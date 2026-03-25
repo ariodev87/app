@@ -11,7 +11,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
   <style>
-    /* ── ESTILO EXACTO DASHBOARDIT ── */
     * { font-family: 'Inter', sans-serif; }
     body { background: #f1f5f9; min-height: 100vh; display: flex; }
     .topbar {
@@ -32,7 +31,6 @@
       padding: 16px 28px; text-align: center;
     }
 
-    /* ── TABLA BACKUPS ── */
     .table-container {
       background: #ffffff; border-radius: 20px;
       border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -48,12 +46,14 @@
     .table { margin: 0; }
     .table thead { background: #f1f5f9; }
     .table th { font-weight: 600; color: #374151; border: none; padding: 20px 16px; }
+    .table td { padding: 14px 16px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; }
+    .table tbody tr:last-child td { border-bottom: none; }
     .btn-action { border-radius: 10px; font-size: 0.8rem; padding: 6px 12px; }
     @media (max-width: 768px) { .content-area { padding: 20px 16px; } }
   </style>
 </head>
 <body>
-  {% set user = session.get('username', 'Usuario') %}
+
   {% set dep = departamento | lower %}
 
   {% if role|int == 0 and dep in ['financiero', 'melia'] %}
@@ -97,15 +97,16 @@
     </div>
 
     <div class="content-area">
+
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show mb-4"
-               style="border-radius:10px; font-size:0.875rem;">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4"
+                 style="border-radius:10px; font-size:0.875rem;">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
         {% endif %}
       {% endwith %}
 
@@ -117,7 +118,8 @@
             Monitoreo y gestión completa de respaldos automáticos.
           </p>
         </div>
-        <button class="btn" style="background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; border:none; border-radius:12px; padding:12px 24px; font-weight:600;"
+        <button class="btn"
+                style="background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; border:none; border-radius:12px; padding:12px 24px; font-weight:600;"
                 data-bs-toggle="modal" data-bs-target="#backupModal" onclick="prepareAdd()">
           <i class="bi bi-plus-circle me-2"></i>Nuevo Backup
         </button>
@@ -126,32 +128,37 @@
       <!-- Stats Cards -->
       <div class="stats-grid mb-4">
         <div class="stat-card">
-          <div style="font-size:2.5rem; font-weight:700;">{{ backups_ok|default(0) }}</div>
+          <div style="font-size:2.5rem; font-weight:700;">{{ backups_ok | default(0) }}</div>
           <div style="font-size:0.85rem; opacity:0.9;">Exitosos</div>
         </div>
-        <div class="stat-card" style="background:linear-gradient(135deg,#ef4444,#dc2626);">
-          <div style="font-size:2.5rem; font-weight:700;">{{ backups_error|default(0) }}</div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#ef4444,#dc2626); box-shadow:0 4px 14px rgba(239,68,68,0.4);">
+          <div style="font-size:2.5rem; font-weight:700;">{{ backups_error | default(0) }}</div>
           <div style="font-size:0.85rem; opacity:0.9;">Con Errores</div>
         </div>
-        <div class="stat-card" style="background:linear-gradient(135deg,#10b981,#059669);">
-          <div style="font-size:2.5rem; font-weight:700;">{{ dias_ultimo|default(0) }}</div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#10b981,#059669); box-shadow:0 4px 14px rgba(16,185,129,0.4);">
+          <div style="font-size:2.5rem; font-weight:700;">{{ dias_ultimo | default(0) }}</div>
           <div style="font-size:0.85rem; opacity:0.9;">Días Último</div>
         </div>
-        <div class="stat-card" style="background:linear-gradient(135deg,#6b7280,#4b5563);">
-          <div style="font-size:2.5rem; font-weight:700;">{{ backups|length|default(0) }}</div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#6b7280,#4b5563); box-shadow:0 4px 14px rgba(107,114,128,0.4);">
+          <div style="font-size:2.5rem; font-weight:700;">{{ backups | length | default(0) }}</div>
           <div style="font-size:0.85rem; opacity:0.9;">Total</div>
         </div>
       </div>
 
-      <!-- Tabla Contenedor -->
+      <!-- Tabla -->
       <div class="table-container">
         <div class="table-header d-flex justify-content-between align-items-center">
           <div class="input-group" style="max-width:400px;">
-            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-            <input type="text" class="form-control border-start-0 ps-0" id="searchInput" placeholder="Buscar servidor o estado...">
+            <span class="input-group-text bg-white border-end-0">
+              <i class="bi bi-search text-muted"></i>
+            </span>
+            <input type="text" class="form-control border-start-0 ps-0"
+                   id="searchInput" placeholder="Buscar servidor o estado..."
+                   onkeyup="searchTable()">
           </div>
           <div class="d-flex gap-2">
-            <select class="form-select form-select-sm" id="filterEstado" onchange="filterTable()" style="max-width:140px;">
+            <select class="form-select form-select-sm" id="filterEstado"
+                    onchange="filterTable()" style="max-width:140px;">
               <option value="">Todos</option>
               <option value="OK">OK</option>
               <option value="ERROR">Error</option>
@@ -161,6 +168,7 @@
             </button>
           </div>
         </div>
+
         <div class="table-responsive">
           <table class="table mb-0">
             <thead>
@@ -175,20 +183,23 @@
             <tbody id="backupsTableBody">
               {% for backup in backups %}
               <tr>
-                <td>{{ backup.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                <td>{{ backup.fecha.strftime('%d/%m/%Y %H:%M') if backup.fecha else '—' }}</td>
                 <td><strong>{{ backup.servidor }}</strong></td>
                 <td>
-                  <span class="badge {{ 'bg-success' if backup.estado=='OK' else 'bg-danger' }}">
+                  <span class="badge {{ 'bg-success' if backup.estado == 'OK' else 'bg-danger' }}">
                     {{ backup.estado }}
                   </span>
                 </td>
-                <td>{{ backup.tamaño or 'N/A' }} MB</td>
+                <!-- ✅ CAMBIO: tamano_gb en lugar de tamaño -->
+                <td>{{ backup.tamano_gb or '—' }} GB</td>
                 <td>
                   <div class="btn-group">
-                    <button class="btn btn-sm btn-outline-primary btn-action" onclick="prepareEdit({{ backup|tojson }})">
+                    <button class="btn btn-sm btn-outline-primary btn-action"
+                            onclick="prepareEdit({{ backup | tojson }})">
                       <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteBackup({{ backup.id }})">
+                    <button class="btn btn-sm btn-outline-danger btn-action"
+                            onclick="deleteBackup({{ backup.id }})">
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
@@ -198,25 +209,27 @@
             </tbody>
           </table>
         </div>
+
         {% if not backups %}
-        <div class="text-center py-8">
+        <div class="text-center py-5">
           <i class="bi bi-cloud-arrow-up-fill display-1 text-muted mb-3"></i>
           <h5 class="text-muted">Sin backups registrados</h5>
           <p class="text-muted mb-0">Crea el primer registro para comenzar.</p>
         </div>
         {% endif %}
       </div>
-    </div>
+
+    </div><!-- /content-area -->
 
     <footer>
       <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
-        &copy; {{ current_year|default('2026') }} Todos los derechos reservados —
+        &copy; {{ current_year | default('2026') }} Todos los derechos reservados —
         Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
       </p>
     </footer>
-  </div>
+  </div><!-- /main-content -->
 
-  <!-- Modal Backup (estilo dashboardit) -->
+  <!-- Modal Backup -->
   <div class="modal fade" id="backupModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-0 shadow-lg" style="border-radius:20px;">
@@ -225,8 +238,7 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <form id="backupForm">
-          <div class="modal-body pt-0">
-            <input type="hidden" id="backupId">
+          <div class="modal-body">
             <div class="mb-3">
               <label class="form-label fw-semibold">Servidor</label>
               <input type="text" class="form-control" id="servidor" required>
@@ -243,13 +255,15 @@
               </select>
             </div>
             <div class="mb-3">
-              <label class="form-label fw-semibold">Tamaño (MB)</label>
+              <label class="form-label fw-semibold">Tamaño (GB)</label>
               <input type="number" class="form-control" id="tamano" min="0" step="0.01">
             </div>
           </div>
           <div class="modal-footer border-0 pt-0">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn" style="background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white;">
+            <button type="button" class="btn btn-outline-secondary"
+                    data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn"
+                    style="background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white;">
               <i class="bi bi-check-circle me-2"></i>Guardar Backup
             </button>
           </div>
@@ -260,22 +274,20 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Fecha topbar (igual dashboardit)
-    document.getElementById('fechaTopbar').textContent = new Date().toLocaleDateString('es-ES', {
-      weekday:'long', year:'numeric', month:'long', day:'numeric'
-    });
 
-    // Sidebar toggle (igual dashboardit)
-    const sidebar = document.getElementById('sidebar');
+    document.getElementById('fechaTopbar').textContent =
+      new Date().toLocaleDateString('es-ES', {
+        weekday:'long', year:'numeric', month:'long', day:'numeric'
+      });
+
+    const sidebar     = document.getElementById('sidebar');
     const mainContent = document.getElementById('main-content');
-    if (localStorage.getItem('sidebar_collapsed') === '1') {
+    if (sidebar && localStorage.getItem('sidebar_collapsed') === '1') {
       sidebar.classList.add('collapsed');
       mainContent.classList.add('expanded');
     }
 
-    // Funciones tabla (búsqueda, filtro, export, CRUD)
     let currentEditId = null;
-    document.getElementById('searchInput').addEventListener('keyup', searchTable);
 
     function searchTable() {
       const term = document.getElementById('searchInput').value.toLowerCase();
@@ -287,59 +299,84 @@
     function filterTable() {
       const estado = document.getElementById('filterEstado').value;
       document.querySelectorAll('#backupsTableBody tr').forEach(row => {
-        row.style.display = (!estado || row.querySelector('.badge').textContent === estado) ? '' : 'none';
+        const badge = row.querySelector('.badge');
+        row.style.display = (!estado || (badge && badge.textContent.trim() === estado)) ? '' : 'none';
       });
     }
 
     function exportCSV() {
-      let csv = 'Fecha,Servidor,Estado,Tamaño\n';
+      let csv = 'Fecha,Servidor,Estado,Tamaño (GB)\n';
       document.querySelectorAll('#backupsTableBody tr:not([style*="none"])').forEach(row => {
-        csv += row.cells[0].textContent + ',' + row.cells[1].textContent + ',' +
-               row.cells[2].textContent + ',' + row.cells[3].textContent + '\n';
+        csv += [row.cells[0].textContent.trim(),
+                row.cells[1].textContent.trim(),
+                row.cells[2].textContent.trim(),
+                row.cells[3].textContent.trim()].join(',') + '\n';
       });
       const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'backups.csv'; a.click();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'backups.csv'; a.click();
     }
 
     function prepareAdd() {
       document.getElementById('modalTitle').textContent = 'Nuevo Backup';
       document.getElementById('backupForm').reset();
-      document.getElementById('fecha').valueAsDate = new Date();
+      // ✅ datetime-local necesita formato ISO sin zona horaria
+      const now   = new Date();
+      const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                      .toISOString().slice(0, 16);
+      document.getElementById('fecha').value  = local;
       document.getElementById('estado').value = 'OK';
       currentEditId = null;
     }
 
     function prepareEdit(backup) {
       document.getElementById('modalTitle').textContent = 'Editar Backup';
-      document.getElementById('backupId').value = backup.id;
+      // ✅ asigna currentEditId para que el submit use action=update
+      currentEditId = backup.id;
       document.getElementById('servidor').value = backup.servidor;
-      document.getElementById('fecha').value = backup.fecha.slice(0,16);
-      document.getElementById('estado').value = backup.estado;
-      document.getElementById('tamano').value = backup.tamaño || '';
+      document.getElementById('fecha').value    = backup.fecha ? backup.fecha.slice(0, 16) : '';
+      document.getElementById('estado').value   = backup.estado;
+      // ✅ CAMBIO: tamano_gb en lugar de tamaño
+      document.getElementById('tamano').value   = backup.tamano_gb || '';
       new bootstrap.Modal(document.getElementById('backupModal')).show();
     }
 
     function deleteBackup(id) {
-      if (confirm('¿Eliminar este backup?')) {
-        fetch('/backups/delete', { method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({id}) }).then(() => location.reload());
-      }
+      if (!confirm('¿Eliminar este backup?')) return;
+      fetch('/it/backups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id })
+      }).then(() => location.reload());
     }
 
     document.getElementById('backupForm').addEventListener('submit', e => {
       e.preventDefault();
       const data = {
-        id: currentEditId,
+        action:   currentEditId ? 'update' : 'add',
+        id:       currentEditId,
         servidor: document.getElementById('servidor').value,
-        fecha: document.getElementById('fecha').value,
-        estado: document.getElementById('estado').value,
-        tamano: document.getElementById('tamano').value || null
+        fecha:    document.getElementById('fecha').value,
+        estado:   document.getElementById('estado').value,
+        tamano:   document.getElementById('tamano').value || null
       };
-      const url = currentEditId ? '/backups/update' : '/backups/add';
-      fetch(url, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) })
-        .then(() => { bootstrap.Modal.getInstance(document.getElementById('backupModal')).hide(); location.reload(); });
+      fetch('/it/backups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) {
+          bootstrap.Modal.getInstance(document.getElementById('backupModal')).hide();
+          location.reload();
+        } else {
+          alert('Error: ' + (d.error || 'Error desconocido'));
+        }
+      });
     });
+
   </script>
 </body>
 </html>

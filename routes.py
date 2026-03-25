@@ -391,57 +391,83 @@ def delete_ticket(id):
 @main.route('/it/backups', methods=['GET', 'POST'])
 @login_required
 def backups():
+    role         = session.get('role')
+    departamento = session.get('departamento', '')
+
     if request.method == 'POST':
-        action = request.form.get('action')
+        data = request.get_json()
+        action = data.get('action') if data else request.form.get('action')
         cur = mysql.connection.cursor()
-        
+
         if action == 'add':
             cur.execute("""
-                INSERT INTO backups (fecha, servidor, tamano_gb, estado, observaciones)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO backups (fecha, servidor, tamano_gb, estado)
+                VALUES (%s, %s, %s, %s)
             """, (
-                request.form.get('fecha'),
-                request.form.get('servidor'),
-                request.form.get('tamano_gb') or None,
-                request.form.get('estado'),
-                request.form.get('observaciones')
+                data.get('fecha'),
+                data.get('servidor'),
+                data.get('tamano') or None,
+                data.get('estado'),
             ))
             mysql.connection.commit()
-            flash('Backup añadido', 'success')
-            
-        elif action == 'delete':
-            cur.execute("DELETE FROM backups WHERE id = %s", (request.form.get('backup_id'),))
+            cur.close()
+            return jsonify({'success': True})
+
+        elif action == 'update':
+            cur.execute("""
+                UPDATE backups
+                SET fecha=%s, servidor=%s, tamano_gb=%s, estado=%s
+                WHERE id=%s
+            """, (
+                data.get('fecha'),
+                data.get('servidor'),
+                data.get('tamano') or None,
+                data.get('estado'),
+                data.get('id'),
+            ))
             mysql.connection.commit()
-            flash('Backup eliminado', 'success')
-        
+            cur.close()
+            return jsonify({'success': True})
+
+        elif action == 'delete':
+            cur.execute("DELETE FROM backups WHERE id = %s", (data.get('id'),))
+            mysql.connection.commit()
+            cur.close()
+            return jsonify({'success': True})
+
         cur.close()
-        return redirect(url_for('main.backups'))
-    
-    # GET: lista
+        return jsonify({'success': False, 'error': 'Acción desconocida'}), 400
+
+    # ── GET: lista completa ──
     cur = mysql.connection.cursor()
     cur.execute("""
-        SELECT id, fecha, servidor, tamano_gb, estado, observaciones 
+        SELECT id, fecha, servidor, tamano_gb, estado
         FROM backups ORDER BY fecha DESC
     """)
-    columns = [col[0] for col in cur.description]
+    columns      = [col[0] for col in cur.description]
     backups_list = [dict(zip(columns, row)) for row in cur.fetchall()]
-    
-    # Stats
+
     cur.execute("SELECT COUNT(*) FROM backups WHERE estado='OK'")
     backups_ok = cur.fetchone()[0]
-    cur.execute("SELECT COUNT(*) FROM backups WHERE estado='Error'")
+
+    cur.execute("SELECT COUNT(*) FROM backups WHERE estado='ERROR'")
     backups_error = cur.fetchone()[0]
+
     cur.execute("SELECT DATEDIFF(NOW(), MAX(fecha)) FROM backups")
     dias_ultimo_row = cur.fetchone()
-    dias_ultimo = dias_ultimo_row[0] if dias_ultimo_row[0] else 0
-    
+    dias_ultimo = dias_ultimo_row[0] if dias_ultimo_row and dias_ultimo_row[0] else 0
+
     cur.close()
-    
-    return render_template('backups.html', 
-        backups=backups_list, 
-        backups_ok=backups_ok, 
-        backups_error=backups_error, 
-        dias_ultimo=dias_ultimo)
+
+    return render_template('backups.html',
+        backups       = backups_list,
+        backups_ok    = backups_ok,
+        backups_error = backups_error,
+        dias_ultimo   = dias_ultimo,
+        role          = role,
+        departamento  = departamento,
+        current_year  = datetime.now().year,
+    )
 
 
 
