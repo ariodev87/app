@@ -1014,9 +1014,7 @@ def exportar_asistencia_pdf():
             if salida_comida and entrada_tarde:
                 pausa = int((entrada_tarde - salida_comida).total_seconds() // 60)
                 minutos_dia -= pausa
-            # Descontar 20min si aplica
-            if añadir_20min:
-                minutos_dia -= 20
+            
             if minutos_dia > 0:
                 total_minutos_trab += minutos_dia
 
@@ -1045,6 +1043,7 @@ def exportar_asistencia_pdf():
         num_afiliacion    = nass,
         añadir_20min      = añadir_20min,
         añadir_iniciales  = añadir_iniciales,
+        total_minutos_ret = total_minutos_ret,
         # ── NUEVOS DATOS ──
         horas_ret         = horas_ret,
         total_horas_ret   = total_horas_ret,
