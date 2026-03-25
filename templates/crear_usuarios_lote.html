@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crear Usuarios en Lote</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #f1f5f9; min-height: 100vh; display: flex; }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: 260px; min-width: 260px;
+      background: #ffffff; border-right: 1px solid #e5e7eb;
+      display: flex; flex-direction: column; min-height: 100vh;
+      transition: width 0.25s ease, min-width 0.25s ease;
+      position: fixed; top: 0; left: 0; z-index: 100; overflow: hidden;
+    }
+    #sidebar.collapsed { width: 68px; min-width: 68px; }
+
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 18px 20px; border-bottom: 1px solid #e5e7eb;
+      min-height: 64px; position: relative;
+    }
+    .sidebar-brand .brand-icon { color: #2563eb; font-size: 1.6rem; flex-shrink: 0; }
+    .sidebar-brand .brand-text { font-size: 1rem; font-weight: 700; color: #1e293b; white-space: nowrap; transition: opacity 0.2s; }
+    #sidebar.collapsed .brand-text { opacity: 0; width: 0; overflow: hidden; }
+
+    #toggleSidebar {
+      position: absolute; top: 18px; right: -14px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #2563eb; color: white; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; z-index: 101;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.4); transition: transform 0.25s;
+    }
+    #sidebar.collapsed #toggleSidebar { transform: rotate(180deg); }
+
+    .sidebar-user {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+    }
+    .sidebar-user img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #2563eb; flex-shrink: 0; }
+    .sidebar-user .user-info { transition: opacity 0.2s; white-space: nowrap; overflow: hidden; }
+    #sidebar.collapsed .user-info { opacity: 0; width: 0; }
+    .sidebar-user .user-name { font-size: 0.875rem; font-weight: 600; color: #1e293b; margin: 0; }
+    .sidebar-user .user-role { font-size: 0.75rem; color: #64748b; margin: 0; }
+
+    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+
+    .nav-section-label {
+      font-size: 0.7rem; font-weight: 600; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 10px 20px 4px; white-space: nowrap; transition: opacity 0.2s;
+    }
+    #sidebar.collapsed .nav-section-label { opacity: 0; }
+
+    .nav-item-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; color: #475569; text-decoration: none;
+      font-size: 0.875rem; font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: all 0.15s ease; white-space: nowrap;
+    }
+    .nav-item-link:hover  { background: #eff6ff; color: #2563eb; border-left-color: #93c5fd; }
+    .nav-item-link.active { background: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: 600; }
+    .nav-item-link i { font-size: 1.1rem; color: #2563eb; flex-shrink: 0; width: 22px; text-align: center; }
+    .nav-item-link .link-text { transition: opacity 0.2s; }
+    #sidebar.collapsed .link-text { opacity: 0; width: 0; overflow: hidden; }
+    #sidebar.collapsed .nav-item-link { justify-content: center; padding: 10px 0; }
+
+    .nav-item-link.lunch i     { color: #f59e0b; }
+    .nav-item-link.lunch:hover { background: #fffbeb; color: #d97706; border-left-color: #fcd34d; }
+    .nav-item-link.lunch-in i     { color: #10b981; }
+    .nav-item-link.lunch-in:hover { background: #ecfdf5; color: #059669; border-left-color: #6ee7b7; }
+    .nav-item-link.visitor i     { color: #8b5cf6; }
+    .nav-item-link.visitor:hover { background: #f5f3ff; color: #7c3aed; border-left-color: #c4b5fd; }
+    .nav-item-link.directorio i     { color: #059669; }
+    .nav-item-link.directorio:hover { background: #ecfdf5; color: #059669; border-left-color: #6ee7b7; }
+
+    .nav-divider { border-top: 1px solid #e5e7eb; margin: 8px 0; }
+    .sidebar-footer { padding: 12px 0; border-top: 1px solid #e5e7eb; }
+    .nav-item-link.logout i { color: #ef4444; }
+    .nav-item-link.logout:hover { background: #fef2f2; color: #ef4444; border-left-color: #fca5a5; }
+
+    /* ── CONTENIDO ── */
+    #main-content {
+      margin-left: 260px; flex: 1;
+      display: flex; flex-direction: column;
+      min-height: 100vh; transition: margin-left 0.25s ease;
+    }
+    #main-content.expanded { margin-left: 68px; }
+
+    .topbar {
+      background: #ffffff; border-bottom: 1px solid #e5e7eb;
+      padding: 0 28px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 99;
+    }
+    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
+
+    .content-area { flex: 1; padding: 28px; }
+
+    /* ── PANEL ── */
+    .panel {
+      background: #fff; border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 28px; margin-bottom: 24px;
+    }
+    .panel h5 {
+      font-size: 0.9rem; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    label { font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 6px; display: block; }
+
+    textarea {
+      width: 100%; border-radius: 12px; border: 1px solid #e5e7eb;
+      padding: 12px 14px; font-size: 0.875rem; color: #1e293b;
+      resize: vertical; outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      font-family: 'Inter', monospace;
+    }
+    textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+
+    .hint {
+      font-size: 0.78rem; color: #94a3b8; margin-top: 8px;
+    }
+    .hint code {
+      background: #f1f5f9; padding: 1px 6px; border-radius: 4px;
+      font-size: 0.78rem; color: #475569;
+    }
+
+    .btn-create {
+      background: #2563eb; color: #fff; border: none;
+      padding: 11px 28px; border-radius: 10px;
+      font-size: 0.9rem; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: background 0.2s; cursor: pointer;
+    }
+    .btn-create:hover { background: #1d4ed8; }
+
+    /* ── TABLA RESULTADOS ── */
+    .result-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    .result-table thead th {
+      background: #f8fafc; color: #64748b;
+      font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 10px 14px; border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+    .result-table tbody td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; color: #374151; }
+
+    .badge-ok      { background:#dcfce7; color:#166534; border:1px solid #bbf7d0; border-radius:20px; padding:3px 10px; font-size:0.75rem; font-weight:600; }
+    .badge-warn    { background:#fffbeb; color:#92400e; border:1px solid #fde68a; border-radius:20px; padding:3px 10px; font-size:0.75rem; font-weight:600; }
+    .badge-err     { background:#fee2e2; color:#991b1b; border:1px solid #fecaca; border-radius:20px; padding:3px 10px; font-size:0.75rem; font-weight:600; }
+
+    /* ── RESUMEN ── */
+    .resumen {
+      display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+    }
+    .resumen-item {
+      background: #fff; border-radius: 12px; border: 1px solid #e5e7eb;
+      padding: 14px 20px; display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .resumen-item .ri-num { font-size: 1.4rem; font-weight: 800; }
+    .resumen-item .ri-label { font-size: 0.78rem; color: #64748b; font-weight: 500; }
+
+    footer {
+      background: #ffffff; border-top: 1px solid #e5e7eb;
+      padding: 16px 28px; text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      #sidebar { width: 68px; min-width: 68px; }
+      #sidebar .link-text, #sidebar .user-info,
+      #sidebar .brand-text, #sidebar .nav-section-label { opacity: 0; width: 0; overflow: hidden; }
+      #sidebar .nav-item-link { justify-content: center; padding: 10px 0; }
+      #main-content { margin-left: 68px; }
+    }
+  </style>
+</head>
+<body>
+
+  {% set avatar = url_for('static', filename=user_foto) if user_foto else url_for('static', filename='img/user.png') %}
+
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+  <nav id="sidebar">
+    <div class="sidebar-brand" style="position:relative;">
+      <i class="bi bi-clock-history brand-icon"></i>
+      <span class="brand-text">TurnoApp</span>
+      <button id="toggleSidebar" title="Colapsar menú">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="sidebar-user">
+      <img src="{{ avatar }}" alt="Avatar">
+      <div class="user-info">
+        <p class="user-name">{{ user }}</p>
+        <p class="user-role">Admin</p>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <a href="{{ url_for('main.dashboard') }}" class="nav-item-link">
+        <i class="bi bi-house-door-fill"></i>
+        <span class="link-text">Dashboard</span>
+      </a>
+      <a href="{{ url_for('main.perfil') }}" class="nav-item-link">
+        <i class="bi bi-person-circle"></i>
+        <span class="link-text">Mi Perfil</span>
+      </a>
+
+      <div class="nav-section-label">Turnos</div>
+      <a href="{{ url_for('main.register_entry') }}" class="nav-item-link">
+        <i class="bi bi-box-arrow-in-right"></i>
+        <span class="link-text">Registrar Entrada</span>
+      </a>
+      <a href="{{ url_for('main.register_exit') }}" class="nav-item-link">
+        <i class="bi bi-box-arrow-right"></i>
+        <span class="link-text">Registrar Salida</span>
+      </a>
+      <a href="{{ url_for('main.lunch_out') }}" class="nav-item-link lunch">
+        <i class="bi bi-cup-hot-fill"></i>
+        <span class="link-text">Salida a Comer</span>
+      </a>
+      <a href="{{ url_for('main.lunch_in') }}" class="nav-item-link lunch-in">
+        <i class="bi bi-cup-straw"></i>
+        <span class="link-text">Vuelta de Comer</span>
+      </a>
+      <a href="{{ url_for('main.vacaciones') }}" class="nav-item-link">
+        <i class="bi bi-calendar-sun"></i>
+        <span class="link-text">Vacaciones</span>
+      </a>
+      <a href="{{ url_for('main.directorio') }}" class="nav-item-link directorio">
+        <i class="bi bi-telephone-fill"></i>
+        <span class="link-text">Directorio</span>
+      </a>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-label">Visitantes</div>
+      <a href="{{ url_for('main.register_visitante') }}" class="nav-item-link visitor">
+        <i class="bi bi-person-badge-fill"></i>
+        <span class="link-text">Agregar Visitante</span>
+      </a>
+
+      <div class="nav-divider"></div>
+      <div class="nav-section-label">Administración</div>
+      <a href="{{ url_for('main.create_user') }}" class="nav-item-link">
+        <i class="bi bi-person-plus-fill"></i>
+        <span class="link-text">Crear Usuario</span>
+      </a>
+      <a href="{{ url_for('main.admin_empleados') }}" class="nav-item-link">
+        <i class="bi bi-people-fill"></i>
+        <span class="link-text">Ver Empleados</span>
+      </a>
+      <a href="{{ url_for('main.crear_usuarios_lote') }}" class="nav-item-link active">
+        <i class="bi bi-person-lines-fill"></i>
+        <span class="link-text">Usuarios en Lote</span>
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <a href="{{ url_for('main.logout') }}" class="nav-item-link logout">
+        <i class="bi bi-box-arrow-left"></i>
+        <span class="link-text">Cerrar Sesión</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ══════════════ CONTENIDO ══════════════ -->
+  <div id="main-content">
+
+    <div class="topbar">
+      <h1 class="page-title">
+        <i class="bi bi-person-lines-fill" style="color:#2563eb; margin-right:8px;"></i>
+        Crear Usuarios en Lote
+      </h1>
+    </div>
+
+    <div class="content-area">
+
+      <!-- FORMULARIO -->
+      <div class="panel">
+        <h5><i class="bi bi-list-ul" style="color:#2563eb;"></i> Lista de nombres</h5>
+        <form method="POST">
+          <label>Introduce un nombre completo por línea</label>
+          <textarea name="lista_nombres" rows="10"
+                    placeholder="Juan García López&#10;María Pérez Sánchez&#10;Carlos Rodríguez Martín">{{ request.form.get('lista_nombres', '') }}</textarea>
+          <p class="hint">
+            El usuario se generará con el <strong>primer nombre en minúscula</strong>
+            y contraseña <code>12345</code>.
+            Ejemplo: <code>Juan García López</code> → usuario <code>juan</code>
+          </p>
+          <div style="margin-top:20px;">
+            <button type="submit" class="btn-create">
+              <i class="bi bi-people-fill"></i> Crear usuarios
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- RESULTADOS -->
+      {% if resultados %}
+        {% set ok   = resultados | selectattr('estado','eq','success') | list | length %}
+        {% set warn = resultados | selectattr('estado','eq','warning') | list | length %}
+        {% set err  = resultados | selectattr('estado','eq','danger')  | list | length %}
+
+        <div class="resumen">
+          <div class="resumen-item">
+            <div>
+              <div class="ri-num" style="color:#16a34a;">{{ ok }}</div>
+              <div class="ri-label">Creados</div>
+            </div>
+            <i class="bi bi-check-circle-fill" style="font-size:1.6rem; color:#86efac;"></i>
+          </div>
+          <div class="resumen-item">
+            <div>
+              <div class="ri-num" style="color:#d97706;">{{ warn }}</div>
+              <div class="ri-label">Ya existían</div>
+            </div>
+            <i class="bi bi-exclamation-circle-fill" style="font-size:1.6rem; color:#fcd34d;"></i>
+          </div>
+          <div class="resumen-item">
+            <div>
+              <div class="ri-num" style="color:#dc2626;">{{ err }}</div>
+              <div class="ri-label">Errores</div>
+            </div>
+            <i class="bi bi-x-circle-fill" style="font-size:1.6rem; color:#fca5a5;"></i>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h5><i class="bi bi-clipboard-check" style="color:#2563eb;"></i> Resultado del proceso</h5>
+          <table class="result-table">
+            <thead>
+              <tr>
+                <th>Nombre completo</th>
+                <th>Usuario</th>
+                <th>Contraseña</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in resultados %}
+              <tr>
+                <td>{{ r.nombre }}</td>
+                <td><code style="background:#f1f5f9; padding:2px 8px; border-radius:6px;">{{ r.username }}</code></td>
+                <td>
+                  {% if r.estado == 'success' %}
+                    <code style="background:#f1f5f9; padding:2px 8px; border-radius:6px;">12345</code>
+                  {% else %}
+                    <span style="color:#94a3b8;">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if r.estado == 'success' %}
+                    <span class="badge-ok"><i class="bi bi-check-circle"></i> {{ r.msg }}</span>
+                  {% elif r.estado == 'warning' %}
+                    <span class="badge-warn"><i class="bi bi-exclamation-circle"></i> {{ r.msg }}</span>
+                  {% else %}
+                    <span class="badge-err"><i class="bi bi-x-circle"></i> {{ r.msg }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+
+    </div><!-- /content-area -->
+
+    <footer>
+      <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
+        &copy; {{ current_year }} Todos los derechos reservados —
+        Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
+      </p>
+    </footer>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const sidebar     = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    const toggleBtn   = document.getElementById('toggleSidebar');
+
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('expanded');
+      localStorage.setItem('sidebar_collapsed', sidebar.classList.contains('collapsed') ? '1' : '0');
+    });
+    if (localStorage.getItem('sidebar_collapsed') === '1') {
+      sidebar.classList.add('collapsed');
+      mainContent.classList.add('expanded');
+    }
+  </script>
+</body>
+</html>

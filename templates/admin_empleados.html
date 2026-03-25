@@ -1,0 +1,1173 @@
+<!-- turno/app/templates/admin_empleados.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%232563eb' viewBox='0 0 16 16'><path d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z'/><path d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z'/></svg>">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Panel de Empleados</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #f1f5f9; min-height: 100vh; display: flex; }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: 260px; min-width: 260px;
+      background: #ffffff; border-right: 1px solid #e5e7eb;
+      display: flex; flex-direction: column;
+      min-height: 100vh;
+      transition: width 0.25s ease, min-width 0.25s ease;
+      position: fixed; top: 0; left: 0;
+      z-index: 100; overflow: hidden;
+    }
+    #sidebar.collapsed { width: 68px; min-width: 68px; }
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 18px 20px; border-bottom: 1px solid #e5e7eb;
+      min-height: 64px; position: relative;
+    }
+    .sidebar-brand .brand-icon { color: #2563eb; font-size: 1.6rem; flex-shrink: 0; }
+    .sidebar-brand .brand-text { font-size: 1rem; font-weight: 700; color: #1e293b; white-space: nowrap; transition: opacity 0.2s; }
+    #sidebar.collapsed .brand-text { opacity: 0; width: 0; overflow: hidden; }
+    #toggleSidebar {
+      position: absolute; top: 18px; right: -14px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #2563eb; color: white; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; z-index: 101;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.4); transition: transform 0.25s;
+    }
+    #sidebar.collapsed #toggleSidebar { transform: rotate(180deg); }
+    .sidebar-user {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+    }
+    .sidebar-user img {
+      width: 40px; height: 40px; border-radius: 50%;
+      object-fit: cover; border: 2px solid #2563eb; flex-shrink: 0;
+    }
+    .sidebar-user .user-info { transition: opacity 0.2s; white-space: nowrap; overflow: hidden; }
+    #sidebar.collapsed .user-info { opacity: 0; width: 0; }
+    .sidebar-user .user-name { font-size: 0.875rem; font-weight: 600; color: #1e293b; margin: 0; }
+    .sidebar-user .user-role { font-size: 0.75rem; color: #64748b; margin: 0; }
+    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+    .nav-section-label {
+      font-size: 0.7rem; font-weight: 600; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 10px 20px 4px; white-space: nowrap; transition: opacity 0.2s;
+    }
+    #sidebar.collapsed .nav-section-label { opacity: 0; }
+    .nav-item-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; color: #475569; text-decoration: none;
+      font-size: 0.875rem; font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: all 0.15s ease; white-space: nowrap;
+    }
+    .nav-item-link:hover { background: #eff6ff; color: #2563eb; border-left-color: #93c5fd; }
+    .nav-item-link.active { background: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: 600; }
+    .nav-item-link i { font-size: 1.1rem; color: #2563eb; flex-shrink: 0; width: 22px; text-align: center; }
+    .nav-item-link .link-text { transition: opacity 0.2s; }
+    #sidebar.collapsed .link-text { opacity: 0; width: 0; overflow: hidden; }
+    #sidebar.collapsed .nav-item-link { justify-content: center; padding: 10px 0; }
+    .nav-item-link.lunch i      { color: #f59e0b; }
+    .nav-item-link.lunch:hover  { background: #fffbeb; color: #d97706; border-left-color: #fcd34d; }
+    .nav-item-link.lunch-in i   { color: #10b981; }
+    .nav-item-link.lunch-in:hover { background: #ecfdf5; color: #059669; border-left-color: #6ee7b7; }
+    .nav-divider { border-top: 1px solid #e5e7eb; margin: 8px 0; }
+    .sidebar-footer { padding: 12px 0; border-top: 1px solid #e5e7eb; }
+    .nav-item-link.logout i { color: #ef4444; }
+    .nav-item-link.logout:hover { background: #fef2f2; color: #ef4444; border-left-color: #fca5a5; }
+
+    /* ── CONTENIDO ── */
+    #main-content {
+      margin-left: 260px; flex: 1;
+      display: flex; flex-direction: column;
+      min-height: 100vh; transition: margin-left 0.25s ease;
+    }
+    #main-content.expanded { margin-left: 68px; }
+    .topbar {
+      background: #ffffff; border-bottom: 1px solid #e5e7eb;
+      padding: 0 28px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 99;
+    }
+    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
+    .topbar .fecha { font-size: 0.82rem; color: #64748b; }
+    .topbar .badge-role {
+      background: #eff6ff; color: #2563eb;
+      font-size: 0.75rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 20px; border: 1px solid #bfdbfe;
+    }
+    .content-area { flex: 1; padding: 28px; }
+
+    /* ── PANEL FILTROS ── */
+    .filter-panel {
+      background: #ffffff; border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 20px 24px; margin-bottom: 24px;
+    }
+    .filter-panel .form-label {
+      font-size: 0.78rem; font-weight: 600;
+      color: #374151; margin-bottom: 6px;
+    }
+    .form-select, .form-control {
+      border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 9px 14px; font-size: 0.875rem; color: #1e293b;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-select:focus, .form-control:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    }
+    .btn-filter {
+      border: none; border-radius: 8px;
+      padding: 9px 18px; font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-filter.asistencia { background: #dcfce7; color: #166534; }
+    .btn-filter.asistencia:hover { background: #bbf7d0; }
+    .btn-filter.vacaciones { background: #fffbeb; color: #92400e; }
+    .btn-filter.vacaciones:hover { background: #fef08a; }
+    .action-btns { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+    .btn-action-top {
+      border: none; border-radius: 8px;
+      padding: 9px 18px; font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      transition: all 0.15s;
+    }
+    .btn-action-top:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-action-top.mes { background: #e0f2fe; color: #0c4a6e; }
+    .btn-action-top.mes:not(:disabled):hover { background: #bae6fd; }
+    .btn-action-top.pdf { background: #fee2e2; color: #991b1b; }
+    .btn-action-top.pdf:not(:disabled):hover { background: #fecaca; }
+
+    /* ── RESULTADOS ── */
+    .result-panel {
+      background: #ffffff; border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 24px; margin-bottom: 24px;
+    }
+    .result-panel h5 {
+      font-size: 0.95rem; font-weight: 600; color: #1e293b;
+      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+      padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;
+    }
+    .result-panel h5 i { color: #2563eb; }
+    .table { color: #374151; font-size: 0.875rem; margin: 0; }
+    .table thead th {
+      background: #f8fafc; color: #64748b;
+      font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      border-bottom: 1px solid #e5e7eb; padding: 10px 14px;
+    }
+    .table tbody td {
+      padding: 10px 14px; border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .badge-hora {
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 500; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .badge-hora.entrada  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-hora.salida   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .badge-hora.vac      { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+    .badge-hora.pending  { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+    .badge-hora.lunch-s  { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+    .badge-hora.lunch-e  { background: #ecfdf5; color: #059669; border: 1px solid #6ee7b7; }
+    .nota-textarea {
+      border: 1px solid #e5e7eb; border-radius: 6px;
+      padding: 6px 10px; font-size: 0.82rem; color: #374151;
+      resize: none; min-width: 160px; width: 100%;
+      background: #f8fafc; transition: border-color 0.15s;
+    }
+    .nota-textarea:focus { border-color: #2563eb; outline: none; }
+    .btn-save-nota {
+      background: #eff6ff; color: #2563eb;
+      border: 1px solid #bfdbfe; border-radius: 6px;
+      padding: 5px 10px; cursor: pointer;
+      transition: all 0.15s; font-size: 0.85rem;
+    }
+    .btn-save-nota:hover { background: #dbeafe; }
+    .btn-edit-reg {
+      background: #fffbeb; color: #d97706;
+      border: 1px solid #fde68a; border-radius: 6px;
+      padding: 5px 10px; cursor: pointer;
+      transition: all 0.15s; font-size: 0.85rem;
+    }
+    .btn-edit-reg:hover { background: #fef08a; }
+    .btn-edit-lunch {
+      background: #ecfdf5; color: #059669;
+      border: 1px solid #6ee7b7; border-radius: 6px;
+      padding: 5px 10px; cursor: pointer;
+      transition: all 0.15s; font-size: 0.85rem;
+    }
+    .btn-edit-lunch:hover { background: #d1fae5; }
+
+    /* Sección mes AJAX */
+    #seccionMes {
+      background: #ffffff; border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 24px; margin-bottom: 24px;
+    }
+    #seccionMes h5 { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 16px; }
+    #seccionMes h5 i { color: #2563eb; }
+    .btn-cerrar-mes {
+      background: #f1f5f9; color: #64748b;
+      border: 1px solid #e5e7eb; border-radius: 6px;
+      padding: 5px 12px; font-size: 0.82rem; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-cerrar-mes:hover { background: #e2e8f0; }
+
+    /* Modales */
+    .modal-content {
+      border-radius: 14px; border: 1px solid #e5e7eb;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+    }
+    .modal-header { border-bottom: 1px solid #f1f5f9; padding: 20px 24px; }
+    .modal-footer { border-top: 1px solid #f1f5f9; padding: 16px 24px; }
+    .modal-title  { font-size: 1rem; font-weight: 600; color: #1e293b; }
+    .modal-title i { color: #2563eb; }
+    .modal-body   { padding: 20px 24px; }
+    .btn-modal-cancel {
+      background: #f1f5f9; color: #64748b; border: none;
+      border-radius: 8px; padding: 9px 18px;
+      font-size: 0.875rem; font-weight: 500; cursor: pointer;
+    }
+    .btn-modal-cancel:hover { background: #e2e8f0; }
+    .btn-modal-ok {
+      background: #2563eb; color: white; border: none;
+      border-radius: 8px; padding: 9px 18px;
+      font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-modal-ok:hover { background: #1d4ed8; }
+    .btn-modal-pdf {
+      background: #dc2626; color: white; border: none;
+      border-radius: 8px; padding: 9px 18px;
+      font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-modal-pdf:hover { background: #b91c1c; }
+    .btn-modal-save {
+      background: #16a34a; color: white; border: none;
+      border-radius: 8px; padding: 9px 18px;
+      font-size: 0.875rem; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-modal-save:hover { background: #15803d; }
+
+    .empty-state {
+      text-align: center; padding: 28px 0;
+      color: #94a3b8; font-size: 0.875rem;
+    }
+    .empty-state i { font-size: 1.8rem; display: block; margin-bottom: 8px; color: #cbd5e1; }
+
+    footer {
+      background: #ffffff; border-top: 1px solid #e5e7eb;
+      padding: 16px 28px; text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      #sidebar { width: 68px; min-width: 68px; }
+      #sidebar .link-text, #sidebar .user-info,
+      #sidebar .brand-text, #sidebar .nav-section-label { opacity: 0; width: 0; overflow: hidden; }
+      #sidebar .nav-item-link { justify-content: center; padding: 10px 0; }
+      #main-content { margin-left: 68px; }
+    }
+  </style>
+</head>
+<body>
+
+ {% include '_sidebar.html' %}
+
+  <!-- ══════════════ CONTENIDO ══════════════ -->
+  <div id="main-content">
+
+    <div class="topbar">
+      <h1 class="page-title">
+        <i class="bi bi-people-fill" style="color:#2563eb; margin-right:8px;"></i>
+        Panel de Empleados
+      </h1>
+      <div class="d-flex align-items-center gap-3">
+        <span class="fecha" id="fechaTopbar"></span>
+        <span class="badge-role">
+          <i class="bi bi-shield-check"></i> Admin
+        </span>
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4"
+                 style="border-radius:10px; font-size:0.875rem;">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- ── FILTROS ── -->
+      <div class="filter-panel">
+        <form method="post" id="formEmpleados">
+          <input type="hidden" name="action" id="hiddenAction" value="asistencia">
+          <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-5">
+              <label for="selected_user" class="form-label">Empleado</label>
+              <select id="selected_user" name="selected_user" class="form-select" required>
+                <option value="" disabled selected>Selecciona un empleado</option>
+                {% for u in usuarios %}
+                  <option value="{{ u[0] }}"
+                    {% if seleccionado and seleccionado == u[0] %}selected{% endif %}>
+                    {{ u[1] }} {{ u[2] }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12 col-md-3">
+              <label for="fecha" class="form-label">Fecha</label>
+              <input type="date" id="fecha" name="fecha" class="form-control"
+                     value="{{ fecha }}" required/>
+            </div>
+            <div class="col-12 col-md-4 d-flex gap-2 flex-wrap">
+              <button type="button" onclick="submitAccion('asistencia')"
+                      class="btn-filter asistencia flex-fill">
+                <i class="bi bi-clock-history"></i> Ver Asistencia
+              </button>
+              <button type="button" onclick="submitAccion('retribuidas')"
+          class="btn-filter flex-fill"
+          style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff; border:none; border-radius:10px; padding:8px 14px; font-size:.85rem; font-weight:600;">
+    <i class="bi bi-coin"></i> Ver Horas Retribuidas
+  </button>
+              <button type="button" onclick="submitAccion('vacaciones')"
+                      class="btn-filter vacaciones flex-fill">
+                <i class="bi bi-calendar-check"></i> Ver Vacaciones
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- ── BOTONES VER MES / PDF ── -->
+      <div class="action-btns">
+        <button type="button" class="btn-action-top mes"
+                data-bs-toggle="modal" data-bs-target="#modalMes"
+                id="btnVerMes" disabled>
+          <i class="bi bi-calendar-month"></i> Ver Mes Completo
+        </button>
+        {% if session.get('role') == 0 %}
+        <button type="button" class="btn-action-top pdf"
+                data-bs-toggle="modal" data-bs-target="#modalPdf"
+                id="btnPdf" disabled>
+          <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
+        </button>
+        {% endif %}
+      </div>
+
+      <!-- ── RESULTADOS ASISTENCIA ── -->
+      {% if asistencia %}
+        <div class="result-panel">
+          <h5>
+            <i class="bi bi-clock-history"></i>
+            Asistencia del {{ fecha }}
+          </h5>
+          <div class="table-responsive">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th><i class="bi bi-box-arrow-in-right"></i> Entrada</th>
+                  <th><i class="bi bi-box-arrow-right"></i> Salida</th>
+                  <th><i class="bi bi-cup-hot-fill" style="color:#f59e0b;"></i> Salida Comer</th>
+                  <th><i class="bi bi-cup-straw" style="color:#10b981;"></i> Vuelta Comer</th>
+                  <th>Nota / Justificación</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for turn_id, ti, to, nota in asistencia %}
+                  <tr>
+                    <!-- Entrada -->
+                    <td>
+                      <span class="badge-hora entrada">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        {{ ti.strftime('%H:%M') if ti else '—' }}
+                      </span>
+                    </td>
+
+                    <!-- Salida -->
+                    <td>
+                      {% if to %}
+                        <span class="badge-hora salida">
+                          <i class="bi bi-box-arrow-right"></i>
+                          {{ to.strftime('%H:%M') }}
+                        </span>
+                      {% else %}
+                        <span class="badge-hora pending">Pendiente</span>
+                      {% endif %}
+                    </td>
+
+                    <!-- Salida a comer — lunch[0]=id, lunch[1]=salida, lunch[2]=entrada -->
+                    <td>
+                      {% if lunch and lunch[1] %}
+                        <span class="badge-hora lunch-s">
+                          <i class="bi bi-cup-hot-fill"></i>
+                          {{ lunch[1].strftime('%H:%M') }}
+                        </span>
+                      {% else %}
+                        <span class="badge-hora pending">—</span>
+                      {% endif %}
+                    </td>
+
+                    <!-- Vuelta de comer -->
+                    <td>
+                      {% if lunch and lunch[2] %}
+                        <span class="badge-hora lunch-e">
+                          <i class="bi bi-cup-straw"></i>
+                          {{ lunch[2].strftime('%H:%M') }}
+                        </span>
+                      {% else %}
+                        <span class="badge-hora pending">—</span>
+                      {% endif %}
+                    </td>
+
+                    <!-- Nota -->
+                    <td>
+                      <textarea class="nota-textarea" rows="1"
+                                id="nota_{{ turn_id }}">{{ nota or '' }}</textarea>
+                    </td>
+
+                    <!-- Acciones -->
+                    <td>
+                      <div class="d-flex gap-1">
+                        <!-- Guardar nota -->
+                        <button type="button" class="btn-save-nota"
+                                onclick="guardarNota({{ turn_id }}, this)"
+                                title="Guardar nota">
+                          <i class="bi bi-floppy"></i>
+                        </button>
+                        <!-- Editar jornada -->
+                         {% if session.get('role' ) == 0 %}
+
+                        <button type="button" class="btn-edit-reg"
+                                title="Editar jornada"
+                                onclick="abrirEditar(
+                                  {{ turn_id }},
+                                  '{{ ti.strftime('%Y-%m-%dT%H:%M') if ti else '' }}',
+                                  '{{ to.strftime('%Y-%m-%dT%H:%M') if to else '' }}',
+                                  {{ nota | tojson if nota else '\"\"' }}
+                                )">
+                          <i class="bi bi-pencil-fill"></i>
+                        </button>
+                          {% endif %}
+                           {% if session.get('role') == 0 %}
+
+                        <button type="button" class="btn-retribuidas"
+    title="Horas Retribuidas"
+    onclick="abrirRetribuidas(
+        {{ seleccionado }},
+        '{{ fecha if fecha else '' }}'
+    )">
+    <i class="bi bi-clock-history"></i>
+</button>
+                          {% endif %}
+                        <!-- Editar lunch -->
+                        {% if lunch %}
+                        {% if session.get('role') == 0 %}
+                          <button type="button" class="btn-edit-lunch"
+                                  title="Editar hora de comida"
+                                  onclick="abrirEditarLunch(
+                                    {{ lunch[0] }},
+                                    '{{ lunch[1].strftime('%Y-%m-%dT%H:%M') if lunch[1] else '' }}',
+                                    '{{ lunch[2].strftime('%Y-%m-%dT%H:%M') if lunch[2] else '' }}'
+                                  )">
+                            <i class="bi bi-cup-hot-fill"></i>
+                          </button>
+                          {% endif %}
+                        {% endif %}
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- ── RESULTADOS VACACIONES ── -->
+      {% if vacaciones %}
+        <div class="result-panel">
+          <h5>
+            <i class="bi bi-calendar-check"></i>
+            Vacaciones {{ current_year }}
+          </h5>
+          <table class="table">
+            <thead>
+              <tr><th>Inicio</th><th>Fin</th><th>Días</th></tr>
+            </thead>
+            <tbody>
+              {% for vi, vo in vacaciones %}
+                <tr>
+                  <td><span class="badge-hora vac"><i class="bi bi-calendar3"></i> {{ vi }}</span></td>
+                  <td><span class="badge-hora vac"><i class="bi bi-calendar3"></i> {{ vo }}</span></td>
+                  <td style="font-weight:600;">
+                    {% if vi and vo %}{{ (vo - vi).days + 1 }} días{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% elif vacaciones is not none and vacaciones|length == 0 %}
+        <div class="result-panel">
+          <div class="empty-state">
+            <i class="bi bi-calendar-x"></i>
+            No hay vacaciones registradas para {{ current_year }}.
+          </div>
+        </div>
+      {% endif %}
+
+      {% if accion == 'retribuidas' %}
+<div class="table-container mt-4">
+  <div class="table-header">
+    <h6 class="fw-bold mb-0" style="color:#6366f1;">
+      <i class="bi bi-coin me-2"></i>Horas Retribuidas del Mes
+    </h6>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Desde</th>
+          <th>Hasta</th>
+          <th>Motivo</th>
+          <th>Tiempo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for hr in horas_ret %}
+        <tr>
+          <td>{{ hr[1].strftime('%d/%m/%Y %H:%M') if hr[1] else '' }}</td>
+          <td>{{ hr[2].strftime('%d/%m/%Y %H:%M') if hr[2] else '' }}</td>
+          <td>{{ hr[3] }}</td>
+          <td>
+            <span class="badge" style="background:#6366f1;">
+              {{ hr[4] // 60 }}h {{ hr[4] % 60 }}m
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-sm btn-outline-danger"
+                    onclick="deleteRetribuida({{ hr[0] }})">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+
+        {% if not horas_ret %}
+        <tr>
+          <td colspan="5" class="text-center text-muted py-4">
+            No hay horas retribuidas este mes
+          </td>
+        </tr>
+        {% endif %}
+
+        <!-- Total -->
+        {% if horas_ret %}
+        <tr class="table-light fw-bold">
+          <td colspan="3" class="text-end">Total:</td>
+          <td colspan="2">
+            <span class="badge" style="background:#4f46e5; font-size:.9rem;">
+              {{ (horas_ret | sum(attribute=4)) // 60 }}h 
+              {{ (horas_ret | sum(attribute=4)) % 60 }}m
+            </span>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+      <!-- ── SECCIÓN MES COMPLETO AJAX ── -->
+      <div id="seccionMes" style="display:none;">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 style="margin:0; font-size:0.95rem; font-weight:600; color:#1e293b;">
+            <i class="bi bi-calendar-month" style="color:#2563eb;"></i>
+            Asistencia mes: <span id="labelMes" style="color:#2563eb;"></span>
+          </h5>
+          <button class="btn-cerrar-mes" onclick="cerrarMes()">
+            <i class="bi bi-x-lg"></i> Cerrar
+          </button>
+        </div>
+        <div class="table-responsive">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th><i class="bi bi-cup-hot-fill" style="color:#f59e0b;"></i> Salida Comer</th>
+                <th><i class="bi bi-cup-straw" style="color:#10b981;"></i> Vuelta Comer</th>
+                <th>Nota</th>
+              </tr>
+            </thead>
+            <tbody id="tablaMesBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /content-area -->
+
+    <footer>
+      <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
+        &copy; {{ current_year }} Todos los derechos reservados —
+        Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
+      </p>
+    </footer>
+
+  </div><!-- /main-content -->
+
+  <!-- ====== MODAL VER MES ====== -->
+  <div class="modal fade" id="modalMes" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-calendar-month"></i> Selecciona el mes
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label"
+                 style="font-size:0.82rem; font-weight:600; color:#374151;">
+            Mes y año
+          </label>
+          <input type="month" id="inputMes" class="form-control"
+                 value="{{ fecha[:7] if fecha else '' }}"/>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-cancel"
+                  data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn-modal-ok" onclick="cargarMes()">
+            <i class="bi bi-search"></i> Ver asistencia
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== MODAL PDF ====== -->
+  <div class="modal fade" id="modalPdf" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-file-earmark-pdf" style="color:#dc2626;"></i>
+          Exportar PDF
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="POST" action="{{ url_for('main.exportar_asistencia_pdf') }}">
+        <input type="hidden" name="user_id" value="{{ seleccionado }}">
+        <div class="modal-body">
+
+          <label class="form-label"
+                 style="font-size:0.82rem; font-weight:600; color:#374151;">
+            Mes y año
+          </label>
+          <input type="month" name="mes" id="inputMesPdf" class="form-control"
+                 value="{{ fecha[:7] if fecha else '' }}" required/>
+
+          <!-- CHECKBOX AQUÍ DENTRO DEL FORM -->
+     <div class="mt-3 p-3 d-flex align-items-center gap-2"
+     style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px;">
+  <input type="checkbox" name="añadir_20min" id="check20min"
+         style="width:16px; height:16px; cursor:pointer; accent-color:#2563eb; flex-shrink:0;">
+  <label for="check20min"
+         style="font-size:0.82rem; font-weight:600; color:#374151; cursor:pointer; margin:0;">
+    Añadir <strong style="color:#2563eb;">"20 minutos diarios no efectivos"</strong> 
+  </label>
+</div>
+    <div class="mt-3 p-3 d-flex align-items-center gap-2"
+     style="background:#f8fafc; border:1px solid #e5e7eb; border-radius:8px;">
+  <input type="checkbox" name="añadir_iniciales" id="checkIniciales"
+         style="width:16px; height:16px; cursor:pointer; accent-color:#2563eb; flex-shrink:0;">
+  <label for="checkIniciales"
+         style="font-size:0.82rem; font-weight:600; color:#374151; cursor:pointer; margin:0;">
+    Añadir <strong style="color:#2563eb;">"Añadir iniciales en la Firma"</strong> 
+  </label>
+</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-cancel"
+                  data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn-modal-pdf">
+            <i class="bi bi-file-earmark-pdf"></i> Generar PDF
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+
+  <!-- ====== MODAL EDITAR JORNADA ====== -->
+  <div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-pencil-fill" style="color:#d97706;"></i>
+            Editar Registro de Jornada
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="edit_turn_id">
+          <div class="mb-3">
+            <label class="form-label"
+                   style="font-size:0.82rem; font-weight:600; color:#374151;">
+              <i class="bi bi-box-arrow-in-right" style="color:#16a34a;"></i>
+              Hora de Entrada
+            </label>
+            <input type="datetime-local" id="edit_timein" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label"
+                   style="font-size:0.82rem; font-weight:600; color:#374151;">
+              <i class="bi bi-box-arrow-right" style="color:#dc2626;"></i>
+              Hora de Salida
+            </label>
+            <input type="datetime-local" id="edit_timeout" class="form-control">
+            <small style="color:#94a3b8; font-size:0.75rem;">
+              Dejar vacío si no hay salida registrada
+            </small>
+          </div>
+          <div class="mb-1">
+            <label class="form-label"
+                   style="font-size:0.82rem; font-weight:600; color:#374151;">
+              <i class="bi bi-chat-left-text" style="color:#2563eb;"></i>
+              Nota / Justificación
+            </label>
+            <textarea id="edit_nota" class="nota-textarea" rows="3"
+                      placeholder="Opcional..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-cancel"
+                  data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn-modal-save" onclick="guardarEdicion()">
+            <i class="bi bi-floppy"></i> Guardar cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== MODAL EDITAR LUNCH ====== -->
+  <div class="modal fade" id="modalEditarLunch" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-cup-hot-fill" style="color:#059669;"></i>
+            Editar Hora de Comida
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="edit_lunch_id">
+          <div class="mb-3">
+            <label class="form-label"
+                   style="font-size:0.82rem; font-weight:600; color:#374151;">
+              <i class="bi bi-cup-hot-fill" style="color:#d97706;"></i>
+              Salida a comer
+            </label>
+            <input type="datetime-local" id="edit_lunch_salida" class="form-control">
+          </div>
+          <div class="mb-1">
+            <label class="form-label"
+                   style="font-size:0.82rem; font-weight:600; color:#374151;">
+              <i class="bi bi-cup-straw" style="color:#059669;"></i>
+              Vuelta de comer
+            </label>
+            <input type="datetime-local" id="edit_lunch_entrada" class="form-control">
+            <small style="color:#94a3b8; font-size:0.75rem;">
+              Dejar vacío si aún no ha vuelto
+            </small>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-cancel"
+                  data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn-modal-save" onclick="guardarLunch()">
+            <i class="bi bi-floppy"></i> Guardar cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Modal Horas Retribuidas -->
+<div class="modal fade" id="modalRetribuidas" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" style="color:#6366f1;">
+          <i class="bi bi-clock-history me-2"></i>Horas Retribuidas
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body pt-2">
+        <input type="hidden" id="ret_user_id">
+
+        <div class="row g-3">
+          <!-- Fecha inicio -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">Desde</label>
+            <input type="datetime-local" class="form-control" id="ret_fecha_inicio" required>
+          </div>
+
+          <!-- Fecha fin -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">Hasta</label>
+            <input type="datetime-local" class="form-control" id="ret_fecha_fin" required>
+          </div>
+
+          <!-- Motivo desplegable -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">Motivo</label>
+            <select class="form-select" id="ret_motivo_select" onchange="toggleOtroMotivo()">
+              <option value="" disabled selected>Selecciona un motivo...</option>
+              <option value="Matrimonio/Pareja de hecho ">Matrimonio/Pareja de Hecho </option>
+              <option value="Fallecimiento/familiar">Fallecimiento de familiar</option>
+              <option value="Enfermedad grave">Enfermedad grave</option>
+              <option value="Traslado de domicilio">Traslado de domicilio</option>
+              <option value="Matrimonio de familiar ">Matrimonio de familiar </option>
+              <option value="Consulta médica">Consulta médica</option>
+              <option value="Acompañamiento médico">Acompañamiento médico</option>
+              <option value="Exámenes">Exámenes</option>
+              <option value="Deber inexcusable público y personal">Deber inexcusable público y personal</option>
+              <option value="Horas sindicales">Horas sindicales</option>
+              <option value="Exámenes prenatales ">Exámenes prenatales</option>
+            </select>
+          </div>
+
+          <!-- Campo libre si elige Otro -->
+          <div class="col-12" id="ret_otro_container" style="display:none;">
+            <label class="form-label fw-semibold">Especifica el motivo</label>
+            <input type="text" class="form-control" id="ret_motivo_otro" placeholder="Escribe el motivo...">
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary px-4 fw-semibold" onclick="guardarRetribuidas()">
+          <i class="bi bi-check-lg me-1"></i>Guardar
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function deleteRetribuida(id) {
+  if (!confirm('¿Borrar esta hora retribuida?')) return;
+  fetch(`/horas_retribuidas/delete/${id}`, { method: 'POST' })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) location.reload();
+      else alert('Error: ' + d.error);
+    });
+}
+    // Abre el modal precargando user_id y fecha del día
+function abrirRetribuidas(user_id, fecha) {
+  document.getElementById('ret_user_id').value = user_id;
+
+  // Precarga fecha_inicio y fecha_fin con el día del empleado a las 00:00 y 23:59
+  if (fecha) {
+    document.getElementById('ret_fecha_inicio').value = fecha + 'T00:00';
+    document.getElementById('ret_fecha_fin').value    = fecha + 'T23:59';
+  } else {
+    document.getElementById('ret_fecha_inicio').value = '';
+    document.getElementById('ret_fecha_fin').value    = '';
+  }
+
+  // Reset motivo
+  document.getElementById('ret_motivo_select').value = '';
+  document.getElementById('ret_motivo_otro').value   = '';
+  document.getElementById('ret_otro_container').style.display = 'none';
+
+  new bootstrap.Modal(document.getElementById('modalRetribuidas')).show();
+}
+
+// Muestra/oculta campo libre si elige "Otro"
+function toggleOtroMotivo() {
+  const sel = document.getElementById('ret_motivo_select').value;
+  document.getElementById('ret_otro_container').style.display =
+    sel === 'Otro' ? 'block' : 'none';
+}
+
+// Guarda via fetch POST
+function guardarRetribuidas() {
+  const user_id      = document.getElementById('ret_user_id').value;
+  const fecha_inicio = document.getElementById('ret_fecha_inicio').value;
+  const fecha_fin    = document.getElementById('ret_fecha_fin').value;
+  const motivo_sel   = document.getElementById('ret_motivo_select').value;
+  const motivo_otro  = document.getElementById('ret_motivo_otro').value.trim();
+
+  // Validaciones
+  if (!fecha_inicio || !fecha_fin) {
+    alert('Las fechas son obligatorias'); return;
+  }
+  if (!motivo_sel) {
+    alert('Selecciona un motivo'); return;
+  }
+  if (motivo_sel === 'Otro' && !motivo_otro) {
+    alert('Especifica el motivo'); return;
+  }
+  if (fecha_fin <= fecha_inicio) {
+    alert('La fecha fin debe ser mayor que la inicio'); return;
+  }
+
+  const motivos = motivo_sel === 'Otro' ? motivo_otro : motivo_sel;
+
+  fetch('/horas_retribuidas/add', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id, fecha_inicio, fecha_fin, motivos })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      bootstrap.Modal.getInstance(document.getElementById('modalRetribuidas')).hide();
+      alert('✅ Horas retribuidas guardadas correctamente');
+    } else {
+      alert('Error: ' + d.error);
+    }
+  })
+  .catch(e => alert('Error de red: ' + e));
+}
+
+    // Fecha topbar
+    document.getElementById('fechaTopbar').textContent =
+      new Date().toLocaleDateString('es-ES', {
+        weekday:'long', year:'numeric', month:'long', day:'numeric'
+      });
+
+    // Toggle sidebar
+    const sidebar     = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    const toggleBtn   = document.getElementById('toggleSidebar');
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('expanded');
+      localStorage.setItem('sidebar_collapsed',
+        sidebar.classList.contains('collapsed') ? '1' : '0');
+    });
+    if (localStorage.getItem('sidebar_collapsed') === '1') {
+      sidebar.classList.add('collapsed');
+      mainContent.classList.add('expanded');
+    }
+
+    // Activar/desactivar botones
+    const selectUser = document.getElementById('selected_user');
+    function toggleBotones() {
+      const activo = selectUser.value !== '';
+      document.getElementById('btnVerMes').disabled = !activo;
+      document.getElementById('btnPdf').disabled    = !activo;
+    }
+    selectUser.addEventListener('change', function () {
+      toggleBotones();
+      const fechaInput = document.getElementById('fecha');
+      if (!fechaInput.value) {
+        fechaInput.value = new Date().toISOString().split('T')[0];
+      }
+      submitAccion('asistencia');
+    });
+    toggleBotones();
+
+    // ── Submit con action controlado ──
+    function submitAccion(accion) {
+      document.getElementById('hiddenAction').value = accion;
+      document.getElementById('formEmpleados').submit();
+    }
+
+    // ── Guardar nota ──
+    function guardarNota(turnId, btn) {
+      const nota = document.getElementById('nota_' + turnId).value;
+      const form = new FormData();
+      form.append('turn_in_id', turnId);
+      form.append('nota', nota);
+
+      fetch('/guardar-nota', { method: 'POST', body: form })
+        .then(r => r.json())
+        .then(data => {
+          const ok = data.status === 'ok';
+          btn.style.background = ok ? '#dcfce7' : '#fee2e2';
+          btn.style.color      = ok ? '#166534' : '#991b1b';
+          setTimeout(() => {
+            btn.style.background = '';
+            btn.style.color      = '';
+          }, 1500);
+        });
+    }
+
+    // ── Abrir modal editar jornada ──
+    function abrirEditar(turnId, timein, timeout, nota) {
+      document.getElementById('edit_turn_id').value = turnId;
+      document.getElementById('edit_timein').value  = timein;
+      document.getElementById('edit_timeout').value = timeout;
+      document.getElementById('edit_nota').value    = nota;
+      new bootstrap.Modal(document.getElementById('modalEditar')).show();
+    }
+
+    // ── Guardar edición jornada ──
+    function guardarEdicion() {
+      const form = new FormData();
+      form.append('turn_in_id', document.getElementById('edit_turn_id').value);
+      form.append('timein',     document.getElementById('edit_timein').value);
+      form.append('timeout',    document.getElementById('edit_timeout').value);
+      form.append('nota',       document.getElementById('edit_nota').value);
+
+      fetch('/editar-registro', { method: 'POST', body: form })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'ok') {
+            bootstrap.Modal.getInstance(
+              document.getElementById('modalEditar')
+            ).hide();
+            submitAccion('asistencia');
+          }
+        });
+    }
+
+    // ── Abrir modal editar lunch ──
+    function abrirEditarLunch(lunchId, salida, entrada) {
+      document.getElementById('edit_lunch_id').value     = lunchId;
+      document.getElementById('edit_lunch_salida').value  = salida;
+      document.getElementById('edit_lunch_entrada').value = entrada;
+      new bootstrap.Modal(document.getElementById('modalEditarLunch')).show();
+    }
+
+    // ── Guardar edición lunch ──
+    function guardarLunch() {
+      const form = new FormData();
+      form.append('lunch_id',      document.getElementById('edit_lunch_id').value);
+      form.append('lunch_salida',  document.getElementById('edit_lunch_salida').value);
+      form.append('lunch_entrada', document.getElementById('edit_lunch_entrada').value);
+
+      fetch('/editar-lunch', { method: 'POST', body: form })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status === 'ok') {
+            bootstrap.Modal.getInstance(
+              document.getElementById('modalEditarLunch')
+            ).hide();
+            submitAccion('asistencia');
+          }
+        });
+    }
+
+
+    // ── Cargar mes AJAX ──
+    function cargarMes() {
+      const mes    = document.getElementById('inputMes').value;
+      const userId = {{ seleccionado or 'null' }};
+      if (!mes || !userId) return;
+
+      bootstrap.Modal.getInstance(
+        document.getElementById('modalMes')
+      ).hide();
+
+      fetch(`/asistencia-mes?user_id=${userId}&mes=${mes}`)
+        .then(r => r.json())
+        .then(data => {
+          const tbody = document.getElementById('tablaMesBody');
+          tbody.innerHTML = '';
+
+          if (data.registros.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center"
+              style="color:#94a3b8; padding:20px;">
+              Sin registros este mes.</td></tr>`;
+          } else {
+            data.registros.forEach(r => {
+              const fecha   = r.timein ? r.timein.split(' ')[0] : '—';
+              const timein  = r.timein ? r.timein.split(' ')[1].substring(0,5) : '—';
+              const timeout = r.timeout ? r.timeout.split(' ')[1].substring(0,5) : null;
+              const lunchS  = r.lunch_salida
+                ? `<span class="badge-hora lunch-s">
+                     <i class="bi bi-cup-hot-fill"></i> ${r.lunch_salida}
+                   </span>`
+                : `<span class="badge-hora pending">—</span>`;
+              const lunchE  = r.lunch_entrada
+                ? `<span class="badge-hora lunch-e">
+                     <i class="bi bi-cup-straw"></i> ${r.lunch_entrada}
+                   </span>`
+                : `<span class="badge-hora pending">—</span>`;
+
+              tbody.innerHTML += `
+                <tr>
+                  <td style="font-size:0.82rem; color:#64748b; font-weight:500;">
+                    ${fecha}
+                  </td>
+                  <td>
+                    <span class="badge-hora entrada">
+                      <i class="bi bi-box-arrow-in-right"></i> ${timein}
+                    </span>
+                  </td>
+                  <td>${timeout
+                    ? `<span class="badge-hora salida">
+                         <i class="bi bi-box-arrow-right"></i> ${timeout}
+                       </span>`
+                    : '<span class="badge-hora pending">Pendiente</span>'}
+                  </td>
+                  <td>${lunchS}</td>
+                  <td>${lunchE}</td>
+                  <td style="font-size:0.82rem; color:#374151;">${r.nota || ''}</td>
+                </tr>`;
+            });
+          }
+
+          document.getElementById('labelMes').textContent = mes;
+          const sec = document.getElementById('seccionMes');
+          sec.style.display = 'block';
+          sec.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
+    function cerrarMes() {
+      document.getElementById('seccionMes').style.display = 'none';
+    }
+
+    
+  </script>
+</body>
+</html>

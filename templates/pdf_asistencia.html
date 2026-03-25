@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @page {
+      size: A4;
+      margin: 7mm 7mm;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 10.5pt;
+      color: #000;
+    }
+
+    /* ENCABEZADO */
+    .titulo {
+      text-align: center;
+      font-size: 10pt;
+      font-weight: bold;
+      border: 1px solid #000;
+      padding: 5px;
+      margin-bottom: 0;
+      background-color: #f2f2f2;
+    }
+
+    .info-empresa {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #000;
+      border-top: none;
+      margin-bottom: 0;
+    }
+
+    .info-empresa td {
+      border: 1px solid #000;
+      padding: 3px 5px;
+      font-size: 7.5pt;
+      vertical-align: middle;
+    }
+
+    .info-empresa .label {
+      font-weight: bold;
+      width: 22%;
+      background-color: #f9f9f9;
+    }
+
+    .info-empresa .valor {
+      width: 28%;
+    }
+
+    /* TABLA PRINCIPAL */
+    table.registro {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      font-size: 6.5pt;
+      table-layout: fixed;
+    }
+
+    table.registro th,
+    table.registro td {
+      border: 1px solid #000;
+      text-align: center;
+      padding: 2px 1px;
+      vertical-align: middle;
+      overflow: hidden;
+    }
+
+    table.registro thead tr.grupo th {
+      background-color: #d9d9d9;
+      font-weight: bold;
+      font-size: 8pt;
+    }
+
+    table.registro thead tr.subgrupo th {
+      background-color: #efefef;
+      font-size: 7.5pt;
+    }
+
+    table.registro tbody tr:nth-child(even) {
+      background-color: #fafafa;
+    }
+
+    /* DÍA: pequeño, horas: distribuidas equitativamente, firma: resto del ancho */
+    .col-dia   { width: 8%; }
+    .col-hora  { width: 18%; }
+    .col-firma { width: 20%; }
+
+    .fila-total td {
+      font-weight: bold;
+      background-color: #d9d9d9;
+      padding: 3px 2px;
+    }
+
+    /* PIE */
+    .pie {
+      margin-top: 10px;
+      font-size: 8pt;
+      text-align: left;
+      padding: 3px 0;
+    }
+
+    .firmas {
+      width: 80%;
+      margin-top: 11px;
+      border-collapse: collapse;
+    }
+
+    .firmas td {
+      width: 50%;
+      text-align: center;
+      padding-top: 28px;
+      font-size: 9pt;
+      border-top: 1px solid #000;
+    }
+
+    .footer-doc {
+      margin-top: 5px;
+      text-align: left;
+      font-size: 5.5pt;
+      color: #888;
+      border-top: 1px solid #ccc;
+      padding-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ENCABEZADO -->
+  <div class="titulo">Listado Resumen mensual del registro de jornada (detalle horario)</div>
+
+  <table class="info-empresa">
+    <tr>
+      <td class="label">Empresa:</td>
+      <td class="valor">{{ empresa or '' }}</td>
+      <td class="label">Trabajador/a:</td>
+      <td class="valor">{{ empleado }}</td>
+    </tr>
+    <tr>
+      <td class="label">C.I.F./N.I.F.:</td>
+      <td class="valor">{{ cif or '' }}</td>
+      <td class="label">N.I.F.:</td>
+      <td class="valor">{{ nif or '' }}</td>
+    </tr>
+    <tr>
+      <td class="label">Centro de Trabajo:</td>
+      <td class="valor">{{ centro or '' }}</td>
+      <td class="label">N&#186; Afiliaci&#243;n:</td>
+      <td class="valor">{{ num_afiliacion or '' }}</td>
+    </tr>
+    <tr>
+      <td class="label">C.C.C.:</td>
+      <td class="valor">{{ ccc or '' }}</td>
+      <td class="label">Mes y A&#241;o:</td>
+      <td class="valor">{{ mes }}</td>
+    </tr>
+  </table>
+
+  <!-- TABLA DE REGISTROS -->
+  <table class="registro">
+    <thead>
+      <tr class="grupo">
+        <th class="col-dia" rowspan="2">D&#205;A</th>
+        <th colspan="2">MA&#209;ANAS</th>
+        <th colspan="2">TARDES</th>
+        <th class="col-firma" rowspan="2">NOTAS</th>
+      </tr>
+      <tr class="subgrupo">
+        <th class="col-hora">ENTRADA</th>
+        <th class="col-hora">SALIDA</th>
+        <th class="col-hora">ENTRADA</th>
+        <th class="col-hora">SALIDA</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      {% set rd = {} %}
+      {% for fecha, em, sm, et, st, notas in registros %}
+        {% if fecha %}
+          {% set _ = rd.update({
+            fecha.day: {
+              'em': em,
+              'sm': sm,
+              'et': et,
+              'st': st,
+              'notas': notas
+            }
+          }) %}
+        {% endif %}
+      {% endfor %}
+
+      {% set acum = [0] %}
+
+      {% for dia in range(1, 32) %}
+        {% set r = rd.get(dia) %}
+
+        {% if r and r.em and r.st %}
+          {% set seg_brutos = (r.st - r.em).total_seconds() %}
+          {% if r.sm and r.et %}
+            {% set seg_pausa = (r.et - r.sm).total_seconds() %}
+            {% set seg_netos = seg_brutos - seg_pausa %}
+          {% else %}
+            {% set seg_netos = seg_brutos %}
+          {% endif %}
+          {% set _ = acum.append(acum.pop() + seg_netos) %}
+        {% endif %}
+
+        <tr>
+          <td class="col-dia"><strong>{{ dia }}</strong></td>
+          <td class="col-hora">{{ r.em.strftime('%H:%M') if r and r.em else '' }}</td>
+          <td class="col-hora">{{ r.sm.strftime('%H:%M') if r and r.sm else '' }}</td>
+          <td class="col-hora">{{ r.et.strftime('%H:%M') if r and r.et else '' }}</td>
+          <td class="col-hora">{{ r.st.strftime('%H:%M') if r and r.st else '' }}</td>
+          <!-- ✅ Ahora — iniciales + nota -->
+<td class="col-firma" style="text-align:left; padding:2px 4px; font-size:6pt;">
+  {% if r %}
+    {% set iniciales %}{{ empleado.split()[0][0] | upper }}{{ empleado.split()[-1][0] | upper }}{% endset %}
+
+    {% if añadir_iniciales and r.notas %}
+      {{ iniciales }} - {{ r.notas }}
+    {% elif añadir_iniciales and not r.notas %}
+      {{ iniciales }}
+    {% elif not añadir_iniciales and r.notas %}
+      {{ r.notas }}
+    {% endif %}
+  {% endif %}
+</td>
+
+</td>
+        </tr>
+      {% endfor %}
+
+      {% set total_h = (acum[0] / 3600) | int %}
+      {% set total_m = ((acum[0] % 3600) / 60) | int %}
+
+      <tr class="fila-total">
+  <td style="text-align:right; padding-right:5px;">TOTAL HORAS:</td>
+  <td>{{ total_h }}h {{ total_m }}m</td>
+  <td style="text-align:right; padding-right:5px;">H. RETRIBUIDAS:</td>
+  <td>{{ total_horas_ret }}h {{ total_mins_ret }}m</td>
+  <td style="text-align:right; padding-right:5px;">TOTAL COMPUTABLE:</td>
+  <td>{{ total_horas_comp }}h {{ total_mins_comp }}m</td>
+</tr>
+
+    </tbody>
+  </table>
+
+  <!-- PIE -->
+  <div class="pie">
+    En &nbsp;&nbsp;<strong>Madrid</strong>&nbsp;&nbsp; a &nbsp;&nbsp;
+    <strong>{{ ultimo_dia }}</strong>&nbsp;&nbsp; de &nbsp;&nbsp;
+    <strong>{{ nombre_mes }}</strong>&nbsp;&nbsp; de &nbsp;&nbsp;
+    <strong>{{ anyo }}</strong>
+  </div>
+  <table class="firmas">
+  <tr><td>Firma de la empresa:</td>
+  <td>
+    <div>{{ empleado }}</div>
+    Firma del trabajador: {% if añadir_20min %}20 minutos diarios no efectivos{% endif %}</td>
+  </tr>
+</table>
+  <div class="footer-doc">
+Registro realizado en  cumplimiento de la letra h) del artículo 1 del R.D.-Ley 16/2013, de 20 de diciembre por el que se modifica el artículo 12.5 del E.T., por el que se establece que “La jornada de los trabajadores a tiempo parcial se registrará día a día y se totalizará mensualmente, entregando copia al trabajador, junto con el recibo de salarios, del resumen de todas las horas realizadas en cada mes, tanto de las ordinarias como de las complementarias en sus distintas modalidades.
+El empresario deberá conservar los resúmenes mensuales de los registros de jornada durante un período mínimo de cuatro años. El incumplimiento empresarial de estas obligaciones de registro tendrá por consecuencia jurídica la de que el contrato se presuma celebrado a jornada completa, salvo prueba en contrario que acredite el carácter parcial de los servicios.
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,419 @@
+<!-- turno/app/templates/register_vacaciones.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mis Vacaciones</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+
+    body { background: #f1f5f9; min-height: 100vh; display: flex; }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: 260px; min-width: 260px;
+      background: #ffffff; border-right: 1px solid #e5e7eb;
+      display: flex; flex-direction: column;
+      min-height: 100vh;
+      transition: width 0.25s ease, min-width 0.25s ease;
+      position: fixed; top: 0; left: 0;
+      z-index: 100; overflow: hidden;
+    }
+    #sidebar.collapsed { width: 68px; min-width: 68px; }
+
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 18px 20px; border-bottom: 1px solid #e5e7eb;
+      min-height: 64px; position: relative;
+    }
+    .sidebar-brand .brand-icon { color: #2563eb; font-size: 1.6rem; flex-shrink: 0; }
+    .sidebar-brand .brand-text { font-size: 1rem; font-weight: 700; color: #1e293b; white-space: nowrap; transition: opacity 0.2s; }
+    #sidebar.collapsed .brand-text { opacity: 0; width: 0; overflow: hidden; }
+
+    #toggleSidebar {
+      position: absolute; top: 18px; right: -14px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #2563eb; color: white; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; z-index: 101;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.4); transition: transform 0.25s;
+    }
+    #sidebar.collapsed #toggleSidebar { transform: rotate(180deg); }
+
+    .sidebar-user {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+    }
+    .sidebar-user img {
+      width: 40px; height: 40px; border-radius: 50%;
+      object-fit: cover; border: 2px solid #2563eb; flex-shrink: 0;
+    }
+    .sidebar-user .user-info { transition: opacity 0.2s; white-space: nowrap; overflow: hidden; }
+    #sidebar.collapsed .user-info { opacity: 0; width: 0; }
+    .sidebar-user .user-name { font-size: 0.875rem; font-weight: 600; color: #1e293b; margin: 0; }
+    .sidebar-user .user-role { font-size: 0.75rem; color: #64748b; margin: 0; }
+
+    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+
+    .nav-section-label {
+      font-size: 0.7rem; font-weight: 600; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 10px 20px 4px; white-space: nowrap; transition: opacity 0.2s;
+    }
+    #sidebar.collapsed .nav-section-label { opacity: 0; }
+
+    .nav-item-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; color: #475569; text-decoration: none;
+      font-size: 0.875rem; font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: all 0.15s ease; white-space: nowrap;
+    }
+    .nav-item-link:hover { background: #eff6ff; color: #2563eb; border-left-color: #93c5fd; }
+    .nav-item-link.active { background: #fffbeb; color: #d97706; border-left-color: #d97706; font-weight: 600; }
+    .nav-item-link.active i { color: #d97706; }
+    .nav-item-link i { font-size: 1.1rem; color: #2563eb; flex-shrink: 0; width: 22px; text-align: center; }
+    .nav-item-link .link-text { transition: opacity 0.2s; }
+    #sidebar.collapsed .link-text { opacity: 0; width: 0; overflow: hidden; }
+    #sidebar.collapsed .nav-item-link { justify-content: center; padding: 10px 0; }
+
+    .nav-divider { border-top: 1px solid #e5e7eb; margin: 8px 0; }
+    .sidebar-footer { padding: 12px 0; border-top: 1px solid #e5e7eb; }
+    .nav-item-link.logout i { color: #ef4444; }
+    .nav-item-link.logout:hover { background: #fef2f2; color: #ef4444; border-left-color: #fca5a5; }
+
+    /* ── CONTENIDO ── */
+    #main-content {
+      margin-left: 260px; flex: 1;
+      display: flex; flex-direction: column;
+      min-height: 100vh; transition: margin-left 0.25s ease;
+    }
+    #main-content.expanded { margin-left: 68px; }
+
+    .topbar {
+      background: #ffffff; border-bottom: 1px solid #e5e7eb;
+      padding: 0 28px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 99;
+    }
+    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
+    .topbar .fecha { font-size: 0.82rem; color: #64748b; }
+    .topbar .badge-role {
+      background: #eff6ff; color: #2563eb;
+      font-size: 0.75rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 20px; border: 1px solid #bfdbfe;
+    }
+
+    .content-area { flex: 1; padding: 28px; }
+
+    /* ── PANELS ── */
+    .panel {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 24px;
+      height: 100%;
+    }
+
+    .panel h5 {
+      font-size: 0.95rem; font-weight: 600; color: #1e293b;
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+      padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;
+    }
+    .panel h5 i { color: #d97706; font-size: 1.1rem; }
+
+    /* Formulario */
+    .form-label { font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+
+    .form-control {
+      border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 10px 14px; font-size: 0.875rem; color: #1e293b;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-control:focus {
+      border-color: #d97706;
+      box-shadow: 0 0 0 3px rgba(217,119,6,0.12);
+      outline: none;
+    }
+
+    .btn-registrar {
+      background: #d97706; color: white; border: none;
+      border-radius: 10px; padding: 12px;
+      font-size: 0.9rem; font-weight: 600;
+      width: 100%; cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 4px;
+    }
+    .btn-registrar:hover { background: #b45309; transform: translateY(-1px); }
+    .btn-registrar:active { transform: translateY(0); }
+
+    /* Tabla */
+    .table { color: #374151; font-size: 0.875rem; margin: 0; }
+    .table thead th {
+      background: #f8fafc; color: #64748b;
+      font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 10px 14px;
+    }
+    .table tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+
+    .badge-fecha {
+      background: #fffbeb; color: #92400e;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 500;
+      border: 1px solid #fde68a;
+      white-space: nowrap;
+    }
+
+    .btn-delete {
+      background: #fee2e2; color: #dc2626;
+      border: none; border-radius: 8px;
+      padding: 5px 10px; font-size: 0.8rem;
+      cursor: pointer; transition: background 0.15s;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .btn-delete:hover { background: #fecaca; }
+
+    .empty-state {
+      text-align: center; padding: 32px 0;
+      color: #94a3b8; font-size: 0.875rem;
+    }
+    .empty-state i { font-size: 2rem; display: block; margin-bottom: 8px; color: #cbd5e1; }
+
+    footer {
+      background: #ffffff; border-top: 1px solid #e5e7eb;
+      padding: 16px 28px; text-align: center;
+    }
+
+    @media (max-width: 768px) {
+      #sidebar { width: 68px; min-width: 68px; }
+      #sidebar .link-text, #sidebar .user-info,
+      #sidebar .brand-text, #sidebar .nav-section-label { opacity: 0; width: 0; overflow: hidden; }
+      #sidebar .nav-item-link { justify-content: center; padding: 10px 0; }
+      #main-content { margin-left: 68px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+  <nav id="sidebar">
+
+    <div class="sidebar-brand">
+      <i class="bi bi-clock-history brand-icon"></i>
+      <span class="brand-text">TurnoApp</span>
+      <button id="toggleSidebar" title="Colapsar menú">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="sidebar-user">
+      <img src="https://ui-avatars.com/api/?name={{ nombre }}+{{ apellido }}&background=2563eb&color=fff&size=80" alt="Avatar">
+      <div class="user-info">
+        <p class="user-name">{{ nombre }} {{ apellido }}</p>
+        <p class="user-role">
+          {% if session.get('role')|int == 0 %}Administrador{% else %}Empleado{% endif %}
+        </p>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+
+      <div class="nav-section-label">Principal</div>
+      <a href="{{ url_for('main.dashboard') }}" class="nav-item-link">
+        <i class="bi bi-house-door-fill"></i>
+        <span class="link-text">Dashboard</span>
+      </a>
+
+      <div class="nav-section-label">Turnos</div>
+      <a href="{{ url_for('main.register_entry') }}" class="nav-item-link">
+        <i class="bi bi-box-arrow-in-right"></i>
+        <span class="link-text">Registrar Entrada</span>
+      </a>
+      <a href="{{ url_for('main.register_exit') }}" class="nav-item-link">
+        <i class="bi bi-box-arrow-right"></i>
+        <span class="link-text">Registrar Salida</span>
+      </a>
+      <a href="{{ url_for('main.vacaciones') }}" class="nav-item-link active">
+        <i class="bi bi-calendar-sun"></i>
+        <span class="link-text">Vacaciones</span>
+      </a>
+
+      {% if session.get('role')|int == 0 %}
+        <div class="nav-divider"></div>
+        <div class="nav-section-label">Administración</div>
+        <a href="{{ url_for('main.create_user') }}" class="nav-item-link">
+          <i class="bi bi-person-plus-fill"></i>
+          <span class="link-text">Crear Usuario</span>
+        </a>
+        <a href="{{ url_for('main.admin_empleados') }}" class="nav-item-link">
+          <i class="bi bi-people-fill"></i>
+          <span class="link-text">Ver Empleados</span>
+        </a>
+      {% endif %}
+
+    </div>
+
+    <div class="sidebar-footer">
+      <a href="{{ url_for('main.logout') }}" class="nav-item-link logout">
+        <i class="bi bi-box-arrow-left"></i>
+        <span class="link-text">Cerrar Sesión</span>
+      </a>
+    </div>
+
+  </nav>
+
+  <!-- ══════════════ CONTENIDO ══════════════ -->
+  <div id="main-content">
+
+    <div class="topbar">
+      <h1 class="page-title">
+        <i class="bi bi-calendar-sun" style="color:#d97706; margin-right:8px;"></i>
+        Vacaciones — {{ nombre }} {{ apellido }}
+      </h1>
+      <div class="d-flex align-items-center gap-3">
+        <span class="fecha" id="fechaTopbar"></span>
+        <span class="badge-role">
+          {% if session.get('role')|int == 0 %}
+            <i class="bi bi-shield-check"></i> Admin
+          {% else %}
+            <i class="bi bi-person-check"></i> Empleado
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4"
+                 style="border-radius:10px; font-size:0.875rem;">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <div class="row g-4">
+
+        <!-- Formulario solicitud -->
+        <div class="col-12 col-lg-5">
+          <div class="panel">
+            <h5><i class="bi bi-calendar-plus"></i> Solicitar Vacaciones</h5>
+
+            <form method="post" action="{{ url_for('main.vacaciones') }}">
+              <div class="mb-3">
+                <label for="vacacionesin" class="form-label">Fecha de inicio</label>
+                <input type="date" class="form-control" id="vacacionesin" name="vacacionesin" required>
+              </div>
+              <div class="mb-3">
+                <label for="vacacionesout" class="form-label">Fecha de fin</label>
+                <input type="date" class="form-control" id="vacacionesout" name="vacacionesout" required>
+              </div>
+              <button type="submit" class="btn-registrar">
+                <i class="bi bi-save-fill"></i> Registrar Vacaciones
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tabla de vacaciones -->
+        <div class="col-12 col-lg-7">
+          <div class="panel">
+            <h5><i class="bi bi-card-list"></i> Mis Vacaciones Programadas</h5>
+
+            {% if vacaciones %}
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Días</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for vac in vacaciones %}
+                    <tr>
+                      <td><span class="badge-fecha"><i class="bi bi-calendar3"></i> {{ vac[0] }}</span></td>
+                      <td><span class="badge-fecha"><i class="bi bi-calendar3"></i> {{ vac[1] }}</span></td>
+                      <td style="font-weight:600; color:#374151;">
+                        {% if vac[0] and vac[1] %}
+                          {{ (vac[1] - vac[0]).days + 1 }} días
+                        {% endif %}
+                      </td>
+                      <td>
+                        <form method="post" action="{{ url_for('main.delete_vacacion') }}">
+                          <input type="hidden" name="vac_in"  value="{{ vac[0] }}">
+                          <input type="hidden" name="vac_out" value="{{ vac[1] }}">
+                          <button type="submit" class="btn-delete">
+                            <i class="bi bi-trash"></i> Eliminar
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div class="empty-state">
+                <i class="bi bi-calendar-x"></i>
+                No tienes vacaciones programadas.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer>
+      <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
+        &copy; {{ current_year }} Todos los derechos reservados —
+        Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
+      </p>
+    </footer>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.getElementById('fechaTopbar').textContent =
+      new Date().toLocaleDateString('es-ES', {
+        weekday:'long', year:'numeric', month:'long', day:'numeric'
+      });
+
+    const sidebar     = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    const toggleBtn   = document.getElementById('toggleSidebar');
+
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('expanded');
+      localStorage.setItem('sidebar_collapsed',
+        sidebar.classList.contains('collapsed') ? '1' : '0');
+    });
+
+    if (localStorage.getItem('sidebar_collapsed') === '1') {
+      sidebar.classList.add('collapsed');
+      mainContent.classList.add('expanded');
+    }
+  </script>
+</body>
+</html>

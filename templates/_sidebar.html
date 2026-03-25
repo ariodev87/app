@@ -1,0 +1,144 @@
+<!-- app/templates/_sidebar.html -->
+<nav id="sidebar">
+  <div class="sidebar-brand" style="position:relative;">
+    <i class="bi bi-clock-history brand-icon"></i>
+    <span class="brand-text">TurnoApp</span>
+    <button id="toggleSidebar" title="Colapsar menú">
+      <i class="bi bi-chevron-left"></i>
+    </button>
+  </div>
+
+  <div class="sidebar-user">
+    <!--<p style="font-size:0.6rem; color:red;">{{ avatar }}</p>-->
+    <img src="{{ avatar }}" alt="Avatar">
+    <div class="user-info">
+      <p class="user-name">{{ user }}</p>
+      <p class="user-role">{{ rol_label }}</p>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Principal</div>
+    <a href="{{ url_for('main.dashboard') }}"
+       class="nav-item-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
+      <i class="bi bi-house-door-fill"></i>
+      <span class="link-text">Dashboard</span>
+    </a>
+
+    {% if dep == 'it' or session.get('user_id') == 1 %}
+    <a href="{{ url_for('main.crear_usuarios_lote') }}"
+       class="nav-item-link {% if request.endpoint == 'main.crear_usuarios_lote' %}active{% endif %}">
+      <i class="bi bi-person-lines-fill"></i>
+      <span class="link-text">Usuarios en Lote</span>
+    </a>
+    {% endif %}
+    {% if role|int == 0 and dep in ['it', 'administración', 'administracion', 'melia', 'financiero'] %}
+    <a href="{{ url_for('main.dashboardit') }}"
+       class="nav-item-link {% if request.endpoint == 'main.dashboardit' %}active{% endif %}">
+      <i class="bi bi-pc-display"></i>
+      <span class="link-text">Dashboard IT</span>
+    </a>
+    {% endif %}
+
+    <a href="{{ url_for('main.perfil') }}"
+       class="nav-item-link {% if request.endpoint == 'main.perfil' %}active{% endif %}">
+      <i class="bi bi-person-circle"></i>
+      <span class="link-text">Mi Perfil</span>
+    </a>
+
+    <a href="{{ url_for('main.directorio') }}"
+       class="nav-item-link {% if request.endpoint == 'main.directorio' %}active{% endif %}">
+      <i class="bi bi-telephone-fill" style="color:#059669;"></i>
+      <span class="link-text">Directorio</span>
+    </a>
+
+    <a href="{{ url_for('main.control_horario') }}"
+       class="nav-item-link horario {% if request.endpoint == 'main.control_horario' %}active{% endif %}">
+      <i class="bi bi-calendar-check-fill"></i>
+      <span class="link-text">Control Horario</span>
+    </a>
+
+    <a href="{{ url_for('main.lunch_out') }}"
+       class="nav-item-link lunch {% if request.endpoint == 'main.lunch_out' %}active{% endif %}">
+      <i class="bi bi-cup-hot-fill"></i>
+      <span class="link-text">Salida a Comer</span>
+    </a>
+
+    <a href="{{ url_for('main.lunch_in') }}"
+       class="nav-item-link lunch-in {% if request.endpoint == 'main.lunch_in' %}active{% endif %}">
+      <i class="bi bi-cup-straw"></i>
+      <span class="link-text">Vuelta de Comer</span>
+    </a>
+
+    <a href="{{ url_for('main.vacaciones') }}"
+       class="nav-item-link {% if request.endpoint == 'main.vacaciones' %}active{% endif %}">
+      <i class="bi bi-calendar-sun"></i>
+      <span class="link-text">Vacaciones</span>
+    </a>
+
+    {% if role|int == 0 %}
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Visitantes</div>
+    <a href="{{ url_for('main.register_visitante') }}"
+       class="nav-item-link visitor {% if request.endpoint == 'main.register_visitante' %}active{% endif %}">
+      <i class="bi bi-person-badge-fill"></i>
+      <span class="link-text">Agregar Visitante</span>
+    </a>
+    {% endif %}
+
+    {% if role|int == 0 and dep in ['it', 'administración', 'administracion', 'melia', 'financiero'] %}
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Administración</div>
+    <a href="{{ url_for('main.create_user') }}"
+       class="nav-item-link {% if request.endpoint == 'main.create_user' %}active{% endif %}">
+      <i class="bi bi-person-plus-fill"></i>
+      <span class="link-text">Crear Usuario</span>
+    </a>
+    {% endif %}
+    <a href="{{ url_for('main.admin_empleados') }}"
+       class="nav-item-link {% if request.endpoint == 'main.admin_empleados' %}active{% endif %}">
+      <i class="bi bi-people-fill"></i>
+      <span class="link-text">Ver Empleados</span>
+    </a>
+    
+
+  </div>
+
+  <div class="sidebar-footer">
+    <a href="{{ url_for('main.logout') }}" class="nav-item-link logout">
+      <i class="bi bi-box-arrow-left"></i>
+      <span class="link-text">Cerrar Sesión</span>
+    </a>
+  </div>
+  <script>
+// ── NOTIFICACIÓN FICHAJE SIN SERVICE WORKER ──
+if ('Notification' in window) {
+  Notification.requestPermission().then(perm => {
+    if (perm === 'granted') {
+
+      let notifEnviada = false;
+
+      setInterval(() => {
+        const ahora   = new Date();
+        const horas   = ahora.getHours();
+        const minutos = ahora.getMinutes();
+
+        // Reset diario
+        if (horas === 0 && minutos === 0) notifEnviada = false;
+
+        // Dispara a las 17:40
+        if (horas === 17 && minutos === 50 && !notifEnviada) {
+          notifEnviada = true;
+          new Notification('⏰ TurnoApp', {
+            body: '¡No olvides fichar la salida!',
+            tag:  'fichaje-salidas hola mundo'
+          });
+        }
+      }, 30000); // comprueba cada 30 segundos
+
+    }
+  });
+}
+</script>
+
+</nav>

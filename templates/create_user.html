@@ -1,0 +1,380 @@
+<!-- turno/app/templates/create_user.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crear Usuario</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+
+    body { background: #f1f5f9; min-height: 100vh; display: flex; }
+    
+
+    /* ── CONTENIDO ── */
+    #main-content {
+      margin-left: 260px; flex: 1;
+      display: flex; flex-direction: column;
+      min-height: 100vh; transition: margin-left 0.25s ease;
+    }
+    #main-content.expanded { margin-left: 68px; }
+
+    .topbar {
+      background: #ffffff; border-bottom: 1px solid #e5e7eb;
+      padding: 0 28px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 99;
+    }
+    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
+    .topbar .badge-role {
+      background: #eff6ff; color: #2563eb;
+      font-size: 0.75rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 20px; border: 1px solid #bfdbfe;
+    }
+
+    .content-area {
+      flex: 1; padding: 28px;
+      display: flex; align-items: flex-start; justify-content: center;
+    }
+
+    /* ── FORM CARD ── */
+    .form-card {
+      background: #ffffff; border-radius: 16px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+      width: 100%; max-width: 760px;
+      overflow: hidden;
+    }
+
+    .form-card-header {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      padding: 28px 32px;
+      display: flex; align-items: center; gap: 14px;
+    }
+
+    .form-card-header .header-icon {
+      width: 48px; height: 48px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .form-card-header .header-icon i { font-size: 1.4rem; color: white; }
+    .form-card-header h2 { font-size: 1.2rem; font-weight: 700; color: white; margin: 0; }
+    .form-card-header p { font-size: 0.82rem; color: rgba(255,255,255,0.75); margin: 0; }
+
+    .form-card-body { padding: 32px; }
+
+    /* Sección interna */
+    .form-section {
+      margin-bottom: 28px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .form-section:last-of-type { border-bottom: none; margin-bottom: 0; }
+
+    .form-section-title {
+      font-size: 0.78rem; font-weight: 700; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 6px;
+    }
+    .form-section-title i { color: #2563eb; font-size: 0.9rem; }
+
+    /* Campos */
+    .form-label { font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+
+    .form-control, .form-select {
+      border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 10px 14px; font-size: 0.875rem; color: #1e293b;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+      outline: none;
+    }
+
+    /* Upload foto */
+    .upload-area {
+      border: 2px dashed #e5e7eb;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .upload-area:hover { border-color: #2563eb; background: #eff6ff; }
+    .upload-area input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+    }
+
+    .upload-area .upload-preview {
+      width: 80px; height: 80px;
+      border-radius: 50%; object-fit: cover;
+      border: 3px solid #2563eb;
+      margin: 0 auto 10px;
+      display: none;
+    }
+
+    .upload-area .upload-icon { font-size: 2rem; color: #cbd5e1; margin-bottom: 8px; }
+    .upload-area .upload-text { font-size: 0.85rem; color: #64748b; font-weight: 500; }
+    .upload-area .upload-hint { font-size: 0.75rem; color: #94a3b8; margin-top: 4px; }
+
+    /* Botones */
+    .btn-submit {
+      background: #2563eb; color: white; border: none;
+      border-radius: 10px; padding: 13px 24px;
+      font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; transition: background 0.15s, transform 0.1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%;
+      box-shadow: 0 4px 12px rgba(37,99,235,0.35);
+    }
+    .btn-submit:hover { background: #1d4ed8; transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(0); }
+
+    .btn-back {
+      background: #f1f5f9; color: #64748b; border: none;
+      border-radius: 10px; padding: 11px 24px;
+      font-size: 0.875rem; font-weight: 500;
+      cursor: pointer; text-decoration: none;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; transition: background 0.15s;
+    }
+    .btn-back:hover { background: #e2e8f0; color: #374151; }
+
+    footer {
+      background: #ffffff; border-top: 1px solid #e5e7eb;
+      padding: 16px 28px; text-align: center;
+    }
+
+    
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+ {% include '_sidebar.html' %}
+
+  <!-- ══════════════ CONTENIDO ══════════════ -->
+  <div id="main-content">
+
+    <div class="topbar">
+      <h1 class="page-title">
+        <i class="bi bi-person-plus-fill" style="color:#2563eb; margin-right:8px;"></i>
+        Crear Usuario
+      </h1>
+      <div class="d-flex align-items-center gap-3">
+        <span class="fecha" id="fechaTopbar"></span>
+        <span class="badge-role">
+          <i class="bi bi-shield-check"></i> Admin
+        </span>
+      </div>
+    </div>
+
+    <div class="content-area">
+      <div class="form-card">
+
+        <!-- Header -->
+        <div class="form-card-header">
+          <div class="header-icon">
+            <i class="bi bi-person-plus-fill"></i>
+          </div>
+          <div>
+            <h2>Nuevo Usuario</h2>
+            <p>Completa los datos para crear una cuenta</p>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="form-card-body">
+
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show mb-4"
+                     style="border-radius:10px; font-size:0.875rem;">
+                  {{ message }}
+                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+              {% endfor %}
+            {% endif %}
+          {% endwith %}
+
+          <!-- enctype multipart para subir archivo -->
+          <form action="{{ url_for('main.create_user') }}"
+                method="post"
+                enctype="multipart/form-data">
+
+            <!-- Foto de perfil -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <i class="bi bi-image"></i> Foto de perfil
+              </div>
+              <div class="upload-area" id="uploadArea">
+                <input type="file" name="foto" id="fotoInput"
+                       accept=".jpg,.jpeg,.png,.webp"
+                       onchange="previewFoto(this)">
+                <img id="fotoPreview" class="upload-preview" alt="Preview">
+                <div id="uploadPlaceholder">
+                  <div class="upload-icon"><i class="bi bi-person-circle"></i></div>
+                  <div class="upload-text">Haz clic o arrastra una imagen</div>
+                  <div class="upload-hint">JPG, PNG o WEBP · Máx. 2MB</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Datos personales -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <i class="bi bi-person-vcard"></i> Datos personales
+              </div>
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label for="nombre" class="form-label">Nombre</label>
+                  <input type="text" class="form-control" id="nombre"
+                         name="nombre" placeholder="Nombre" required>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="apellidos" class="form-label">Apellidos</label>
+                  <input type="text" class="form-control" id="apellidos"
+                         name="apellidos" placeholder="Apellidos" required>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="correo" class="form-label">Correo electrónico</label>
+                  <input type="email" class="form-control" id="correo"
+                         name="correo" placeholder="correo@empresa.com" required>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="departamento" class="form-label">Departamento</label>
+                  <select class="form-select" id="departamento" name="departamento" required>
+                    <option value="" disabled selected>Selecciona departamento</option>
+                    <option value="Financiero">Financiero</option>
+                    <option value="Melia">Melia</option>
+                    <option value="RH">RH</option>
+                    <option value="IT">IT</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Datos de cuenta -->
+            <div class="form-section">
+              <div class="form-section-title">
+                <i class="bi bi-shield-lock"></i> Datos de la cuenta
+              </div>
+              <div class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label for="username" class="form-label">Usuario</label>
+                  <input type="text" class="form-control" id="username"
+                         name="username" placeholder="nombre_usuario" required>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="password" class="form-label">Contraseña</label>
+                  <div style="position:relative;">
+                    <input type="password" class="form-control" id="password"
+                           name="password" placeholder="••••••••"
+                           style="padding-right:42px;" required>
+                    <button type="button"
+                            onclick="togglePass()"
+                            style="position:absolute; right:12px; top:50%;
+                                   transform:translateY(-50%); background:none;
+                                   border:none; color:#94a3b8; cursor:pointer; padding:0;">
+                      <i class="bi bi-eye" id="eyeIcon"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label for="role" class="form-label">Rol</label>
+                  <select class="form-select" id="role" name="role" required>
+                    <option value="" disabled selected>Selecciona rol</option>
+                    <option value="1">Empleado</option>
+                    <option value="0">Administrador</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="row g-3 mt-2">
+              <div class="col-12 col-md-8">
+                <button type="submit" class="btn-submit">
+                  <i class="bi bi-person-check-fill"></i> Crear Usuario
+                </button>
+              </div>
+              <div class="col-12 col-md-4">
+                <a href="{{ url_for('main.dashboard') }}" class="btn-back">
+                  <i class="bi bi-arrow-left"></i> Volver
+                </a>
+              </div>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
+        &copy; {{ current_year }} Todos los derechos reservados —
+        Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
+      </p>
+    </footer>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Fecha topbar
+    document.getElementById('fechaTopbar').textContent =
+      new Date().toLocaleDateString('es-ES', {
+        weekday:'long', year:'numeric', month:'long', day:'numeric'
+      });
+
+    // Toggle sidebar
+    const sidebar     = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    const toggleBtn   = document.getElementById('toggleSidebar');
+
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('expanded');
+      localStorage.setItem('sidebar_collapsed',
+        sidebar.classList.contains('collapsed') ? '1' : '0');
+    });
+
+    if (localStorage.getItem('sidebar_collapsed') === '1') {
+      sidebar.classList.add('collapsed');
+      mainContent.classList.add('expanded');
+    }
+
+    // Preview foto
+    function previewFoto(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const preview     = document.getElementById('fotoPreview');
+          const placeholder = document.getElementById('uploadPlaceholder');
+          preview.src       = e.target.result;
+          preview.style.display    = 'block';
+          placeholder.style.display = 'none';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    // Mostrar/ocultar contraseña
+    function togglePass() {
+      const input   = document.getElementById('password');
+      const icon    = document.getElementById('eyeIcon');
+      const visible = input.type === 'text';
+      input.type    = visible ? 'password' : 'text';
+      icon.className = visible ? 'bi bi-eye' : 'bi bi-eye-slash';
+    }
+  </script>
+</body>
+</html>

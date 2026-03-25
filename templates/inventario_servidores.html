@@ -1,0 +1,304 @@
+<!-- app/templates/inventario_servidores.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inventario Servidores - Dashboard IT</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #f1f5f9; min-height: 100vh; display: flex; }
+    .topbar { background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 0 28px; height: 64px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 99; }
+    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
+    .content-area { flex: 1; padding: 28px; }
+    footer { background: #ffffff; border-top: 1px solid #e5e7eb; padding: 16px 28px; text-align: center; }
+    
+    /* Cards Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; margin: 2rem 0; }
+    .stat-card { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; border-radius: 20px; padding: 24px; text-align: center; box-shadow: 0 10px 30px rgba(59,130,246,0.3); }
+    .stat-number { font-size: 2.5rem; font-weight: 700; margin-bottom: 4px; }
+    
+    /* Tabla */
+    .table-container { background: #ffffff; border-radius: 20px; border: 1px solid #e5e7eb; box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 2rem; }
+    .table-header { background: #f8fafc; padding: 24px; border-bottom: 1px solid #e5e7eb; }
+    .btn-primary-grad { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important; border: none; }
+    .btn-action { border-radius: 10px; font-size: 0.8rem; padding: 8px 12px; }
+    @media (max-width: 768px) { .content-area { padding: 20px 16px; } }
+  </style>
+</head>
+<body>
+  {% set user = session.get('username', 'Usuario') %}
+  {% set dep = departamento | lower %}
+  {% if role|int == 0 and dep in ['financiero', 'melia'] %}
+    {% set rol_label = 'Supervisora' %}{% set rol_icon = 'bi-star-fill' %}{% set rol_color = 'background:#fdf4ff; color:#7e22ce; border-color:#d8b4fe;' %}
+  {% elif role|int == 0 %}
+    {% set rol_label = 'Admin' %}{% set rol_icon = 'bi-shield-check-fill' %}{% set rol_color = 'background:#dbeafe; color:#1e40af; border-color:#93c5fd;' %}
+  {% else %}
+    {% set rol_label = 'Empleado' %}{% set rol_icon = 'bi-person-check-fill' %}{% set rol_color = 'background:#eff6ff; color:#2563eb; border-color:#bfdbfe;' %}
+  {% endif %}
+
+  {% include '_sidebar.html' %}
+
+  <div id="main-content">
+    <div class="topbar">
+      <h1 class="page-title">
+        <i class="bi bi-server" style="color:#3b82f6; margin-right:8px;"></i>
+        Inventario Servidores
+      </h1>
+      <div class="d-flex align-items-center gap-3">
+        <span class="fecha" id="fechaTopbar"></span>
+        <span class="badge" style="{{ rol_color }}"><i class="bi {{ rol_icon }}"></i> {{ rol_label }}</span>
+        <a href="{{ url_for('main.logout') }}" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-box-arrow-left"></i> Salir
+        </a>
+      </div>
+    </div>
+
+    <div class="content-area">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category=='error' else category }} alert-dismissible fade show mb-4 rounded-2">
+              {{ message }} <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Header -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h4 style="color:#1e293b; font-weight:700;">Inventario de Servidores</h4>
+          <p style="color:#64748b; font-size:0.95rem;">Gestión completa de infraestructura física y virtual.</p>
+        </div>
+        <button class="btn btn-primary-grad px-4 py-2 fw-semibold shadow-sm" 
+                data-bs-toggle="modal" data-bs-target="#servidorModal" onclick="prepareAdd()">
+          <i class="bi bi-plus-lg me-2"></i>Agregar Servidor
+        </button>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">{{ total_servidores|default(0) }}</div>
+          <div style="font-size:0.9rem; opacity:0.95;">Total Servidores</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#10b981,#059669);">
+          <div class="stat-number">{{ fisicos|default(0) }}</div>
+          <div style="font-size:0.9rem; opacity:0.95;">Físicos</div>
+        </div>
+        <div class="stat-card" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed);">
+          <div class="stat-number">{{ virtuales|default(0) }}</div>
+          <div style="font-size:0.9rem; opacity:0.95;">Virtuales</div>
+        </div>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-container">
+        <div class="table-header d-flex justify-content-between flex-wrap gap-3 align-items-center">
+          <div class="input-group flex-grow-1" style="max-width:500px;">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+            <input type="text" class="form-control border-start-0 ps-3 py-2" id="searchInput" placeholder="Buscar nombre, hostname, IP...">
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm px-3" onclick="exportCSV()">
+              <i class="bi bi-download me-1"></i>Exportar
+            </button>
+            <button class="btn btn-success btn-sm px-3" onclick="clearFilters()">
+              <i class="bi bi-arrow-clockwise me-1"></i>Limpiar
+            </button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width:80px;">ID</th>
+                <th>Server Name</th>
+                <th>Hostname</th>
+                <th>IP Address</th>
+                <th>Model</th>
+                <th>Serial</th>
+                <th style="width:140px;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="servidoresTable">
+              {% for srv in servidores %}
+              <tr data-name="{{ srv.server_name }}" data-host="{{ srv.hostname }}" data-ip="{{ srv.ip_address }}">
+                <td><strong>#{{ srv.id }}</strong></td>
+                <td><strong class="text-primary">{{ srv.server_name }}</strong></td>
+                <td>{{ srv.hostname }}</td>
+                <td><code class="bg-light px-2 py-1 rounded">{{ srv.ip_address }}</code></td>
+                <td>{{ srv.model }}</td>
+                <td><small class="text-muted">{{ srv.serial_number }}</small></td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-primary btn-action" onclick="prepareEdit({{ srv|tojson }})" title="Editar">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-action" onclick="deleteServidor({{ srv.id }})" title="Eliminar">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if not servidores %}
+        <div class="text-center py-12">
+          <i class="bi bi-server display-3 text-muted mb-4"></i>
+          <h5 class="text-muted mb-2">Sin servidores registrados</h5>
+          <p class="text-muted mb-0">Agrega el primer servidor para comenzar.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <footer>
+      <p style="color:#94a3b8; font-size:0.8rem;">
+        © {{ '2026' }} Dashboard IT — Desarrollado por Ariel Castro
+      </p>
+    </footer>
+  </div>
+
+  <!-- Modal Agregar/Editar -->
+  <div class="modal fade" id="servidorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-xl rounded-3">
+        <div class="modal-header border-0 pb-1">
+          <h5 class="modal-title fw-bold text-primary" id="modalTitle">Nuevo Servidor</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form id="servidorForm">
+          <div class="modal-body">
+            <input type="hidden" id="servidorId">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Technology</label>
+                <select class="form-select" id="technology" required>
+                  <option value="Física">Física</option>
+                  <option value="Virtual">Virtual</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Server Name (PHYSICAL)</label>
+                <input type="text" class="form-control" id="server_name" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Hostname</label>
+                <input type="text" class="form-control" id="hostname" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">IP Address</label>
+                <input type="text" class="form-control" id="ip_address" required pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Model</label>
+                <input type="text" class="form-control" id="model" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-semibold">Serial Number</label>
+                <input type="text" class="form-control" id="serial_number" required>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-0 pt-0">
+            <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary-grad px-5 fw-semibold">
+              <i class="bi bi-check-lg me-2"></i>{{ 'Actualizar' if servidorId else 'Crear' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Fecha topbar
+    document.getElementById('fechaTopbar').textContent = new Intl.DateTimeFormat('es-ES', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    }).format(new Date());
+
+    // Search + Filter
+    document.getElementById('searchInput').addEventListener('input', e => {
+      const q = e.target.value.toLowerCase();
+      document.querySelectorAll('#servidoresTable tr').forEach(row => {
+        row.style.display = [row.dataset.name, row.dataset.host, row.dataset.ip]
+          .some(field => field?.toLowerCase().includes(q)) ? '' : 'none';
+      });
+    });
+
+    let editId = null;
+    function prepareAdd() {
+      document.getElementById('modalTitle').textContent = 'Nuevo Servidor';
+      document.getElementById('servidorForm').reset();
+      document.getElementById('technology').value = 'Física';
+      editId = null;
+    }
+    function prepareEdit(servidor) {
+      document.getElementById('modalTitle').textContent = 'Editar Servidor';
+      document.getElementById('servidorId').value = servidor.id;
+      document.getElementById('technology').value = servidor.technology;
+      document.getElementById('server_name').value = servidor.server_name;
+      document.getElementById('hostname').value = servidor.hostname;
+      document.getElementById('ip_address').value = servidor.ip_address;
+      document.getElementById('model').value = servidor.model;
+      document.getElementById('serial_number').value = servidor.serial_number;
+      new bootstrap.Modal(document.getElementById('servidorModal')).show();
+      editId = servidor.id;
+    }
+    function deleteServidor(id) {
+      if (confirm('¿Eliminar este servidor permanentemente?')) {
+        fetch(`/inventario_servidores/delete/${id}`, {method: 'POST'})
+          .then(r => r.json()).then(data => { if (data.success) location.reload(); });
+      }
+    }
+    function exportCSV() {
+      let csv = 'ID,Technology,Server Name,Hostname,IP Address,Model,Serial Number\n';
+      document.querySelectorAll('#servidoresTable tr:not([style*="none"])').forEach(tr => {
+        const cells = Array.from(tr.cells).slice(0,-1);
+        csv += cells.map(c => `"${c.textContent.trim().replace(/"/g,'""')}"`).join(',') + '\n';
+      });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv'}));
+      a.download = `servidores_${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+    }
+    function clearFilters() {
+      document.getElementById('searchInput').value = '';
+      document.querySelectorAll('#servidoresTable tr').forEach(r => r.style.display = '');
+    }
+
+    // Form submit
+    document.getElementById('servidorForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const formData = {
+        technology: document.getElementById('technology').value,
+        server_name: document.getElementById('server_name').value,
+        hostname: document.getElementById('hostname').value,
+        ip_address: document.getElementById('ip_address').value,
+        model: document.getElementById('model').value,
+        serial_number: document.getElementById('serial_number').value
+      };
+      const url = editId ? `/inventario_servidores/update/${editId}` : '/inventario_servidores/add';
+      const res = await fetch(url, {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        bootstrap.Modal.getInstance(document.getElementById('servidorModal')).hide();
+        location.reload();
+      } else {
+        alert('Error: ' + data.error);
+      }
+    });
+  </script>
+</body>
+</html>

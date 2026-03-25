@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%232563eb' viewBox='0 0 16 16'><path d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z'/><path d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z'/></svg>">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Directorio Telefónico</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #f1f5f9; min-height: 100vh; display: flex; }
+
+    /* ── SIDEBAR ── */
+    #sidebar {
+      width: 260px; min-width: 260px;
+      background: #ffffff; border-right: 1px solid #e5e7eb;
+      display: flex; flex-direction: column;
+      min-height: 100vh;
+      transition: width 0.25s ease, min-width 0.25s ease;
+      position: fixed; top: 0; left: 0;
+      z-index: 100; overflow: hidden;
+    }
+    #sidebar.collapsed { width: 68px; min-width: 68px; }
+
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 18px 20px; border-bottom: 1px solid #e5e7eb;
+      min-height: 64px; position: relative;
+    }
+    .sidebar-brand .brand-icon { color: #2563eb; font-size: 1.6rem; flex-shrink: 0; }
+    .sidebar-brand .brand-text { font-size: 1rem; font-weight: 700; color: #1e293b; white-space: nowrap; transition: opacity 0.2s; }
+    #sidebar.collapsed .brand-text { opacity: 0; width: 0; overflow: hidden; }
+
+    #toggleSidebar {
+      position: absolute; top: 18px; right: -14px;
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #2563eb; color: white; border: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; z-index: 101;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.4); transition: transform 0.25s;
+    }
+    #sidebar.collapsed #toggleSidebar { transform: rotate(180deg); }
+
+    .sidebar-user {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+    }
+    .sidebar-user img {
+      width: 40px; height: 40px; border-radius: 50%;
+      object-fit: cover; border: 2px solid #2563eb; flex-shrink: 0;
+    }
+    .sidebar-user .user-info { transition: opacity 0.2s; white-space: nowrap; overflow: hidden; }
+    #sidebar.collapsed .user-info { opacity: 0; width: 0; }
+    .sidebar-user .user-name { font-size: 0.875rem; font-weight: 600; color: #1e293b; margin: 0; }
+    .sidebar-user .user-role { font-size: 0.75rem; color: #64748b; margin: 0; }
+
+    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+
+    .nav-section-label {
+      font-size: 0.7rem; font-weight: 600; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 10px 20px 4px; white-space: nowrap; transition: opacity 0.2s;
+    }
+    #sidebar.collapsed .nav-section-label { opacity: 0; }
+
+    .nav-item-link {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 20px; color: #475569; text-decoration: none;
+      font-size: 0.875rem; font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: all 0.15s ease; white-space: nowrap;
+    }
+    .nav-item-link:hover { background: #eff6ff; color: #2563eb; border-left-color: #93c5fd; }
+    .nav-item-link.active { background: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: 600; }
+    .nav-item-link i { font-size: 1.1rem; color: #2563eb; flex-shrink: 0; width: 22px; text-align: center; }
+    .nav-item-link .link-text { transition: opacity 0.2s; }
+    #sidebar.collapsed .link-text { opacity: 0; width: 0; overflow: hidden; }
+    #sidebar.collapsed .nav-item-link { justify-content: center; padding: 10px 0; }
+
+    .nav-item-link.lunch i     { color: #f59e0b; }
+    .nav-item-link.lunch:hover { background: #fffbeb; color: #d97706; border-left-color: #fcd34d; }
+    .nav-item-link.lunch-in i     { color: #10b981; }
+    .nav-item-link.lunch-in:hover { background: #ecfdf5; color: #059669; border-left-color: #6ee7b7; }
+    .nav-item-link.visitor i     { color: #8b5cf6; }
+    .nav-item-link.visitor:hover { background: #f5f3ff; color: #7c3aed; border-left-color: #c4b5fd; }
+    .nav-item-link.directorio i     { color: #059669; }
+    .nav-item-link.directorio:hover { background: #ecfdf5; color: #059669; border-left-color: #6ee7b7; }
+    .nav-item-link.directorio.active { background: #ecfdf5; color: #059669; border-left-color: #059669; }
+
+    .nav-divider { border-top: 1px solid #e5e7eb; margin: 8px 0; }
+    .sidebar-footer { padding: 12px 0; border-top: 1px solid #e5e7eb; }
+    .nav-item-link.logout i { color: #ef4444; }
+    .nav-item-link.logout:hover { background: #fef2f2; color: #ef4444; border-left-color: #fca5a5; }
+
+    /* ── CONTENIDO ── */
+    #main-content {
+      margin-left: 260px; flex: 1;
+      display: flex; flex-direction: column;
+      min-height: 100vh; transition: margin-left 0.25s ease;
+    }
+    #main-content.expanded { margin-left: 68px; }
+
+    .topbar {
+      background: #ffffff; border-bottom: 1px solid #e5e7eb;
+      padding: 0 28px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 99;
+    }
+    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
+    .topbar .fecha { font-size: 0.82rem; color: #64748b; }
+
+    .content-area { flex: 1; padding: 28px; }
+
+    footer {
+      background: #ffffff; border-top: 1px solid #e5e7eb;
+      padding: 16px 28px; text-align: center;
+    }
+
+    /* ── DIRECTORIO ── */
+    .dir-header {
+      background: linear-gradient(135deg, #1e40af 0%, #2563eb 60%, #3b82f6 100%);
+      border-radius: 20px; padding: 28px 32px;
+      margin-bottom: 28px; color: #fff;
+      display: flex; align-items: center; gap: 20px;
+      box-shadow: 0 8px 32px rgba(37,99,235,0.25);
+    }
+    .dir-header .hicon {
+      width: 56px; height: 56px; border-radius: 14px;
+      background: rgba(255,255,255,0.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; flex-shrink: 0;
+    }
+    .dir-header h1 { font-size: 1.4rem; font-weight: 800; margin: 0 0 4px; }
+    .dir-header p  { font-size: 0.85rem; margin: 0; opacity: 0.8; }
+
+    .search-wrap { position: relative; margin-bottom: 28px; }
+    .search-wrap i {
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+      color: #94a3b8; font-size: 1rem;
+    }
+    .search-input {
+      width: 100%; padding: 12px 16px 12px 44px;
+      border-radius: 12px; border: 1px solid #e5e7eb;
+      background: #fff; font-size: 0.9rem; color: #1e293b;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+    }
+
+    .section-block { margin-bottom: 28px; }
+    .section-title {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.72rem; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.1em;
+      margin-bottom: 12px; padding: 0 4px;
+    }
+    .section-title::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+
+    .dir-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    .dir-card {
+      background: #fff; border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    }
+    .dir-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      border-color: #bfdbfe;
+    }
+    .dir-card .avatar {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.85rem; font-weight: 700; flex-shrink: 0; color: #fff;
+    }
+    .dir-card .info { min-width: 0; }
+    .dir-card .info .cname {
+      font-size: 0.78rem; font-weight: 600; color: #1e293b;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 4px;
+    }
+    .dir-card .info .cext {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #eff6ff; color: #2563eb;
+      border: 1px solid #bfdbfe;
+      border-radius: 20px; padding: 2px 9px;
+      font-size: 0.78rem; font-weight: 700;
+    }
+    .dir-card.offline { opacity: 0.5; }
+    .dir-card.offline .info .cext { background: #f1f5f9; color: #94a3b8; border-color: #e5e7eb; }
+    .dir-card.noname .info .cname { color: #94a3b8; font-style: italic; font-weight: 400; }
+
+    .av-it       { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+    .av-admin    { background: linear-gradient(135deg, #d97706, #f59e0b); }
+    .av-conta    { background: linear-gradient(135deg, #0891b2, #06b6d4); }
+    .av-reservas { background: linear-gradient(135deg, #059669, #10b981); }
+    .av-cobros   { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+    .av-otros    { background: linear-gradient(135deg, #475569, #64748b); }
+
+    .no-results { text-align: center; padding: 48px 0; color: #94a3b8; }
+    .no-results i { font-size: 2.5rem; display: block; margin-bottom: 12px; }
+
+    @media (max-width: 768px) {
+      #sidebar { width: 68px; min-width: 68px; }
+      #sidebar .link-text, #sidebar .user-info,
+      #sidebar .brand-text, #sidebar .nav-section-label { opacity: 0; width: 0; overflow: hidden; }
+      #sidebar .nav-item-link { justify-content: center; padding: 10px 0; }
+      #main-content { margin-left: 68px; }
+    }
+  </style>
+</head>
+<body>
+
+  {% set avatar = url_for('static', filename=user_foto) if user_foto else url_for('static', filename='img/user.png') %}
+
+  {% set dep = departamento | lower %}
+  {% if role|int == 0 and dep in ['financiero', 'melia'] %}
+    {% set rol_label = 'Supervisora' %}
+    {% set rol_icon  = 'bi-star-fill' %}
+  {% elif role|int == 0 %}
+    {% set rol_label = 'Admin' %}
+    {% set rol_icon  = 'bi-shield-check-fill' %}
+  {% else %}
+    {% set rol_label = 'Empleado' %}
+    {% set rol_icon  = 'bi-person-check-fill' %}
+  {% endif %}
+
+  <!-- ══════════════ SIDEBAR ══════════════ -->
+  <nav id="sidebar">
+    <div class="sidebar-brand" style="position:relative;">
+      <i class="bi bi-clock-history brand-icon"></i>
+      <span class="brand-text">TurnoApp</span>
+      <button id="toggleSidebar" title="Colapsar menú">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+    </div>
+
+    <div class="sidebar-user">
+      <img src="{{ avatar }}" alt="Avatar">
+      <div class="user-info">
+        <p class="user-name">{{ user }}</p>
+        <p class="user-role">{{ rol_label }}</p>
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <a href="{{ url_for('main.dashboard') }}" class="nav-item-link">
+        <i class="bi bi-house-door-fill"></i>
+        <span class="link-text">Dashboard</span>
+      </a>
+      <a href="{{ url_for('main.perfil') }}" class="nav-item-link">
+        <i class="bi bi-person-circle"></i>
+        <span class="link-text">Mi Perfil</span>
+      </a>
+
+      <!--<div class="nav-section-label">Turnos</div>
+      <a href="{{ url_for('main.register_entry') }}" class="nav-item-link">
+        <i class="bi bi-box-arrow-in-right"></i>
+        <span class="link-text">Registrar Entrada</span>
+      </a>
+      <a href="{{ url_for('main.register_exit') }}" class="nav-item-link">
+        <i class="bi bi-box-arrow-right"></i>
+        <span class="link-text">Registrar Salida</span>
+      </a>-->
+      <a href="{{ url_for('main.lunch_out') }}" class="nav-item-link lunch">
+        <i class="bi bi-cup-hot-fill"></i>
+        <span class="link-text">Salida a Comer</span>
+      </a>
+      <a href="{{ url_for('main.lunch_in') }}" class="nav-item-link lunch-in">
+        <i class="bi bi-cup-straw"></i>
+        <span class="link-text">Vuelta de Comer</span>
+      </a>
+      <a href="{{ url_for('main.vacaciones') }}" class="nav-item-link">
+        <i class="bi bi-calendar-sun"></i>
+        <span class="link-text">Vacaciones</span>
+      </a>
+      <a href="{{ url_for('main.directorio') }}" class="nav-item-link directorio active">
+        <i class="bi bi-telephone-fill"></i>
+        <span class="link-text">Directorio</span>
+      </a>
+
+      {% if role|int == 0 %}
+      <div class="nav-divider"></div>
+      <div class="nav-section-label">Visitantes</div>
+      <a href="{{ url_for('main.register_visitante') }}" class="nav-item-link visitor">
+        <i class="bi bi-person-badge-fill"></i>
+        <span class="link-text">Agregar Visitante</span>
+      </a>
+      <div class="nav-divider"></div>
+      <div class="nav-section-label">Administración</div>
+      <a href="{{ url_for('main.create_user') }}" class="nav-item-link">
+        <i class="bi bi-person-plus-fill"></i>
+        <span class="link-text">Crear Usuario</span>
+      </a>
+      <a href="{{ url_for('main.admin_empleados') }}" class="nav-item-link">
+        <i class="bi bi-people-fill"></i>
+        <span class="link-text">Ver Empleados</span>
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="sidebar-footer">
+      <a href="{{ url_for('main.logout') }}" class="nav-item-link logout">
+        <i class="bi bi-box-arrow-left"></i>
+        <span class="link-text">Cerrar Sesión</span>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ══════════════ CONTENIDO ══════════════ -->
+  <div id="main-content">
+
+    <div class="topbar">
+      <h1 class="page-title">
+        <i class="bi bi-telephone" style="color:#059669; margin-right:8px;"></i>
+        Directorio Telefónico
+      </h1>
+      <div class="d-flex align-items-center gap-3">
+        <span class="fecha" id="fechaHoy"></span>
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <div class="dir-header">
+        <div class="hicon"><i class="bi bi-telephone-fill"></i></div>
+        <div>
+          <h1>Directorio Telefónico</h1>
+          <p>RESORTS ADVANTAGE, SPAIN, S.L.U. &nbsp;·&nbsp; Extensiones internas</p>
+        </div>
+      </div>
+
+      <div class="search-wrap">
+        <i class="bi bi-search"></i>
+        <input type="text" id="searchInput" class="search-input"
+               placeholder="Buscar por nombre o extensión...">
+      </div>
+
+      <div id="directorioWrap">
+
+        <!-- ══ ADMINISTRACIÓN ══ -->
+        <div class="section-block" data-section>
+          <div class="section-title">
+            <i class="bi bi-building" style="color:#d97706;"></i>
+            Administración
+          </div>
+          <div class="dir-grid">
+            <div class="dir-card" data-name="rafael diaz cortes" data-ext="421">
+              <div class="avatar av-admin">RD</div>
+              <div class="info">
+                <p class="cname">Rafael Díaz Cortés</p>
+                <span class="cext"><i class="bi bi-telephone"></i> 421</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ SISTEMAS · IT ══ -->
+        <div class="section-block" data-section>
+          <div class="section-title">
+            <i class="bi bi-cpu" style="color:#2563eb;"></i>
+            Sistemas · IT
+          </div>
+          <div class="dir-grid">
+            <div class="dir-card" data-name="ariel castro" data-ext="423">
+              <div class="avatar av-it">AC</div>
+              <div class="info">
+                <p class="cname">Ariel Castro</p>
+                <span class="cext"><i class="bi bi-telephone"></i> 423</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ CONTABILIDAD ══ -->
+        <div class="section-block" data-section>
+          <div class="section-title">
+            <i class="bi bi-calculator" style="color:#0891b2;"></i>
+            Contabilidad
+          </div>
+          <div class="dir-grid">
+            <div class="dir-card" data-name="amaya bedate" data-ext="420">
+              <div class="avatar av-conta">AB</div>
+              <div class="info">
+                <p class="cname">Amaya Bedate</p>
+                <span class="cext"><i class="bi bi-telephone"></i> 420</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ RESERVAS ══ -->
+        <div class="section-block" data-section>
+          <div class="section-title">
+            <i class="bi bi-calendar-check-fill" style="color:#059669;"></i>
+            Reservas / Reservations
+          </div>
+          <div class="dir-grid" id="gridReservas"></div>
+        </div>
+
+        <!-- ══ COBRANZAS ══ -->
+        <div class="section-block" data-section>
+          <div class="section-title">
+            <i class="bi bi-currency-euro" style="color:#7c3aed;"></i>
+            Cobranzas / Collections
+          </div>
+          <div class="dir-grid" id="gridCobros"></div>
+        </div>
+
+        <!-- ══ OTROS ══ -->
+        <div class="section-block" data-section>
+          <div class="section-title">
+            <i class="bi bi-three-dots" style="color:#475569;"></i>
+            Otros
+          </div>
+          <div class="dir-grid" id="gridOtros"></div>
+        </div>
+
+      </div><!-- /directorioWrap -->
+
+      <div id="noResults" class="no-results" style="display:none;">
+        <i class="bi bi-search"></i>
+        Sin resultados para tu búsqueda
+      </div>
+
+    </div><!-- /content-area -->
+
+    <footer>
+      <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
+        &copy; {{ current_year }} Todos los derechos reservados —
+        Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
+      </p>
+    </footer>
+
+  </div><!-- /main-content -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const DIRECTORIO = {
+  reservas: [
+    { name: 'Mercedes Bustamante',     ext: '411', initials: 'MB' },
+    { name: 'Marta Ruiz',              ext: '410', initials: 'MR' },
+    { name: 'Elzbieta Pawlik',         ext: '407', initials: 'EP' },
+    { name: 'Manuela Dos Santos',      ext: '405', initials: 'MD' },
+    { name: 'Wendy Rault',             ext: '408', initials: 'WR' },
+    { name: 'Arianna Deulofeu',        ext: '412', initials: 'AD' },
+    { name: 'Mary Alexandra Simancas', ext: '413', initials: 'MS' },
+    { name: 'Kateryna Hetmanenko',     ext: '415', initials: 'KH' },
+    { name: 'Susana González',           ext: '414', initials: 'SG' },
+    { name: 'Diana Paola Márquez',     ext: '409', initials: 'DM' },
+  ],
+  cobros: [
+    { name: 'Mónica Hagen',           ext: '401', initials: 'MH' },
+    { name: 'Elsa Martín',            ext: '402', initials: 'EM' },
+    { name: 'Marilia Luisa',         ext: '403', initials: 'ML' },
+    { name: 'Raquel Santamaría',      ext: '404', initials: 'RS' },
+    { name: 'Paloma Zaragoza',        ext: '400', initials: 'PZ' },
+    { name: 'Pilar Bartolomé',        ext: '416', initials: 'PB' },
+    { name: 'Oleksandra Herasymenko', ext: '424', initials: 'OH' },
+  ],
+  otros: [
+    { name: 'Sala de Juntas / Conf. Room', ext: '422', initials: '🔇', offline: true, note: 'No conectado' },
+    { name: 'Altavoz / Speaker',           ext: '438', initials: '🔇', offline: true, note: 'No conectado' },
+    { name: 'Inalámbrico',                 ext: '437', initials: '📵', offline: true, note: 'No existe' },
+  ]
+};
+
+const COBROS_COLORS = [
+  '#7c3aed','#6d28d9','#8b5cf6','#a78bfa',
+  '#7c3aed','#6d28d9','#8b5cf6','#a78bfa',
+];
+
+function buildCard(item, avClass, colorOverride) {
+  const offline  = item.offline || false;
+  const noname   = !item.name;
+  const bgStyle  = colorOverride ? `style="background:${colorOverride}"` : '';
+  const noteHtml = item.note
+    ? `<span style="font-size:0.7rem;color:#94a3b8;display:block;margin-top:2px;">${item.note}</span>`
+    : '';
+  return `
+    <div class="dir-card${offline ? ' offline' : ''}${noname ? ' noname' : ''}"
+         data-name="${item.name.toLowerCase()}" data-ext="${item.ext}">
+      <div class="avatar ${avClass}" ${bgStyle}>${item.initials}</div>
+      <div class="info">
+        <p class="cname">${item.name || 'Sin asignar'}</p>
+        <span class="cext"><i class="bi bi-telephone"></i> ${item.ext}</span>
+        ${noteHtml}
+      </div>
+    </div>`;
+}
+
+function renderSection(gridId, items, avClass, colors) {
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  grid.innerHTML = items.map((item, i) =>
+    buildCard(item, avClass, colors ? colors[i % colors.length] : null)
+  ).join('');
+}
+
+renderSection('gridReservas', DIRECTORIO.reservas, 'av-reservas', null);
+renderSection('gridCobros',   DIRECTORIO.cobros,   'av-cobros',   COBROS_COLORS);
+renderSection('gridOtros',    DIRECTORIO.otros,    'av-otros',    null);
+
+// Buscador
+document.getElementById('searchInput').addEventListener('input', function () {
+  const q = this.value.toLowerCase().trim();
+  const cards    = document.querySelectorAll('.dir-card');
+  const sections = document.querySelectorAll('[data-section]');
+  let total = 0;
+
+  cards.forEach(c => {
+    const show = !q || c.dataset.name.includes(q) || c.dataset.ext.includes(q);
+    c.style.display = show ? '' : 'none';
+    if (show) total++;
+  });
+
+  sections.forEach(sec => {
+    const any = Array.from(sec.querySelectorAll('.dir-card')).some(c => c.style.display !== 'none');
+    sec.style.display = any ? '' : 'none';
+  });
+
+  document.getElementById('noResults').style.display      = (!total && q) ? 'block' : 'none';
+  document.getElementById('directorioWrap').style.display = (!total && q) ? 'none'  : '';
+});
+
+// Fecha topbar
+document.getElementById('fechaHoy').textContent = new Date().toLocaleDateString('es-ES', {
+  weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+});
+
+// Sidebar toggle
+const sidebar     = document.getElementById('sidebar');
+const mainContent = document.getElementById('main-content');
+const toggleBtn   = document.getElementById('toggleSidebar');
+
+toggleBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('collapsed');
+  mainContent.classList.toggle('expanded');
+  localStorage.setItem('sidebar_collapsed', sidebar.classList.contains('collapsed') ? '1' : '0');
+});
+if (localStorage.getItem('sidebar_collapsed') === '1') {
+  sidebar.classList.add('collapsed');
+  mainContent.classList.add('expanded');
+}
+</script>
+</body>
+</html>

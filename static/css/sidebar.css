@@ -1,0 +1,95 @@
+/* ── SIDEBAR ── */
+#sidebar {
+  width: 260px; min-width: 260px;
+  background: #ffffff; border-right: 1px solid #e5e7eb;
+  display: flex; flex-direction: column;
+  min-height: 100vh;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  position: fixed; top: 0; left: 0;
+  z-index: 100; overflow: hidden;
+}
+#sidebar.collapsed { width: 68px; min-width: 68px; }
+
+.sidebar-brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px 20px; border-bottom: 1px solid #e5e7eb;
+  min-height: 64px; position: relative;
+}
+.sidebar-brand .brand-icon { color: #2563eb; font-size: 1.6rem; flex-shrink: 0; }
+.sidebar-brand .brand-text { font-size: 1rem; font-weight: 700; color: #1e293b; white-space: nowrap; transition: opacity 0.2s; }
+#sidebar.collapsed .brand-text { opacity: 0; width: 0; overflow: hidden; }
+
+#toggleSidebar {
+  position: absolute; top: 18px; right: -14px;
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #2563eb; color: white; border: none;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; z-index: 101;
+  box-shadow: 0 2px 6px rgba(37,99,235,0.4); transition: transform 0.25s;
+}
+#sidebar.collapsed #toggleSidebar { transform: rotate(180deg); }
+
+.sidebar-user {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
+}
+.sidebar-user img {
+  width: 40px; height: 40px; border-radius: 50%;
+  object-fit: cover; border: 2px solid #2563eb; flex-shrink: 0;
+}
+.sidebar-user .user-info { transition: opacity 0.2s; white-space: nowrap; overflow: hidden; }
+#sidebar.collapsed .user-info { opacity: 0; width: 0; }
+.sidebar-user .user-name { font-size: 0.875rem; font-weight: 600; color: #1e293b; margin: 0; }
+.sidebar-user .user-role { font-size: 0.75rem; color: #64748b; margin: 0; }
+
+.sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+
+.nav-section-label {
+  font-size: 0.7rem; font-weight: 600; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding: 10px 20px 4px; white-space: nowrap; transition: opacity 0.2s;
+}
+#sidebar.collapsed .nav-section-label { opacity: 0; }
+
+.nav-item-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 20px; color: #475569; text-decoration: none;
+  font-size: 0.875rem; font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: all 0.15s ease; white-space: nowrap;
+}
+.nav-item-link:hover { background: #eff6ff; color: #2563eb; border-left-color: #93c5fd; }
+.nav-item-link.active { background: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: 600; }
+.nav-item-link i { font-size: 1.1rem; color: #2563eb; flex-shrink: 0; width: 22px; text-align: center; }
+.nav-item-link .link-text { transition: opacity 0.2s; }
+#sidebar.collapsed .link-text { opacity: 0; width: 0; overflow: hidden; }
+#sidebar.collapsed .nav-item-link { justify-content: center; padding: 10px 0; }
+
+.nav-item-link.lunch i      { color: #f59e0b; }
+.nav-item-link.lunch:hover  { background: #fffbeb; color: #d97706; border-left-color: #fcd34d; }
+.nav-item-link.lunch-in i   { color: #10b981; }
+.nav-item-link.lunch-in:hover { background: #ecfdf5; color: #059669; border-left-color: #6ee7b7; }
+.nav-item-link.visitor i    { color: #8b5cf6; }
+.nav-item-link.visitor:hover { background: #f5f3ff; color: #7c3aed; border-left-color: #c4b5fd; }
+.nav-item-link.horario i    { color: #0891b2; }
+.nav-item-link.horario:hover { background: #ecfeff; color: #0e7490; border-left-color: #67e8f9; }
+
+.nav-divider { border-top: 1px solid #e5e7eb; margin: 8px 0; }
+.sidebar-footer { padding: 12px 0; border-top: 1px solid #e5e7eb; }
+.nav-item-link.logout i { color: #ef4444; }
+.nav-item-link.logout:hover { background: #fef2f2; color: #ef4444; border-left-color: #fca5a5; }
+
+#main-content {
+  margin-left: 260px; flex: 1;
+  display: flex; flex-direction: column;
+  min-height: 100vh; transition: margin-left 0.25s ease;
+}
+#main-content.expanded { margin-left: 68px; }
+
+@media (max-width: 768px) {
+  #sidebar { width: 68px; min-width: 68px; }
+  #sidebar .link-text, #sidebar .user-info,
+  #sidebar .brand-text, #sidebar .nav-section-label { opacity: 0; width: 0; overflow: hidden; }
+  #sidebar .nav-item-link { justify-content: center; padding: 10px 0; }
+  #main-content { margin-left: 68px; }
+}
