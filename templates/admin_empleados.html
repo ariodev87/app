@@ -294,6 +294,64 @@
  {% include '_sidebar.html' %}
 
   <!-- ══════════════ CONTENIDO ══════════════ -->
+   <!-- Dias retribuidos -->
+  <!-- MODAL INSERTAR DÍA RETRIBUIDO -->
+<div class="modal fade" id="modalDiaRetribuido" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" style="color:#d97706;">
+          <i class="bi bi-calendar-plus me-2"></i>Insertar Día Retribuido
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <input type="hidden" id="dia_ret_user_id">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label fw-semibold">Día</label>
+            <input type="date" class="form-control" id="dia_ret_fecha" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Motivo</label>
+            <select class="form-select" id="dia_ret_motivo_select" onchange="toggleOtroMotivoDia()">
+              <option value="" disabled selected>Selecciona un motivo...</option>
+              <option value="Incapacidad Temporal">Incapacidad Temporal</option>
+              <option value="Matrimonio/Pareja de hecho">Matrimonio/Pareja de Hecho</option>
+              <option value="Fallecimiento/familiar">Fallecimiento de familiar</option>
+              <option value="Enfermedad grave">Enfermedad grave</option>
+              <option value="Traslado de domicilio">Traslado de domicilio</option>
+              <option value="Matrimonio de familiar">Matrimonio de familiar</option>
+              <option value="Consulta médica">Consulta médica</option>
+              <option value="Acompañamiento médico">Acompañamiento médico</option>
+              <option value="Exámenes">Exámenes</option>
+              <option value="Deber inexcusable público y personal">Deber inexcusable público y personal</option>
+              <option value="Horas sindicales">Horas sindicales</option>
+              <option value="Exámenes prenatales">Exámenes prenatales</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="col-12" id="dia_ret_otro_container" style="display:none;">
+            <label class="form-label fw-semibold">Especifica el motivo</label>
+            <input type="text" class="form-control" id="dia_ret_motivo_otro"
+                   placeholder="Escribe el motivo...">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary"
+                data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn fw-semibold px-4"
+                style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; border:none;"
+                onclick="guardarDiaRetribuido()">
+          <i class="bi bi-check-lg me-1"></i>Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
   <div id="main-content">
 
     <div class="topbar">
@@ -355,6 +413,14 @@
           style="background:linear-gradient(135deg,#6366f1,#4f46e5); color:#fff; border:none; border-radius:10px; padding:8px 14px; font-size:.85rem; font-weight:600;">
     <i class="bi bi-coin"></i> Ver Horas Retribuidas
   </button>
+         {% if session.get('role') == 0 %}
+<button type="button"
+        class="btn-filter flex-fill"
+        style="background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff; border:none; border-radius:10px; padding:8px 14px; font-size:.85rem; font-weight:600;"
+        onclick="abrirDiasRetribuidos()">
+  <i class="bi bi-calendar-plus"></i> Insertar Día Retribuido
+</button>
+{% endif %}
               <button type="button" onclick="submitAccion('vacaciones')"
                       class="btn-filter vacaciones flex-fill">
                 <i class="bi bi-calendar-check"></i> Ver Vacaciones
@@ -864,6 +930,7 @@
             <label class="form-label fw-semibold">Motivo</label>
             <select class="form-select" id="ret_motivo_select" onchange="toggleOtroMotivo()">
               <option value="" disabled selected>Selecciona un motivo...</option>
+              <option value="Incapacidad Temporal">Incapacidad Temporal</option>
               <option value="Matrimonio/Pareja de hecho ">Matrimonio/Pareja de Hecho </option>
               <option value="Fallecimiento/familiar">Fallecimiento de familiar</option>
               <option value="Enfermedad grave">Enfermedad grave</option>
@@ -901,6 +968,63 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+  //Insertar día retribuido
+  function abrirDiasRetribuidos() {
+  const userId = document.getElementById('selected_user').value;
+  if (!userId) { alert('Selecciona un empleado primero'); return; }
+
+  document.getElementById('dia_ret_user_id').value = userId;
+  // Precarga con la fecha del filtro si existe
+  const fechaFiltro = document.getElementById('fecha').value;
+  document.getElementById('dia_ret_fecha').value        = fechaFiltro || '';
+  document.getElementById('dia_ret_motivo_select').value = '';
+  document.getElementById('dia_ret_motivo_otro').value   = '';
+  document.getElementById('dia_ret_otro_container').style.display = 'none';
+
+  const modalEl   = document.getElementById('modalDiaRetribuido');
+  const instancia = bootstrap.Modal.getInstance(modalEl);
+  if (instancia) instancia.dispose();
+  new bootstrap.Modal(modalEl).show();
+}
+
+function toggleOtroMotivoDia() {
+  const sel = document.getElementById('dia_ret_motivo_select').value;
+  document.getElementById('dia_ret_otro_container').style.display =
+    sel === 'Otro' ? 'block' : 'none';
+}
+
+function guardarDiaRetribuido() {
+  const user_id     = document.getElementById('dia_ret_user_id').value;
+  const fecha       = document.getElementById('dia_ret_fecha').value;
+  const motivo_sel  = document.getElementById('dia_ret_motivo_select').value;
+  const motivo_otro = document.getElementById('dia_ret_motivo_otro').value.trim();
+
+  if (!user_id)    { alert('Selecciona un empleado primero'); return; }
+  if (!fecha)      { alert('La fecha es obligatoria'); return; }
+  if (!motivo_sel) { alert('Selecciona un motivo'); return; }
+  if (motivo_sel === 'Otro' && !motivo_otro) { alert('Especifica el motivo'); return; }
+
+  const motivos = motivo_sel === 'Otro' ? motivo_otro : motivo_sel;
+
+
+  fetch('/horas_retribuidas/add_dia', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id, fecha, motivos })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) {
+      bootstrap.Modal.getInstance(document.getElementById('modalDiaRetribuido')).hide();
+      alert('✅ Día retribuido guardado correctamente');
+    } else {
+      alert('Error: ' + (d.error || 'Error desconocido'));
+    }
+  })
+  .catch(e => alert('Error de red: ' + e));
+}
+  // Elimina hora retribuida via fetch POST
+    
     function deleteRetribuida(id) {
   if (!confirm('¿Borrar esta hora retribuida?')) return;
   fetch(`/horas_retribuidas/delete/${id}`, { method: 'POST' })

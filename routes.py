@@ -756,10 +756,9 @@ def admin_empleados():
             """, (seleccionado, primer_dia_anio, ultimo_dia_anio))
             vacaciones_u = cur.fetchall()
 
-        # ══ HORAS RETRIBUIDAS ══ ← NUEVO
+        # ══ HORAS RETRIBUIDAS ══ 
         elif accion == 'retribuidas':
-            # fecha aquí es el mes seleccionado tipo '2026-03-23'
-            # extraemos año-mes para filtrar todo el mes
+            
             mes = fecha[:7]  # '2026-03'
             cur.execute("""
                 SELECT
@@ -793,7 +792,48 @@ def admin_empleados():
     )
 
 
+@main.route('/horas_retribuidas/add_dia', methods=['POST'])
+@login_required
+def horas_retribuidas_add_dia():
+    data = request.get_json()
+    try:
+        user_id = data.get('user_id')
+        fecha   = data.get('fecha')
+        motivos = data.get('motivos')
 
+        if not fecha or not user_id:
+            return jsonify({'success': False, 'error': 'Faltan datos: user_id o fecha'}), 400
+
+        fecha_inicio = fecha + ' 00:00:00'
+        fecha_fin    = fecha + ' 08:00:00'
+        creado_por   = session.get('user_id', 0)
+
+        cur = mysql.connection.cursor()
+
+        # 1. horas_retribuidas — columnas correctas
+        cur.execute("""
+            INSERT INTO horas_retribuidas (user_id, fecha_inicio, fecha_fin, motivos, tipo, creado_por)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (user_id, fecha_inicio, fecha_fin, motivos, 'Permiso', creado_por))
+
+        # 2. turn_in_laboral
+        cur.execute("""
+            INSERT INTO turn_in_laboral (iduser, timein, nota)
+            VALUES (%s, %s, %s)
+        """, (user_id, fecha_inicio, motivos))
+
+        # 3. turn_out_laboral
+        cur.execute("""
+            INSERT INTO turn_out_laboral (iduser, timeout)
+            VALUES (%s, %s)
+        """, (user_id, fecha_fin))
+
+        mysql.connection.commit()
+        cur.close()
+        return jsonify({'success': True})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # ══════════════════════════════════════════════════════
 #  GUARDAR NOTA — turn_in_laboral
