@@ -462,19 +462,20 @@
                           <i class="bi bi-floppy"></i>
                         </button>
                         <!-- Editar jornada -->
-                         {% if session.get('role' ) == 0 %}
-
-                        <button type="button" class="btn-edit-reg"
-                                title="Editar jornada"
-                                onclick="abrirEditar(
-                                  {{ turn_id }},
-                                  '{{ ti.strftime('%Y-%m-%dT%H:%M') if ti else '' }}',
-                                  '{{ to.strftime('%Y-%m-%dT%H:%M') if to else '' }}',
-                                  {{ nota | tojson if nota else '\"\"' }}
-                                )">
-                          <i class="bi bi-pencil-fill"></i>
-                        </button>
-                          {% endif %}
+                      {% if session.get('role') == 0 %}
+<button type="button" class="btn-edit-reg"
+        title="Editar jornada"
+        onclick="abrirEditar(
+          {{ turn_id }},
+          '{{ ti.strftime('%Y-%m-%dT%H:%M') if ti else '' }}',
+          '{{ to.strftime('%Y-%m-%dT%H:%M') if to else '' }}',
+          {{ nota | tojson if nota else 'null' }},
+          {{ seleccionado }},
+          '{{ fecha }}'
+        )">
+  <i class="bi bi-pencil-fill"></i>
+</button>
+{% endif %}
                            {% if session.get('role') == 0 %}
 
                         <button type="button" class="btn-retribuidas"
@@ -733,57 +734,59 @@
 
 
   <!-- ====== MODAL EDITAR JORNADA ====== -->
-  <div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="bi bi-pencil-fill" style="color:#d97706;"></i>
-            Editar Registro de Jornada
-          </h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-pencil-fill" style="color:#d97706;"></i>
+          Editar Registro de Jornada
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit_turn_id">
+        <input type="hidden" id="edit_user_id">  <!-- ← AÑADIDO -->
+        <input type="hidden" id="edit_fecha">     <!-- ← AÑADIDO -->
+        <div class="mb-3">
+          <label class="form-label"
+                 style="font-size:0.82rem; font-weight:600; color:#374151;">
+            <i class="bi bi-box-arrow-in-right" style="color:#16a34a;"></i>
+            Hora de Entrada
+          </label>
+          <input type="datetime-local" id="edit_timein" class="form-control">
         </div>
-        <div class="modal-body">
-          <input type="hidden" id="edit_turn_id">
-          <div class="mb-3">
-            <label class="form-label"
-                   style="font-size:0.82rem; font-weight:600; color:#374151;">
-              <i class="bi bi-box-arrow-in-right" style="color:#16a34a;"></i>
-              Hora de Entrada
-            </label>
-            <input type="datetime-local" id="edit_timein" class="form-control">
-          </div>
-          <div class="mb-3">
-            <label class="form-label"
-                   style="font-size:0.82rem; font-weight:600; color:#374151;">
-              <i class="bi bi-box-arrow-right" style="color:#dc2626;"></i>
-              Hora de Salida
-            </label>
-            <input type="datetime-local" id="edit_timeout" class="form-control">
-            <small style="color:#94a3b8; font-size:0.75rem;">
-              Dejar vacío si no hay salida registrada
-            </small>
-          </div>
-          <div class="mb-1">
-            <label class="form-label"
-                   style="font-size:0.82rem; font-weight:600; color:#374151;">
-              <i class="bi bi-chat-left-text" style="color:#2563eb;"></i>
-              Nota / Justificación
-            </label>
-            <textarea id="edit_nota" class="nota-textarea" rows="3"
-                      placeholder="Opcional..."></textarea>
-          </div>
+        <div class="mb-3">
+          <label class="form-label"
+                 style="font-size:0.82rem; font-weight:600; color:#374151;">
+            <i class="bi bi-box-arrow-right" style="color:#dc2626;"></i>
+            Hora de Salida
+          </label>
+          <input type="datetime-local" id="edit_timeout" class="form-control">
+          <small style="color:#94a3b8; font-size:0.75rem;">
+            Dejar vacío si no hay salida registrada
+          </small>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-modal-cancel"
-                  data-bs-dismiss="modal">Cancelar</button>
-          <button type="button" class="btn-modal-save" onclick="guardarEdicion()">
-            <i class="bi bi-floppy"></i> Guardar cambios
-          </button>
+        <div class="mb-1">
+          <label class="form-label"
+                 style="font-size:0.82rem; font-weight:600; color:#374151;">
+            <i class="bi bi-chat-left-text" style="color:#2563eb;"></i>
+            Nota / Justificación
+          </label>
+          <textarea id="edit_nota" class="nota-textarea" rows="3"
+                    placeholder="Opcional..."></textarea>
         </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cancel"
+                data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn-modal-save" onclick="guardarEdicion()">
+          <i class="bi bi-floppy"></i> Guardar cambios
+        </button>
       </div>
     </div>
   </div>
+</div>
 
   <!-- ====== MODAL EDITAR LUNCH ====== -->
   <div class="modal fade" id="modalEditarLunch" tabindex="-1" aria-hidden="true">
@@ -1041,13 +1044,27 @@ function guardarRetribuidas() {
     }
 
     // ── Abrir modal editar jornada ──
-    function abrirEditar(turnId, timein, timeout, nota) {
-      document.getElementById('edit_turn_id').value = turnId;
-      document.getElementById('edit_timein').value  = timein;
-      document.getElementById('edit_timeout').value = timeout;
-      document.getElementById('edit_nota').value    = nota;
-      new bootstrap.Modal(document.getElementById('modalEditar')).show();
-    }
+ function abrirEditar(turnId, timein, timeout, nota, userId, fecha) {
+  // DEBUG — elimina estas líneas una vez resuelto
+  console.log('edit_turn_id:', document.getElementById('edit_turn_id'));
+  console.log('edit_user_id:', document.getElementById('edit_user_id'));
+  console.log('edit_fecha:',   document.getElementById('edit_fecha'));
+  console.log('edit_timein:',  document.getElementById('edit_timein'));
+  console.log('edit_timeout:', document.getElementById('edit_timeout'));
+  console.log('edit_nota:',    document.getElementById('edit_nota'));
+
+  document.getElementById('edit_turn_id').value = turnId;
+  document.getElementById('edit_user_id').value = userId;
+  document.getElementById('edit_fecha').value   = fecha;
+  document.getElementById('edit_timein').value  = timein;
+  document.getElementById('edit_timeout').value = timeout;
+  document.getElementById('edit_nota').value    = nota || '';
+
+  const modalEl   = document.getElementById('modalEditar');
+  const instancia = bootstrap.Modal.getInstance(modalEl);
+  if (instancia) instancia.dispose();
+  new bootstrap.Modal(modalEl).show();
+}
 
     // ── Guardar edición jornada ──
     function guardarEdicion() {
