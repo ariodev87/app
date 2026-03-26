@@ -826,7 +826,7 @@ def horas_retribuidas_add_dia():
         cur.execute("""
             INSERT INTO turn_out_laboral (iduser, timeout)
             VALUES (%s, %s)
-        """, (user_id, fecha_fin))
+        """, (user_id, fecha_inicio))
 
         mysql.connection.commit()
         cur.close()
