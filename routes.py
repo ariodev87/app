@@ -142,7 +142,7 @@ def dashboard():
 
     anio = date.today().year
     cur.execute("""
-        SELECT vacacionesin, vacacionesout
+        SELECT vacacionesin, vacacionesout,idvac
         FROM vacaciones
         WHERE iduser = %s
           AND YEAR(vacacionesin) = %s
@@ -611,31 +611,65 @@ current_year = datetime.now().year,
 
 
 @main.route('/vacaciones', methods=['GET', 'POST'])
+@main.route('/vacaciones/<int:uid>', methods=['GET', 'POST'])  # ← ruta extra con uid
 @login_required
-def vacaciones():
+def vacaciones(uid=None):
     if session.get('role') not in (0, 1):
         flash('No tienes permisos para esta sección.', 'warning')
         return redirect(url_for('main.dashboard'))
 
+    # Si uid viene en la URL y quien lo pide es admin/supervisor → usa ese uid
+    # Si no → usa el usuario logueado
+    target_user = uid if (uid and session.get('role') in (0, 1)) else session['user_id']
+
     cur = mysql.connection.cursor()
 
     if request.method == 'POST':
-        vac_in  = request.form['vacacionesin']
-        vac_out = request.form['vacacionesout']
-        insert_vacaciones(cur, session['user_id'], vac_in, vac_out)
+        vac_in  = request.form.get('vacacionesin')
+        vac_out = request.form.get('vacacionesout')
+        insert_vacaciones(cur, target_user, vac_in, vac_out)
         mysql.connection.commit()
         flash('Vacaciones registradas correctamente.', 'success')
-        return redirect(url_for('main.vacaciones'))
+        return redirect(url_for('main.vacaciones', uid=uid) if uid else url_for('main.vacaciones'))
 
-    nombre, apellido = get_persona(cur, session['user_id'])
-    lista_vacs = get_vacaciones(cur, session['user_id'])
+    nombre, apellido = get_persona(cur, target_user)
+
+    cur.execute("""
+        SELECT vacacionesin, vacacionesout, idvac
+        FROM vacaciones
+        WHERE iduser = %s
+        ORDER BY vacacionesin DESC
+    """, (target_user,))
+    lista_vacs = cur.fetchall()
+    cur.close()
 
     return render_template(
         'register_vacaciones.html',
         nombre=nombre,
         apellido=apellido,
-        vacaciones=lista_vacs
+        vacaciones=lista_vacs,
+        current_year=date.today().year,
+        target_user=target_user  # ← para que editar/eliminar sepa a quién apunta
     )
+
+@main.route('/editar-vacacion', methods=['POST'])
+@login_required
+def editar_vacacion():
+    vacacion_id = request.form.get('vacacion_id')
+    fecha_in    = request.form.get('vacacionesin')
+    fecha_out   = request.form.get('vacacionesout')
+
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        UPDATE vacaciones
+        SET vacacionesin = %s, vacacionesout = %s
+        WHERE idvac = %s 
+    """, (fecha_in, fecha_out, vacacion_id))
+    mysql.connection.commit()
+    cur.close()
+
+    flash('Vacación actualizada correctamente.', 'success')
+    return redirect(url_for('main.vacaciones'))
 
 
 @main.route('/vacaciones/delete', methods=['POST'])
@@ -645,12 +679,16 @@ def delete_vacacion():
         flash('No tienes permisos para esta sección.', 'warning')
         return redirect(url_for('main.dashboard'))
 
-    vac_in  = request.form['vac_in']
-    vac_out = request.form['vac_out']
+    vacacion_id = request.form.get('vacacion_id')
 
     cur = mysql.connection.cursor()
-    delete_vacaciones(cur, session['user_id'], vac_in, vac_out)
+    cur.execute("""
+        DELETE FROM vacaciones
+        WHERE idvac = %s 
+    """, (vacacion_id))
     mysql.connection.commit()
+    cur.close()
+
     flash('Vacación eliminada.', 'info')
     return redirect(url_for('main.vacaciones'))
 
@@ -749,7 +787,7 @@ def admin_empleados():
             primer_dia_anio = f"{anio_actual}-01-01"
             ultimo_dia_anio = f"{anio_actual}-12-31"
             cur.execute("""
-                SELECT vacacionesin, vacacionesout
+                SELECT vacacionesin, vacacionesout, idvac
                 FROM vacaciones
                 WHERE iduser = %s AND vacacionesin BETWEEN %s AND %s
                 ORDER BY vacacionesin
@@ -1037,7 +1075,7 @@ def exportar_asistencia_pdf():
     """, (user_id, primer_dia, ultimo_dia))
     registros = cur.fetchall()
 
-    # ── HORAS RETRIBUIDAS DEL MES ── ← NUEVO
+    # ── HORAS RETRIBUIDAS DEL MES ──
     cur.execute("""
         SELECT
             hr.fecha_inicio,
@@ -1051,10 +1089,22 @@ def exportar_asistencia_pdf():
     """, (user_id, mes))
     horas_ret = cur.fetchall()
 
-    # ── TOTAL MINUTOS RETRIBUIDOS ── ← NUEVO
     total_minutos_ret = sum(r[3] for r in horas_ret if r[3]) if horas_ret else 0
     total_horas_ret   = total_minutos_ret // 60
     total_mins_ret    = total_minutos_ret % 60
+
+    # ── VACACIONES DEL MES ──
+    cur.execute("""
+        SELECT vacacionesin, vacacionesout
+        FROM vacaciones
+        WHERE iduser = %s
+          AND (
+            DATE(vacacionesin) BETWEEN %s AND %s
+            OR DATE(vacacionesout) BETWEEN %s AND %s
+          )
+        ORDER BY vacacionesin
+    """, (user_id, primer_dia, ultimo_dia, primer_dia, ultimo_dia))
+    vacaciones_mes = cur.fetchall()
 
     # ── DATOS EMPLEADO ──
     cur.execute("""
@@ -1069,25 +1119,22 @@ def exportar_asistencia_pdf():
     nif             = empleado[2] if empleado else ""
     nass            = empleado[3] if empleado else ""
 
-    # ── CALCULAR TOTAL HORAS TRABAJADAS ── ← NUEVO
-    # Suma minutos reales fichados (entrada_manana → salida_tarde descontando lunch)
+    # ── CALCULAR TOTAL HORAS TRABAJADAS ──
     total_minutos_trab = 0
     for r in registros:
         fecha, entrada, salida_comida, entrada_tarde, salida, notas = r
         if entrada and salida:
             minutos_dia = int((salida - entrada).total_seconds() // 60)
-            # Descontar pausa comida si existe
             if salida_comida and entrada_tarde:
                 pausa = int((entrada_tarde - salida_comida).total_seconds() // 60)
                 minutos_dia -= pausa
-            
             if minutos_dia > 0:
                 total_minutos_trab += minutos_dia
 
     total_horas_trab = total_minutos_trab // 60
     total_mins_trab  = total_minutos_trab % 60
 
-    # ── TOTAL COMPUTABLE (trabajadas + retribuidas) ── ← NUEVO
+    # ── TOTAL COMPUTABLE ──
     total_minutos_comp = total_minutos_trab + total_minutos_ret
     total_horas_comp   = total_minutos_comp // 60
     total_mins_comp    = total_minutos_comp % 60
@@ -1110,7 +1157,6 @@ def exportar_asistencia_pdf():
         añadir_20min      = añadir_20min,
         añadir_iniciales  = añadir_iniciales,
         total_minutos_ret = total_minutos_ret,
-        # ── NUEVOS DATOS ──
         horas_ret         = horas_ret,
         total_horas_ret   = total_horas_ret,
         total_mins_ret    = total_mins_ret,
@@ -1118,6 +1164,7 @@ def exportar_asistencia_pdf():
         total_mins_trab   = total_mins_trab,
         total_horas_comp  = total_horas_comp,
         total_mins_comp   = total_mins_comp,
+        vacaciones_mes    = vacaciones_mes,   # ← nuevo
     )
 
     pdf = BytesIO()

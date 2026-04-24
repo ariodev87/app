@@ -11,6 +11,15 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
   <style>
+    .btn-editar-vac-admin {
+  background: #eff6ff; color: #2563eb;
+  border: 1px solid #bfdbfe; border-radius: 8px;
+  padding: 5px 12px; font-size: 0.8rem; font-weight: 600;
+  text-decoration: none;
+  display: flex; align-items: center; gap: 5px;
+  transition: background 0.15s;
+}
+.btn-editar-vac-admin:hover { background: #dbeafe; color: #1d4ed8; }
     * { font-family: 'Inter', sans-serif; }
     body { background: #f1f5f9; min-height: 100vh; display: flex; }
 
@@ -578,37 +587,66 @@
       {% endif %}
 
       <!-- ── RESULTADOS VACACIONES ── -->
-      {% if vacaciones %}
-        <div class="result-panel">
-          <h5>
-            <i class="bi bi-calendar-check"></i>
-            Vacaciones {{ current_year }}
-          </h5>
-          <table class="table">
-            <thead>
-              <tr><th>Inicio</th><th>Fin</th><th>Días</th></tr>
-            </thead>
-            <tbody>
-              {% for vi, vo in vacaciones %}
-                <tr>
-                  <td><span class="badge-hora vac"><i class="bi bi-calendar3"></i> {{ vi }}</span></td>
-                  <td><span class="badge-hora vac"><i class="bi bi-calendar3"></i> {{ vo }}</span></td>
-                  <td style="font-weight:600;">
-                    {% if vi and vo %}{{ (vo - vi).days + 1 }} días{% endif %}
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      {% elif vacaciones is not none and vacaciones|length == 0 %}
-        <div class="result-panel">
-          <div class="empty-state">
-            <i class="bi bi-calendar-x"></i>
-            No hay vacaciones registradas para {{ current_year }}.
-          </div>
-        </div>
-      {% endif %}
+      <!-- ── RESULTADOS VACACIONES ── -->
+{% if vacaciones %}
+  <div class="result-panel">
+    <h5>
+      <i class="bi bi-calendar-check"></i>
+      Vacaciones — {{ nombre_empleado }}
+      <a href="{{ url_for('main.vacaciones', uid=seleccionado) }}"
+   class="btn-editar-vac-admin">
+  <i class="bi bi-pencil-square"></i> Gestionar vacaciones
+</a>
+    </h5>
+    <table class="table">
+      <thead>
+        <tr><th>Inicio</th><th>Fin</th><th>Días / Horas</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for vi, vo, idvac in vacaciones %}
+          <tr>
+            <td>
+              <span class="badge-hora vac">
+                <i class="bi bi-calendar3"></i>
+                {{ vi.strftime('%d/%m/%Y %H:%M') if vi else '' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge-hora vac">
+                <i class="bi bi-calendar3"></i>
+                {{ vo.strftime('%d/%m/%Y %H:%M') if vo else '' }}
+              </span>
+            </td>
+            <td style="font-weight:600; color:#374151;">
+  {% if vi and vo %}
+    {% set diff_segundos = (vo - vi).total_seconds() %}
+    {% set dias = (diff_segundos // 86400) | int %}
+    {% set horas_restantes = ((diff_segundos % 86400) // 3600) | int %}
+    {% if horas_restantes >= 8 %}
+      {% set dias = dias + 1 %}
+      {% set horas_restantes = horas_restantes - 8 %}
+    {% endif %}
+    {% if dias > 0 and horas_restantes > 0 %}
+      {{ dias }} día{{ 's' if dias != 1 }} y {{ horas_restantes }} h
+    {% elif dias > 0 %}
+      {{ dias }} día{{ 's' if dias != 1 }}
+    {% else %}
+      {{ horas_restantes }} h
+    {% endif %}
+  {% endif %}
+</td>
+            <td>
+              <a href="{{ url_for('main.vacaciones', uid=seleccionado) }}"
+   class="btn-editar-vac-admin">
+  <i class="bi bi-pencil-square"></i> Gestionar vacaciones
+</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
 
       {% if accion == 'retribuidas' %}
 <div class="table-container mt-4">

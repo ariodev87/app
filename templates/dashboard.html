@@ -228,7 +228,7 @@
           <div class="vac-card">
             <h5><i class="bi bi-calendar-sun"></i> Mis Vacaciones {{ current_year }}</h5>
             {% if vacaciones_anio %}
-              {% for vi, vo in vacaciones_anio %}
+              {% for vi, vo ,idvac  in vacaciones_anio %}
                 <div class="vac-item">
                   <div class="vac-dates">
                     <i class="bi bi-calendar3"></i> {{ vi }} → {{ vo }}
