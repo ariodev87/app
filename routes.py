@@ -1766,6 +1766,102 @@ def update_horas_retribuidas(id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+
+@main.route('/admin/usuarios-eliminados')
+@login_required
+def admin_usuarios_gestion():
+    if session.get('role') != 0:
+        flash('Sin permisos.', 'warning')
+        return redirect(url_for('main.dashboard'))
+
+    cur = mysql.connection.cursor()
+
+    # Usuarios activos
+    cur.execute("""
+        SELECT iduser, nombre, apellido, correo, departamento, nif, nass
+        FROM personas
+        ORDER BY nombre ASC
+    """)
+    activos = cur.fetchall()
+
+    # Usuarios eliminados
+    cur.execute("""
+        SELECT iduser, nombre, apellido, correo, departamento, nif, nass,
+               eliminado_fecha, eliminado_motivo
+        FROM usuarios_eliminados
+        ORDER BY eliminado_fecha DESC
+    """)
+    eliminados = cur.fetchall()
+    cur.close()
+
+    return render_template('admin_usuarios_gestion.html',
+                           activos=activos,
+                           eliminados=eliminados)
+
+
+@main.route('/admin/eliminar-usuario', methods=['POST'])
+@login_required
+def eliminar_usuario():
+    if session.get('role') != 0:
+        flash('Sin permisos.', 'warning')
+        return redirect(url_for('main.dashboard'))
+
+    user_id = request.form.get('user_id')
+    motivo  = request.form.get('motivo', '').strip()
+
+    cur = mysql.connection.cursor()
+
+    # Mover a usuarios_eliminados
+    cur.execute("""
+        INSERT INTO usuarios_eliminados
+            (iduser, nombre, apellido, correo, departamento, nif, nass,
+             eliminado_por, eliminado_fecha, eliminado_motivo)
+        SELECT iduser, nombre, apellido, correo, departamento, nif, nass,
+               %s, NOW(), %s
+        FROM personas WHERE iduser = %s
+    """, (session['user_id'], motivo, user_id))
+
+    # Borrar de personas
+    cur.execute("DELETE FROM personas WHERE iduser = %s", (user_id,))
+
+    mysql.connection.commit()
+    cur.close()
+
+    flash('Usuario eliminado correctamente.', 'success')
+    return redirect(url_for('main.admin_usuarios_gestion'))
+
+
+@main.route('/admin/restaurar-usuario', methods=['POST'])
+@login_required
+def restaurar_usuario():
+    if session.get('role') != 0:
+        flash('Sin permisos.', 'warning')
+        return redirect(url_for('main.dashboard'))
+
+    user_id = request.form.get('user_id')
+
+    cur = mysql.connection.cursor()
+
+    # Restaurar a personas
+    cur.execute("""
+        INSERT INTO personas
+            (iduser, nombre, apellido, correo, departamento, nif, nass)
+        SELECT iduser, nombre, apellido, correo, departamento, nif, nass
+        FROM usuarios_eliminados WHERE iduser = %s
+    """, (user_id,))
+
+    # Borrar de eliminados
+    cur.execute("DELETE FROM usuarios_eliminados WHERE iduser = %s", (user_id,))
+
+    mysql.connection.commit()
+    cur.close()
+
+    flash('Usuario restaurado correctamente.', 'success')
+    return redirect(url_for('main.admin_usuarios_gestion'))
+
+
+
+
 @main.route('/logout')
 @login_required
 def logout():

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestión de Usuarios</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    body { background: #f1f5f9; }
+    .topbar {
+      background: #fff; border-bottom: 1px solid #e5e7eb;
+      padding: 0 28px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 99;
+    }
+    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
+    .content-area { padding: 28px; }
+    .panel {
+      background: #fff; border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 24px; margin-bottom: 28px;
+    }
+    .panel-title {
+      font-size: 0.95rem; font-weight: 600; color: #1e293b;
+      margin-bottom: 16px; padding-bottom: 12px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .panel-title i { font-size: 1.1rem; }
+    .table { font-size: 0.85rem; color: #374151; margin: 0; }
+    .table thead th {
+      background: #f8fafc; color: #64748b;
+      font-size: 0.75rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      border-bottom: 1px solid #e5e7eb; padding: 10px 14px;
+    }
+    .table tbody td {
+      padding: 10px 14px; border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .badge-dept {
+      background: #eff6ff; color: #2563eb;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 500;
+      border: 1px solid #bfdbfe;
+    }
+    .badge-eliminado {
+      background: #fef2f2; color: #dc2626;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 500;
+      border: 1px solid #fecaca;
+    }
+    .btn-eliminar {
+      background: #fee2e2; color: #dc2626;
+      border: none; border-radius: 8px;
+      padding: 5px 12px; font-size: 0.8rem;
+      cursor: pointer; font-weight: 500;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: background 0.15s;
+    }
+    .btn-eliminar:hover { background: #fecaca; }
+    .btn-restaurar {
+      background: #dcfce7; color: #16a34a;
+      border: none; border-radius: 8px;
+      padding: 5px 12px; font-size: 0.8rem;
+      cursor: pointer; font-weight: 500;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: background 0.15s;
+    }
+    .btn-restaurar:hover { background: #bbf7d0; }
+    .empty-state {
+      text-align: center; padding: 32px 0;
+      color: #94a3b8; font-size: 0.875rem;
+    }
+    .empty-state i { font-size: 2rem; display: block; margin-bottom: 8px; color: #cbd5e1; }
+    .search-input {
+      border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 8px 14px; font-size: 0.85rem; width: 260px;
+    }
+    .search-input:focus { outline: none; border-color: #2563eb; }
+  </style>
+</head>
+<body>
+{% include '_sidebar.html' %}
+  <div class="topbar">
+    <h1 class="page-title">
+      <i class="bi bi-people-fill" style="color:#2563eb; margin-right:8px;"></i>
+      Gestión de Usuarios
+    </h1>
+    <a href="{{ url_for('main.admin_empleados') }}"
+       style="font-size:0.85rem; color:#64748b; text-decoration:none;">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+  </div>
+
+  <div class="content-area">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show mb-4"
+               style="border-radius:10px; font-size:0.875rem;">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- ── USUARIOS ACTIVOS ── -->
+    <div class="panel">
+      <div class="panel-title">
+        <i class="bi bi-person-check-fill" style="color:#2563eb;"></i>
+        Usuarios Activos
+        <span style="margin-left:auto;">
+          <input type="text" class="search-input" id="buscar-activos"
+                 placeholder="🔍 Buscar usuario..." oninput="filtrarTabla('activos')">
+        </span>
+      </div>
+
+      {% if activos %}
+        <table class="table" id="tabla-activos">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>Correo</th>
+              <th>Departamento</th>
+              <th>NIF</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in activos %}
+              <tr>
+                <td style="color:#94a3b8;">#{{ u[0] }}</td>
+                <td style="font-weight:600;">{{ u[1] }}</td>
+                <td>{{ u[2] }}</td>
+                <td style="color:#64748b;">{{ u[3] }}</td>
+                <td><span class="badge-dept">{{ u[4] or '—' }}</span></td>
+                <td style="color:#94a3b8;">{{ u[5] or '—' }}</td>
+                <td>
+                  <button class="btn-eliminar"
+                          onclick="abrirModalEliminar('{{ u[0] }}', '{{ u[1] }} {{ u[2] }}')">
+                    <i class="bi bi-trash"></i> Eliminar
+                  </button>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <i class="bi bi-person-x"></i>
+          No hay usuarios activos.
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- ── USUARIOS ELIMINADOS ── -->
+    <div class="panel">
+      <div class="panel-title">
+        <i class="bi bi-trash-fill" style="color:#dc2626;"></i>
+        Usuarios Eliminados
+        <span style="margin-left:auto;">
+          <input type="text" class="search-input" id="buscar-eliminados"
+                 placeholder="🔍 Buscar..." oninput="filtrarTabla('eliminados')">
+        </span>
+      </div>
+
+      {% if eliminados %}
+        <table class="table" id="tabla-eliminados">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Apellido</th>
+              <th>Correo</th>
+              <th>Departamento</th>
+              <th>NIF</th>
+              <th>Eliminado</th>
+              <th>Motivo</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in eliminados %}
+              <tr>
+                <td style="color:#94a3b8;">#{{ u[0] }}</td>
+                <td style="font-weight:600;">{{ u[1] }}</td>
+                <td>{{ u[2] }}</td>
+                <td style="color:#64748b;">{{ u[3] }}</td>
+                <td><span class="badge-dept">{{ u[4] or '—' }}</span></td>
+                <td style="color:#94a3b8;">{{ u[5] or '—' }}</td>
+                <td>
+                  <span class="badge-eliminado">
+                    {{ u[7].strftime('%d/%m/%Y') if u[7] else '—' }}
+                  </span>
+                </td>
+                <td style="color:#64748b; font-size:0.8rem;">{{ u[8] or '—' }}</td>
+                <td>
+                  <form method="post" action="{{ url_for('main.restaurar_usuario') }}"
+                        style="margin:0;"
+                        onsubmit="return confirm('¿Restaurar a {{ u[1] }} {{ u[2] }}?')">
+                    <input type="hidden" name="user_id" value="{{ u[0] }}">
+                    <button type="submit" class="btn-restaurar">
+                      <i class="bi bi-arrow-counterclockwise"></i> Restaurar
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <i class="bi bi-check-circle"></i>
+          No hay usuarios eliminados.
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- ── MODAL ELIMINAR ── -->
+  <div class="modal fade" id="modalEliminar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:12px;">
+        <div class="modal-header" style="border-bottom:1px solid #f1f5f9;">
+          <h5 class="modal-title" style="font-size:0.95rem; font-weight:600;">
+            <i class="bi bi-exclamation-triangle-fill" style="color:#dc2626;"></i>
+            Eliminar Usuario
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="post" action="{{ url_for('main.eliminar_usuario') }}">
+          <div class="modal-body">
+            <input type="hidden" name="user_id" id="modal-user-id">
+            <p style="font-size:0.875rem; color:#374151; margin-bottom:16px;">
+              ¿Eliminar a <strong id="modal-nombre-usuario"></strong>?
+              El usuario se moverá a la lista de eliminados y podrá restaurarse.
+            </p>
+            <div class="mb-3">
+              <label style="font-size:0.82rem; font-weight:600; color:#374151;">
+                Motivo (opcional)
+              </label>
+              <input type="text" name="motivo" class="form-control mt-1"
+                     placeholder="Ej: Baja voluntaria, fin de contrato..."
+                     style="font-size:0.875rem;">
+            </div>
+          </div>
+          <div class="modal-footer" style="border-top:1px solid #f1f5f9;">
+            <button type="button" class="btn btn-light btn-sm"
+                    data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-danger btn-sm">
+              <i class="bi bi-trash"></i> Confirmar eliminación
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function abrirModalEliminar(userId, nombre) {
+      document.getElementById('modal-user-id').value = userId;
+      document.getElementById('modal-nombre-usuario').textContent = nombre;
+      new bootstrap.Modal(document.getElementById('modalEliminar')).show();
+    }
+
+    function filtrarTabla(tipo) {
+      const input = document.getElementById('buscar-' + tipo).value.toLowerCase();
+      const filas = document.querySelectorAll('#tabla-' + tipo + ' tbody tr');
+      filas.forEach(fila => {
+        fila.style.display = fila.textContent.toLowerCase().includes(input) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

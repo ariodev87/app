@@ -32,6 +32,13 @@
       <span class="link-text">Usuarios en Lote</span>
     </a>
     {% endif %}
+    {% if dep == 'it' or session.get('user_id') == 1 %}
+    <a href="{{ url_for('main.admin_usuarios_gestion') }}"
+       class="nav-item-link {% if request.endpoint == 'main.admin_usuarios_gestion' %}active{% endif %}">
+      <i class="bi bi-person-lines-fill"></i>
+      <span class="link-text">Gestion de Usuarios</span>
+    </a>
+    {% endif %}
     {% if role|int == 0 and dep in ['it', 'administración', 'administracion', 'melia', 'financiero'] %}
     <a href="{{ url_for('main.dashboardit') }}"
        class="nav-item-link {% if request.endpoint == 'main.dashboardit' %}active{% endif %}">
