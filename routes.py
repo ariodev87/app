@@ -664,7 +664,7 @@ def editar_vacacion():
         UPDATE vacaciones
         SET vacacionesin = %s, vacacionesout = %s
         WHERE idvac = %s 
-    """, (fecha_in, fecha_out, vacacion_id))
+    """, (fecha_in, fecha_out, vacacion_id,))
     mysql.connection.commit()
     cur.close()
 
@@ -685,7 +685,7 @@ def delete_vacacion():
     cur.execute("""
         DELETE FROM vacaciones
         WHERE idvac = %s 
-    """, (vacacion_id))
+    """, (vacacion_id,))
     mysql.connection.commit()
     cur.close()
 
