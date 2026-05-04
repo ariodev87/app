@@ -1034,151 +1034,134 @@ def asistencia_mes():
 # ══════════════════════════════════════════════════════
 #  EXPORTAR PDF — turn_in_laboral + turn_out_laboral
 # ══════════════════════════════════════════════════════
+from io import BytesIO
+from datetime import datetime
+from calendar import monthrange
+from flask import request, redirect, url_for, flash, session, render_template, make_response
+
 @main.route('/exportar-asistencia-pdf', methods=['POST'])
 @login_required
 def exportar_asistencia_pdf():
+    # 1. Validación de permisos
     if session.get('role') != 0:
         flash('No tienes permisos.', 'warning')
         return redirect(url_for('main.dashboard'))
 
-    user_id      = int(request.form.get('user_id'))
-    mes          = request.form.get('mes')
+    # 2. Captura y normalización de parámetros
+    user_id = int(request.form.get('user_id', 0))
+    mes = request.form.get('mes', '')
     añadir_20min = request.form.get('añadir_20min') == 'on'
     añadir_iniciales = request.form.get('añadir_iniciales') == 'on'
-    year, month  = map(int, mes.split('-'))
-    primer_dia   = f"{year}-{month:02d}-01"
-    ultimo_dia_num = monthrange(year, month)[1]
-    ultimo_dia   = f"{year}-{month:02d}-{ultimo_dia_num}"
+    
+    if not mes or user_id == 0:
+        flash('Datos de solicitud incompletos.', 'danger')
+        return redirect(url_for('main.vacaciones'))
 
+    year, month = map(int, mes.split('-'))
+    primer_dia = f"{year}-{month:02d}-01"
+    ultimo_dia_num = monthrange(year, month)[1]
+    ultimo_dia = f"{year}-{month:02d}-{ultimo_dia_num}"
+
+    # 3. Inicialización segura de variables
+    total_minutos_ret = 0
+    total_horas_ret = 0
+    total_mins_ret = 0
+    total_minutos_trab = 0
+    
     cur = mysql.connection.cursor()
 
     # ── ASISTENCIA ──
     cur.execute("""
-        SELECT
-            DATE(til.timein)             AS fecha,
-            MIN(til.timein)              AS entrada_manana,
-            tl.salida                    AS salida_comida,
-            tl.entrada                   AS entrada_tarde,
-            MAX(tol.timeout)             AS salida_tarde,
-            GROUP_CONCAT(DISTINCT til.nota SEPARATOR ' | ') AS notas
+        SELECT DATE(til.timein) AS fecha, MIN(til.timein) AS entrada_manana, 
+               tl.salida AS salida_comida, tl.entrada AS entrada_tarde, 
+               MAX(tol.timeout) AS salida_tarde, 
+               GROUP_CONCAT(DISTINCT til.nota SEPARATOR ' | ') AS notas
         FROM turn_in_laboral til
-        LEFT JOIN turn_out_laboral tol
-            ON til.iduser = tol.iduser
-            AND DATE(til.timein) = DATE(tol.timeout)
-        LEFT JOIN turn_lunch tl
-            ON til.iduser = tl.iduser
-            AND DATE(til.timein) = DATE(tl.salida)
-        WHERE til.iduser = %s
-          AND DATE(til.timein) BETWEEN %s AND %s
+        LEFT JOIN turn_out_laboral tol ON til.iduser = tol.iduser AND DATE(til.timein) = DATE(tol.timeout)
+        LEFT JOIN turn_lunch tl ON til.iduser = tl.iduser AND DATE(til.timein) = DATE(tl.salida)
+        WHERE til.iduser = %s AND DATE(til.timein) BETWEEN %s AND %s
         GROUP BY DATE(til.timein), tl.salida, tl.entrada
         ORDER BY fecha
     """, (user_id, primer_dia, ultimo_dia))
     registros = cur.fetchall()
 
-    # ── HORAS RETRIBUIDAS DEL MES ──
+    # ── HORAS RETRIBUIDAS ──
     cur.execute("""
-        SELECT
-            hr.fecha_inicio,
-            hr.fecha_fin,
-            hr.motivos,
-            TIMESTAMPDIFF(MINUTE, hr.fecha_inicio, hr.fecha_fin) AS minutos
+        SELECT hr.fecha_inicio, hr.fecha_fin, hr.motivos, 
+               TIMESTAMPDIFF(MINUTE, hr.fecha_inicio, hr.fecha_fin) AS minutos
         FROM horas_retribuidas hr
-        WHERE hr.user_id = %s
-          AND DATE_FORMAT(hr.fecha_inicio, '%%Y-%%m') = %s
+        WHERE hr.user_id = %s AND DATE_FORMAT(hr.fecha_inicio, '%%Y-%%m') = %s
         ORDER BY hr.fecha_inicio ASC
     """, (user_id, mes))
     horas_ret = cur.fetchall()
+    
+    if horas_ret:
+        total_minutos_ret = sum(r[3] for r in horas_ret if r[3] or 0)
+        total_horas_ret = total_minutos_ret // 60
+        total_mins_ret = total_minutos_ret % 60
 
-    total_minutos_ret = sum(r[3] for r in horas_ret if r[3]) if horas_ret else 0
-    total_horas_ret   = total_minutos_ret // 60
-    total_mins_ret    = total_minutos_ret % 60
-
-    # ── VACACIONES DEL MES ──
+    # ── VACACIONES (Normalizadas) ──
     cur.execute("""
-        SELECT vacacionesin, vacacionesout
-        FROM vacaciones
-        WHERE iduser = %s
-          AND (
-            DATE(vacacionesin) BETWEEN %s AND %s
-            OR DATE(vacacionesout) BETWEEN %s AND %s
-          )
+        SELECT vacacionesin, vacacionesout FROM vacaciones
+        WHERE iduser = %s AND DATE(vacacionesin) <= %s AND DATE(vacacionesout) >= %s
         ORDER BY vacacionesin
-    """, (user_id, primer_dia, ultimo_dia, primer_dia, ultimo_dia))
-    vacaciones_mes = cur.fetchall()
+    """, (user_id, ultimo_dia, primer_dia))
+    vacaciones_raw = cur.fetchall()
+    
+    vacaciones_mes = []
+    for vin, vout in vacaciones_raw:
+        if vin and vout:
+            v_start = vin if isinstance(vin, datetime) else datetime.strptime(str(vin), '%Y-%m-%d %H:%M:%S')
+            v_end = vout if isinstance(vout, datetime) else datetime.strptime(str(vout), '%Y-%m-%d %H:%M:%S')
+            vacaciones_mes.append((v_start, v_end))
 
-    # ── DATOS EMPLEADO ──
-    cur.execute("""
-        SELECT nombre, apellido, nif, nass
-        FROM personas WHERE iduser = %s
-    """, (user_id,))
+    # ── EMPLEADO ──
+    cur.execute("SELECT nombre, apellido, nif, nass FROM personas WHERE iduser = %s", (user_id,))
     empleado = cur.fetchone()
     cur.close()
 
-    nombre_empleado = f"{empleado[0]} {empleado[1]}" if empleado else "Desconocido"
-    nombre_mes      = MESES_ES[month]
-    nif             = empleado[2] if empleado else ""
-    nass            = empleado[3] if empleado else ""
-
-    # ── CALCULAR TOTAL HORAS TRABAJADAS ──
-    total_minutos_trab = 0
+    # ── CALCULAR TOTAL TRABAJADAS ──
     for r in registros:
-        fecha, entrada, salida_comida, entrada_tarde, salida, notas = r
-        if entrada and salida:
-            minutos_dia = int((salida - entrada).total_seconds() // 60)
-            if salida_comida and entrada_tarde:
-                pausa = int((entrada_tarde - salida_comida).total_seconds() // 60)
-                minutos_dia -= pausa
+        if r[1] and r[4]:
+            minutos_dia = int((r[4] - r[1]).total_seconds() // 60)
+            if r[2] and r[3]:
+                minutos_dia -= int((r[3] - r[2]).total_seconds() // 60)
             if minutos_dia > 0:
                 total_minutos_trab += minutos_dia
-
+                
     total_horas_trab = total_minutos_trab // 60
-    total_mins_trab  = total_minutos_trab % 60
-
-    # ── TOTAL COMPUTABLE ──
+    total_mins_trab = total_minutos_trab % 60
+    
     total_minutos_comp = total_minutos_trab + total_minutos_ret
-    total_horas_comp   = total_minutos_comp // 60
-    total_mins_comp    = total_minutos_comp % 60
-
+    
+    # 4. Render final con retorno obligatorio
     html = render_template(
         'pdf_asistencia.html',
-        empleado          = nombre_empleado,
-        mes               = f"{nombre_mes} {year}",
-        registros         = registros,
-        current_year      = date.today().year,
-        ultimo_dia        = ultimo_dia_num,
-        nombre_mes        = nombre_mes,
-        anyo              = year,
-        empresa           = 'RESORTS ADVANTAGE, SPAIN, S.L.U.',
-        cif               = 'B82778374',
-        centro            = 'RESORTS ADVANTAGE, SPAIN, S.L.U.',
-        ccc               = '28/1584100/84',
-        nif               = nif,
-        num_afiliacion    = nass,
-        añadir_20min      = añadir_20min,
-        añadir_iniciales  = añadir_iniciales,
-        total_minutos_ret = total_minutos_ret,
-        horas_ret         = horas_ret,
-        total_horas_ret   = total_horas_ret,
-        total_mins_ret    = total_mins_ret,
-        total_horas_trab  = total_horas_trab,
-        total_mins_trab   = total_mins_trab,
-        total_horas_comp  = total_horas_comp,
-        total_mins_comp   = total_mins_comp,
-        vacaciones_mes    = vacaciones_mes,   # ← nuevo
+        empleado=f"{empleado[0]} {empleado[1]}" if empleado else "Desconocido",
+        mes=f"{MESES_ES[month]} {year}",
+        registros=registros,
+        horas_ret=horas_ret,
+        total_minutos_ret=total_minutos_ret,
+        total_horas_ret=total_horas_ret,
+        total_mins_ret=total_mins_ret,
+        total_horas_trab=total_horas_trab,
+        total_mins_trab=total_mins_trab,
+        total_horas_comp=total_minutos_comp // 60,
+        total_mins_comp=total_minutos_comp % 60,
+        vacaciones_mes=vacaciones_mes,
+        month=month,
+        year=year,
+        ultimo_dia_num=ultimo_dia_num
     )
 
     pdf = BytesIO()
     pisa.CreatePDF(html, dest=pdf)
-
+    
     response = make_response(pdf.getvalue())
     response.headers['Content-Type'] = 'application/pdf'
-    response.headers['Content-Disposition'] = (
-        f'attachment; filename=Registro-{nombre_mes}-{year}-{nombre_empleado}.pdf'
-    )
-    return response
-
-
-
+    response.headers['Content-Disposition'] = f'attachment; filename=Registro-{mes}-{user_id}.pdf'
+    
+    return response # <--- ESTO ASEGURA QUE LA FUNCIÓN SIEMPRE DEVUELVA ALGO
 # ══════════════════════════════════════════════════════
 #  SALIDA A COMER
 # ══════════════════════════════════════════════════════

@@ -140,7 +140,6 @@
 </head>
 <body>
 
-  <!-- ENCABEZADO -->
   <div class="titulo">Listado Resumen mensual del registro de jornada (detalle horario)</div>
 
   <table class="info-empresa">
@@ -170,7 +169,6 @@
     </tr>
   </table>
 
-  <!-- TABLA DE REGISTROS -->
   <table class="registro">
     <thead>
       <tr class="grupo">
@@ -188,7 +186,7 @@
     </thead>
     <tbody>
 
-      {# ── Dict de registros de asistencia por día ── #}
+      {# ── REGISTROS POR DÍA ── #}
       {% set rd = {} %}
       {% for fecha, em, sm, et, st, notas in registros %}
         {% if fecha %}
@@ -204,33 +202,43 @@
         {% endif %}
       {% endfor %}
 
-      {# ── Dict de vacaciones por día ── #}
-{% set vd = {} %}
-{% for vin, vout in vacaciones_mes %}
-  {% if vin and vout %}
-    {% set total_segundos = (vout - vin).total_seconds() %}
-    {% set es_completo = total_segundos >= 28800 %}  {# 28800 = 8h * 3600 #}
-    {% set dia_ini = vin.day %}
-    {% set dia_fin = vout.day %}
-    {% for dia in range(1, 32) %}
-      {% if dia >= dia_ini and dia <= dia_fin %}
-        {% if es_completo %}
-          {% set _ = vd.update({dia: {'tipo': 'completo'}}) %}
-        {% else %}
-          {% set _ = vd.update({dia: {
-            'tipo': 'horas',
-            'desde': vin.strftime('%H:%M'),
-            'hasta': vout.strftime('%H:%M')
-          }}) %}
+      {# ── VACACIONES POR DÍA ── #}
+      {% set vd = {} %}
+      {% for vin, vout in vacaciones_mes %}
+        {% if vin and vout %}
+
+          {# recorte al mes actual #}
+          {% set d_start = vin.day if vin.month == month and vin.year == year else 1 %}
+          {% set d_end = vout.day if vout.month == month and vout.year == year else ultimo_dia_num %}
+
+          {# si es el mismo día y no cubre jornada completa -> vacaciones por horas #}
+          {% set mismo_dia = (vin.year == vout.year and vin.month == vout.month and vin.day == vout.day) %}
+          {% set segundos = (vout - vin).total_seconds() %}
+          {% set es_horas = mismo_dia and segundos < 28800 %}
+
+          {% for dia in range(d_start | int, d_end | int + 1) %}
+            {% if es_horas %}
+              {% set _ = vd.update({
+                dia: {
+                  'tipo': 'horas',
+                  'desde': vin.strftime('%H:%M'),
+                  'hasta': vout.strftime('%H:%M')
+                }
+              }) %}
+            {% else %}
+              {% set _ = vd.update({
+                dia: {
+                  'tipo': 'completo'
+                }
+              }) %}
+            {% endif %}
+          {% endfor %}
         {% endif %}
-      {% endif %}
-    {% endfor %}
-  {% endif %}
-{% endfor %}
+      {% endfor %}
 
       {% set acum = [0] %}
 
-      {% for dia in range(1, 32) %}
+      {% for dia in range(1, ultimo_dia_num + 1) %}
         {% set r = rd.get(dia) %}
         {% set v = vd.get(dia) %}
 
@@ -249,7 +257,6 @@
           <td class="col-dia"><strong>{{ dia }}</strong></td>
 
           {% if v and v.tipo == 'completo' %}
-            {# Vacaciones día completo: ocupa las 4 columnas de hora #}
             <td class="col-hora vac-completo" colspan="4">VACACIONES</td>
           {% else %}
             <td class="col-hora">{{ r.em.strftime('%H:%M') if r and r.em else '' }}</td>
@@ -261,7 +268,6 @@
           <td class="col-firma" style="text-align:left; padding:2px 4px; font-size:6pt;">
             {% set iniciales %}{{ empleado.split()[0][0] | upper }}{{ empleado.split()[-1][0] | upper }}{% endset %}
 
-            {# Nota de vacaciones por horas #}
             {% if v and v.tipo == 'horas' %}
               <span class="vac-nota">Vacaciones {{ v.desde }} - {{ v.hasta }}</span>
               {% if r %}
@@ -271,7 +277,6 @@
                 {% endif %}
               {% endif %}
 
-            {# Nota normal sin vacaciones #}
             {% elif r %}
               {% if añadir_iniciales and r.notas %}
                 {{ iniciales }} - {{ r.notas }}
@@ -288,15 +293,18 @@
       {# ── TOTALES ── #}
       {% set total_h = (acum[0] / 3600) | int %}
       {% set total_m = ((acum[0] % 3600) / 60) | int %}
-      {% set total_comp_min = ((acum[0] / 60) | int) + total_minutos_ret %}
+      {% set minutos_retribuidos = total_minutos_ret | default(0) %}
+      {% set total_horas_ret_safe = total_horas_ret | default(0) %}
+      {% set total_mins_ret_safe = total_mins_ret | default(0) %}
+      {% set total_comp_min = ((acum[0] / 60) | int) + minutos_retribuidos %}
       {% set total_horas_comp_calc = total_comp_min // 60 %}
-      {% set total_mins_comp_calc  = total_comp_min % 60 %}
+      {% set total_mins_comp_calc = total_comp_min % 60 %}
 
       <tr class="fila-total">
         <td style="text-align:right; padding-right:5px;">TOTAL HORAS PRESENCIALES:</td>
         <td>{{ total_h }}h {{ total_m }}m</td>
         <td style="text-align:right; padding-right:5px;">H. RETRIBUIDAS:</td>
-        <td>{{ total_horas_ret }}h {{ total_mins_ret }}m</td>
+        <td>{{ total_horas_ret_safe }}h {{ total_mins_ret_safe }}m</td>
         <td style="text-align:right; padding-right:5px;">TOTAL:</td>
         <td>{{ total_horas_comp_calc }}h {{ total_mins_comp_calc }}m</td>
       </tr>
@@ -304,13 +312,13 @@
     </tbody>
   </table>
 
-  <!-- PIE -->
   <div class="pie">
     En &nbsp;&nbsp;<strong>Madrid</strong>&nbsp;&nbsp; a &nbsp;&nbsp;
     <strong>{{ ultimo_dia }}</strong>&nbsp;&nbsp; de &nbsp;&nbsp;
     <strong>{{ nombre_mes }}</strong>&nbsp;&nbsp; de &nbsp;&nbsp;
     <strong>{{ anyo }}</strong>
   </div>
+
   <table class="firmas">
     <tr>
       <td>Firma de la empresa:</td>
@@ -320,6 +328,7 @@
       </td>
     </tr>
   </table>
+
   <div class="footer-doc">
     Registro realizado en cumplimiento de la letra h) del artículo 1 del R.D.-Ley 16/2013, de 20 de diciembre
     por el que se modifica el artículo 12.5 del E.T., por el que se establece que "La jornada de los trabajadores
