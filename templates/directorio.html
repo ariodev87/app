@@ -207,6 +207,19 @@
     .av-reservas { background: linear-gradient(135deg, #059669, #10b981); }
     .av-cobros   { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
     .av-otros    { background: linear-gradient(135deg, #475569, #64748b); }
+    .av-numeros-cliente-servicio {background: linear-gradient(135deg, #766f0f, #b8ad14); }
+    .av-numeros-ra {background: linear-gradient(135deg, #760f0f, #b81414); }
+    .av-transferencias {background: linear-gradient(135deg, #760f6d, #b8148f);}
+    .transfer-note {
+  margin: -4px 4px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.78rem;
+}
+
 
     .no-results { text-align: center; padding: 48px 0; color: #94a3b8; }
     .no-results i { font-size: 2.5rem; display: block; margin-bottom: 12px; }
@@ -427,6 +440,37 @@
           </div>
           <div class="dir-grid" id="gridOtros"></div>
         </div>
+             <!-- ══ Números por Cliente /Servicio ══ -->
+        <div class="section-block" data-section>
+          <div class="section-title">
+            <i class="bi bi-three-dots" style="color:#475569;"></i>
+            Números por Cliente /Servicio
+          </div>
+          <div class="dir-grid" id="gridNumerosClienteServicio"></div>
+        </div>
+          <!-- ══ Números RA ══ -->
+        <div class="section-block" data-section>
+          <div class="section-title">
+            <i class="bi bi-three-dots" style="color:#475569;"></i>
+            Números RA
+          </div>
+          <div class="dir-grid" id="gridNumerosRA"></div>
+        </div>
+        
+        <div class="section-block" data-section>
+  <div class="section-title">
+    <i class="bi bi-arrow-left-right" style="color:#0f766e;"></i>
+    Códigos de transferencia
+  </div>
+  <div class="dir-grid" id="gridTransferencias"></div>
+</div>
+
+<div class="transfer-note">
+  <strong>Leyenda:</strong>
+  X=1 ES · 2 EN · 3 PT · 4 DE · 5 FR · 6 RU · 7 IT
+</div>
+
+
 
       </div><!-- /directorioWrap -->
 
@@ -474,7 +518,33 @@ const DIRECTORIO = {
     { name: 'Sala de Juntas / Conf. Room', ext: '422', initials: '🔇', offline: true, note: 'No conectado' },
     { name: 'Altavoz / Speaker',           ext: '438', initials: '🔇', offline: true, note: 'No conectado' },
     { name: 'Inalámbrico',                 ext: '437', initials: '📵', offline: true, note: 'No existe' },
-  ]
+  ],
+  numerosClienteServicio: [
+    { name: 'Clubs de Melia',ext: '911987403', initials: 'CM' },
+    { name: 'Travel Smart y Prime Travelers',           ext: '915723108', initials: 'TS'},
+    { name: 'Krystal Vacation Club',           ext: '915727095', initials: 'KVC' },
+    { name: 'Club vacacional (Cay/Coco/Carac/TPC)',           ext: '915722454', initials: 'CV' },
+  ],
+    numerosRA: [
+    { name: 'Recepción / Administración',ext: '915721168', initials: 'RA' },
+    { name: 'Fax',           ext: '915727096', initials: 'FX'},
+  ],
+  transferencias: [
+  { name: 'Prime Travelers Club', ext: '27X', initials: 'PT' },
+  { name: 'Destinations Network', ext: '28X', initials: 'DN' },
+  { name: 'Destinations Financiero', ext: '29X', initials: 'DF' },
+  { name: 'Club Melia Financiero', ext: '30X', initials: 'CM' },
+  { name: 'Club Melia Network', ext: '34X', initials: 'CM' },
+  { name: 'Circle Financiero', ext: '37X', initials: 'CF' },
+  { name: 'Circle Network', ext: '36X', initials: 'CN' },
+  { name: 'Infinite Black', ext: '36B', initials: 'IB' },
+  { name: 'MVC Financiero', ext: '33X', initials: 'MF' },
+  { name: 'MVC Reservas', ext: '39X', initials: 'MR' },
+  { name: 'Member Services Melia', ext: '35X', initials: 'MS' },
+  { name: 'Travel Smart', ext: '31X', initials: 'TS' },
+  { name: 'Krystal Vacation Club', ext: '32X', initials: 'KV' },
+  { name: '(Cayena/Coco B./Caracol/TPC)', ext: '38X', initials: 'CC' }
+]
 };
 
 const COBROS_COLORS = [
@@ -512,6 +582,9 @@ function renderSection(gridId, items, avClass, colors) {
 renderSection('gridReservas', DIRECTORIO.reservas, 'av-reservas', null);
 renderSection('gridCobros',   DIRECTORIO.cobros,   'av-cobros',   COBROS_COLORS);
 renderSection('gridOtros',    DIRECTORIO.otros,    'av-otros',    null);
+renderSection('gridNumerosClienteServicio', DIRECTORIO.numerosClienteServicio, 'av-numeros-cliente-servicio', null);
+renderSection('gridNumerosRA', DIRECTORIO.numerosRA, 'av-numeros-ra', null);
+renderSection('gridTransferencias', DIRECTORIO.transferencias, 'av-transferencias', null);
 
 // Buscador
 document.getElementById('searchInput').addEventListener('input', function () {
