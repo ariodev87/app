@@ -2,108 +2,395 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%232563eb' viewBox='0 0 16 16'><path d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z'/><path d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z'/></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%232563eb' viewBox='0 0 16 16'><path d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z'/><path d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z'/></svg>">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+
   <style>
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #f1f5f9; min-height: 100vh; display: flex; }
+    /* ─────────────────────────────────────
+       TOKENS — Apple/macOS visual language
+    ───────────────────────────────────── */
+    :root {
+      --font:         'Satoshi', 'Inter', system-ui, sans-serif;
+      --bg:           #f5f5f7;
+      --surface:      #ffffff;
+      --border:       rgba(0,0,0,0.07);
+      --border-row:   rgba(0,0,0,0.04);
+      --text:         #1d1d1f;
+      --text-2:       rgba(0,0,0,0.50);
+      --text-3:       rgba(0,0,0,0.30);
+      --accent:       #2563eb;
+      --radius-card:  20px;
+      --radius-panel: 16px;
+      --radius-sm:    8px;
+      --shadow-card:  0 1px 1px rgba(0,0,0,0.03), 0 4px 18px rgba(0,0,0,0.06);
+      --transition:   150ms cubic-bezier(0.25,0.46,0.45,0.94);
+    }
 
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); min-height: 100vh; display: flex; }
+
+    /* ── Topbar ── */
     .topbar {
-      background: #ffffff; border-bottom: 1px solid #e5e7eb;
-      padding: 0 28px; height: 64px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 99;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 99;
     }
-    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
-    .topbar .fecha { font-size: 0.82rem; color: #64748b; }
+
+    .topbar .page-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.01em;
+    }
+    .topbar .page-title i { color: var(--accent); }
+
+    .topbar .fecha {
+      font-size: 0.8rem;
+      color: var(--text-2);
+      font-weight: 500;
+    }
+
     .topbar .badge-role {
-      font-size: 0.75rem; font-weight: 600;
-      padding: 4px 10px; border-radius: 20px; border: 1px solid;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
     }
 
-    .content-area { flex: 1; padding: 28px; }
+    .btn-salir {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: var(--text-2);
+      text-decoration: none;
+      padding: 5px 12px;
+      border-radius: var(--radius-sm);
+      transition: background var(--transition), color var(--transition);
+    }
+    .btn-salir:hover { background: rgba(239,68,68,0.08); color: #dc2626; }
 
-    /* ── CARD PERFIL ── */
-    .profile-card {
-      background: #ffffff; border-radius: 16px;
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden;
+    /* ── Contenido ── */
+    .content-area { flex: 1; padding: 28px 32px; }
+
+    /* ── Saludo ── */
+    .saludo h4 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0 0 4px;
+      letter-spacing: -0.02em;
     }
-    .profile-card .profile-banner {
-      height: 80px;
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%);
+    .saludo p {
+      font-size: 0.875rem;
+      color: var(--text-2);
+      margin: 0;
     }
-    .profile-card .profile-body { padding: 0 24px 24px; }
-    .profile-card .profile-avatar {
-      width: 80px; height: 80px; border-radius: 50%; object-fit: cover;
-      border: 4px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      margin-top: -40px; display: block;
+
+    /* ── Card base Apple ── */
+    .card-apple {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      height: 100%;
     }
-    .profile-card .profile-name { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 12px 0 2px; }
-    .profile-card .profile-role { font-size: 0.8rem; color: #64748b; margin: 0 0 16px; }
-    .profile-card .profile-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      border-radius: 20px; padding: 4px 12px; font-size: 0.78rem; font-weight: 600;
+
+    /* ── Perfil ── */
+    .profile-banner { height: 72px; }
+    .profile-body   { padding: 0 22px 22px; }
+
+    .profile-avatar {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--surface);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+      margin-top: -36px;
+      display: block;
+    }
+
+    .profile-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 10px 0 2px;
+      letter-spacing: -0.015em;
+    }
+
+    .profile-role-text {
+      font-size: 0.78rem;
+      color: var(--text-2);
+      margin: 0 0 14px;
+    }
+
+    .profile-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border-radius: 20px;
+      padding: 3px 11px;
+      font-size: 0.73rem;
+      font-weight: 600;
       border: 1px solid;
     }
 
-    /* ── CARD VACACIONES ── */
-    .vac-card {
-      background: #ffffff; border-radius: 16px;
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-      padding: 24px; height: 100%;
+    /* ── Card header ── */
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 17px 20px 13px;
+      border-bottom: 1px solid var(--border);
     }
-    .vac-card h5 {
-      font-size: 0.95rem; font-weight: 600; color: #1e293b;
-      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
-      padding-bottom: 12px; border-bottom: 1px solid #f1f5f9;
+
+    .card-head-icon {
+      width: 28px; height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      flex-shrink: 0;
     }
-    .vac-card h5 i { color: #d97706; }
+
+    .card-head h5 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+
+    .card-body-p { padding: 4px 20px 18px; }
+
+    /* ── Vacaciones ── */
     .vac-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--border-row);
+      font-size: 0.82rem;
     }
     .vac-item:last-child { border-bottom: none; }
-    .vac-item .vac-dates { display: flex; align-items: center; gap: 6px; color: #374151; font-weight: 500; }
-    .vac-item .vac-dates i { color: #d97706; font-size: 0.9rem; }
-    .vac-item .vac-dias {
-      background: #fffbeb; color: #92400e; border: 1px solid #fde68a;
-      border-radius: 20px; padding: 2px 10px; font-size: 0.78rem; font-weight: 600; white-space: nowrap;
-    }
-    .vac-empty { text-align: center; padding: 20px 0; color: #94a3b8; font-size: 0.875rem; }
-    .vac-empty i { font-size: 1.8rem; display: block; margin-bottom: 8px; color: #cbd5e1; }
 
-    /* ── TABLA HOY ── */
+    .vac-dates {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text);
+      font-weight: 500;
+    }
+    .vac-dates i { font-size: 0.78rem; color: #d97706; }
+
+    .vac-dias {
+      background: rgba(217,119,6,0.08);
+      color: #92400e;
+      border-radius: 20px;
+      padding: 2px 9px;
+      font-size: 0.71rem;
+      font-weight: 600;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .vac-empty {
+      text-align: center;
+      padding: 24px 0 12px;
+      color: var(--text-3);
+      font-size: 0.85rem;
+    }
+    .vac-empty i { font-size: 1.75rem; display: block; margin-bottom: 8px; opacity: 0.35; }
+
+    .card-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.78rem;
+      color: #d97706;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 10px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background var(--transition);
+    }
+    .card-link:hover { background: rgba(217,119,6,0.07); }
+
+    /* ── Noticias ── */
+    .noticia-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-row);
+    }
+    .noticia-item:last-child { border-bottom: none; }
+
+    .noticia-titulo {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 3px;
+    }
+    .noticia-titulo .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex-shrink: 0;
+    }
+    .noticia-titulo span {
+      font-size: 0.83rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .noticia-texto {
+      font-size: 0.78rem;
+      color: var(--text-2);
+      margin: 0 0 4px 13px;
+      line-height: 1.5;
+    }
+    .noticia-meta {
+      font-size: 0.7rem;
+      color: var(--text-3);
+      margin-left: 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* ── Panels de tabla ── */
     .table-panel {
-      background: #ffffff; border-radius: 12px;
-      border: 1px solid #e5e7eb; padding: 24px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
     }
-    .table-panel h5 {
-      font-size: 0.95rem; font-weight: 600; color: #1e293b;
-      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
-    }
-    .table-panel h5 i { color: #2563eb; }
-    .table { color: #374151; font-size: 0.875rem; }
-    .table thead th {
-      background: #f8fafc; color: #64748b;
-      font-size: 0.78rem; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.05em;
-      border-bottom: 1px solid #e5e7eb; padding: 10px 14px;
-    }
-    .table tbody td { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; }
 
-    footer {
-      background: #ffffff; border-top: 1px solid #e5e7eb;
-      padding: 16px 28px; text-align: center;
+    .panel-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px 22px;
+      border-bottom: 1px solid var(--border);
     }
+
+    .panel-head-icon {
+      width: 30px; height: 30px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.88rem;
+      flex-shrink: 0;
+    }
+
+    .panel-head h5 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+
+    /* Tabla — sin fondo en thead (estilo Apple) */
+    .table {
+      color: var(--text);
+      font-size: 0.835rem;
+      margin: 0;
+    }
+
+    .table thead th {
+      background: transparent;
+      color: var(--text-2);
+      font-size: 0.71rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 22px;
+    }
+
+    .table tbody td {
+      padding: 11px 22px;
+      border-bottom: 1px solid var(--border-row);
+      vertical-align: middle;
+    }
+
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table-hover tbody tr:hover td { background: rgba(0,0,0,0.015); }
+
+    .table-empty {
+      padding: 16px 22px;
+      color: var(--text-3);
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    /* ── Chips ── */
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+    .chip-cyan  { background: rgba(8,145,178,0.10);  color: #0e7490; }
+    .chip-green { background: rgba(22,163,74,0.10);  color: #15803d; }
+    .chip-amber { background: rgba(217,119,6,0.10);  color: #92400e; }
+    .chip-teal  { background: rgba(16,185,129,0.10); color: #065f46; }
+    .chip-slate { background: rgba(0,0,0,0.05);      color: var(--text-2); }
+
+    /* ── Alert ── */
+    .alert {
+      border-radius: var(--radius-panel);
+      font-size: 0.875rem;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Footer ── */
+    footer {
+      background: transparent;
+      border-top: 1px solid var(--border);
+      padding: 14px 32px;
+      text-align: center;
+    }
+    footer p {
+      color: var(--text-3);
+      font-size: 0.76rem;
+      margin: 0;
+      font-weight: 500;
+    }
+    footer strong { color: var(--text-2); }
   </style>
 </head>
 <body>
@@ -114,28 +401,28 @@
   {% if role|int == 0 and dep in ['financiero', 'melia'] %}
     {% set rol_label = 'Supervisora' %}
     {% set rol_icon  = 'bi-star-fill' %}
-    {% set rol_color = 'background:#fdf4ff; color:#7e22ce; border-color:#d8b4fe;' %}
-    {% set banner_gradient = 'background: linear-gradient(135deg,#6b21a8 0%,#7c3aed 60%,#8b5cf6 100%);' %}
+    {% set rol_color = 'background:rgba(124,58,237,0.08); color:#6d28d9; border-color:rgba(124,58,237,0.2);' %}
+    {% set banner_gradient = 'background:linear-gradient(160deg,#ede9fe 0%,#ddd6fe 100%);' %}
   {% elif role|int == 0 %}
     {% set rol_label = 'Admin' %}
     {% set rol_icon  = 'bi-shield-check-fill' %}
-    {% set rol_color = 'background:#dbeafe; color:#1e40af; border-color:#93c5fd;' %}
-    {% set banner_gradient = 'background: linear-gradient(135deg,#1e40af 0%,#1d4ed8 60%,#2563eb 100%);' %}
+    {% set rol_color = 'background:rgba(37,99,235,0.08); color:#1e40af; border-color:rgba(37,99,235,0.2);' %}
+    {% set banner_gradient = 'background:linear-gradient(160deg,#dbeafe 0%,#bfdbfe 100%);' %}
   {% else %}
     {% set rol_label = 'Empleado' %}
     {% set rol_icon  = 'bi-person-check-fill' %}
-    {% set rol_color = 'background:#eff6ff; color:#2563eb; border-color:#bfdbfe;' %}
-    {% set banner_gradient = 'background: linear-gradient(135deg,#2563eb 0%,#1d4ed8 50%,#1e40af 100%);' %}
+    {% set rol_color = 'background:rgba(37,99,235,0.07); color:#2563eb; border-color:rgba(37,99,235,0.18);' %}
+    {% set banner_gradient = 'background:linear-gradient(160deg,#dbeafe 0%,#bfdbfe 100%);' %}
   {% endif %}
 
   {% include '_sidebar.html' %}
 
-  <!-- ══════════════ CONTENIDO ══════════════ -->
   <div id="main-content">
 
+    <!-- TOPBAR -->
     <div class="topbar">
       <h1 class="page-title">
-        <i class="bi bi-house-door" style="color:#2563eb; margin-right:8px;"></i>
+        <i class="bi bi-house-door-fill"></i>
         Dashboard
       </h1>
       <div class="d-flex align-items-center gap-3">
@@ -143,15 +430,9 @@
         <span class="badge-role" style="{{ rol_color }}">
           <i class="bi {{ rol_icon }}"></i> {{ rol_label }}
         </span>
-        <a href="{{ url_for('main.logout') }}"
-           style="display:flex; align-items:center; gap:6px; font-size:0.82rem;
-                  color:#ef4444; text-decoration:none; font-weight:500;
-                  border:1px solid #fca5a5; border-radius:8px; padding:5px 12px;
-                  background:#fff; transition:background 0.15s;"
-           onmouseover="this.style.background='#fef2f2'"
-           onmouseout="this.style.background='#fff'">
+        <a href="{{ url_for('main.logout') }}" class="btn-salir">
           <i class="bi bi-box-arrow-left"></i>
-          <span>Salir</span>
+          Salir
         </a>
       </div>
     </div>
@@ -161,8 +442,7 @@
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4"
-                 style="border-radius:10px; font-size:0.875rem;">
+            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4">
               {{ message }}
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -170,93 +450,110 @@
         {% endif %}
       {% endwith %}
 
-      <div class="mb-4">
-        <h4 style="color:#1e293b; font-weight:700;">Bienvenido, {{ user }} 👋</h4>
-        <p style="color:#64748b; font-size:0.9rem; margin:0;">
-          Aquí tienes un resumen de tu actividad de hoy.
-        </p>
+      <div class="saludo mb-4">
+        <h4>Bienvenido, {{ user }} 👋</h4>
+        <p>Aquí tienes un resumen de tu actividad de hoy.</p>
       </div>
 
-      <!-- ── MACRO NOTICIAS ── -->
+      <!-- MACRO NOTICIAS -->
       {% macro card_noticias() %}
       <div class="col-12 col-md-4">
-        <div class="vac-card">
-          <h5>
-            <i class="bi bi-megaphone-fill" style="color:#2563eb;"></i>
-            Noticias
-          </h5>
-          {% if noticias %}
-            {% for titulo, noticia, created_at in noticias %}
-              <div style="padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
-                <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px;">
-                  <i class="bi bi-circle-fill" style="color:#2563eb; font-size:0.45rem;"></i>
-                  <span style="font-size:0.85rem; font-weight:600; color:#1e293b;">{{ titulo }}</span>
-                </div>
-                <p style="font-size:0.8rem; color:#475569; margin:0 0 4px 14px;">{{ noticia }}</p>
-                <span style="font-size:0.72rem; color:#94a3b8; margin-left:14px;">
-                  <i class="bi bi-clock"></i>
-                  {{ created_at.strftime('%d/%m/%Y') }}
-                </span>
-              </div>
-            {% endfor %}
-          {% else %}
-            <div class="vac-empty">
-              <i class="bi bi-megaphone"></i>
-              Sin noticias recientes
+        <div class="card-apple">
+          <div class="card-head">
+            <div class="card-head-icon" style="background:rgba(37,99,235,0.08);color:#2563eb;">
+              <i class="bi bi-megaphone-fill"></i>
             </div>
-          {% endif %}
+            <h5>Noticias</h5>
+          </div>
+          <div class="card-body-p">
+            {% if noticias %}
+              {% for titulo, noticia, created_at in noticias %}
+                <div class="noticia-item">
+                  <div class="noticia-titulo">
+                    <span class="dot"></span>
+                    <span>{{ titulo }}</span>
+                  </div>
+                  <p class="noticia-texto">{{ noticia }}</p>
+                  <div class="noticia-meta">
+                    <i class="bi bi-clock"></i>
+                    {{ created_at.strftime('%d/%m/%Y') }}
+                  </div>
+                </div>
+              {% endfor %}
+            {% else %}
+              <div class="vac-empty">
+                <i class="bi bi-megaphone"></i>
+                Sin noticias recientes
+              </div>
+            {% endif %}
+          </div>
         </div>
       </div>
       {% endmacro %}
 
-      <!-- ── CARDS SUPERIORES ── -->
-      <div class="row g-4 mb-4">
+      <!-- CARDS SUPERIORES -->
+      <div class="row g-3 mb-4">
+
+        <!-- Perfil -->
         <div class="col-12 col-md-4">
-          <div class="profile-card">
+          <div class="card-apple">
             <div class="profile-banner" style="{{ banner_gradient }}"></div>
             <div class="profile-body">
               <img src="{{ avatar }}" alt="Foto de perfil" class="profile-avatar">
               <p class="profile-name">{{ user }}</p>
-              <p class="profile-role">{{ rol_label }} · TurnoApp</p>
+              <p class="profile-role-text">{{ rol_label }} · TurnoApp</p>
               <span class="profile-badge" style="{{ rol_color }}">
                 <i class="bi {{ rol_icon }}"></i> {{ rol_label }}
               </span>
             </div>
           </div>
         </div>
+
+        <!-- Vacaciones -->
         <div class="col-12 col-md-4">
-          <div class="vac-card">
-            <h5><i class="bi bi-calendar-sun"></i> Mis Vacaciones {{ current_year }}</h5>
-            {% if vacaciones_anio %}
-              {% for vi, vo ,idvac  in vacaciones_anio %}
-                <div class="vac-item">
-                  <div class="vac-dates">
-                    <i class="bi bi-calendar3"></i> {{ vi }} → {{ vo }}
-                  </div>
-                  <span class="vac-dias">{{ (vo - vi).days + 1 }} días</span>
-                </div>
-              {% endfor %}
-            {% else %}
-              <div class="vac-empty">
-                <i class="bi bi-calendar-x"></i> Sin vacaciones programadas
+          <div class="card-apple">
+            <div class="card-head">
+              <div class="card-head-icon" style="background:rgba(217,119,6,0.09);color:#d97706;">
+                <i class="bi bi-calendar-sun"></i>
               </div>
-            {% endif %}
-            <a href="{{ url_for('main.vacaciones') }}"
-               style="display:block; margin-top:16px; font-size:0.82rem;
-                      color:#d97706; text-decoration:none; font-weight:500;">
-              <i class="bi bi-plus-circle"></i> Programar vacaciones
-            </a>
+              <h5>Mis Vacaciones {{ current_year }}</h5>
+            </div>
+            <div class="card-body-p">
+              {% if vacaciones_anio %}
+                {% for vi, vo, idvac in vacaciones_anio %}
+                  <div class="vac-item">
+                    <div class="vac-dates">
+                      <i class="bi bi-calendar3"></i>
+                      {{ vi }} → {{ vo }}
+                    </div>
+                    {% set total = (vo - vi).days + 1 %}
+                    <span class="vac-dias">{{ total }} {{ 'día' if total == 1 else 'días' }}</span>
+                  </div>
+                {% endfor %}
+              {% else %}
+                <div class="vac-empty">
+                  <i class="bi bi-calendar-x"></i>
+                  Sin vacaciones programadas
+                </div>
+              {% endif %}
+              <a href="{{ url_for('main.vacaciones') }}" class="card-link">
+                <i class="bi bi-plus-circle"></i> Programar vacaciones
+              </a>
+            </div>
           </div>
         </div>
+
         {{ card_noticias() }}
       </div>
 
-      <!-- ══ PANEL CONTROL HORARIO HOY ══ -->
-      <div class="table-panel mt-4 mb-4">
-        <h5>
-          <i class="bi bi-calendar-check-fill" style="color:#0891b2;"></i>
-          Control Horario de hoy
-        </h5>
+      <!-- CONTROL HORARIO -->
+      <div class="table-panel mb-3">
+        <div class="panel-head">
+          <div class="panel-head-icon" style="background:rgba(8,145,178,0.09);color:#0891b2;">
+            <i class="bi bi-calendar-check-fill"></i>
+          </div>
+          <h5>Control Horario de hoy</h5>
+        </div>
         {% if entrada_laboral_hoy %}
           <table class="table table-hover mb-0">
             <thead>
@@ -268,16 +565,14 @@
             <tbody>
               <tr>
                 <td>
-                  <span style="background:#cffafe; color:#0e7490; padding:3px 10px;
-                                border-radius:20px; font-size:0.82rem; font-weight:500;">
-                    <i class="bi bi-calendar-check-fill" style="color:#0891b2;"></i>
+                  <span class="chip chip-cyan">
+                    <i class="bi bi-calendar-check-fill"></i>
                     {{ entrada_laboral_hoy.strftime('%H:%M') }}
                   </span>
                 </td>
                 <td>
-                  <span style="background:#dcfce7; color:#166534; padding:3px 10px;
-                                border-radius:20px; font-size:0.82rem; font-weight:500;">
-                    <i class="bi bi-check-circle-fill" style="color:#16a34a;"></i>
+                  <span class="chip chip-green">
+                    <i class="bi bi-check-circle-fill"></i>
                     Jornada registrada
                   </span>
                 </td>
@@ -285,70 +580,21 @@
             </tbody>
           </table>
         {% else %}
-          <p style="color:#94a3b8; font-size:0.875rem; margin:0;">
-            <i class="bi bi-info-circle"></i> Sin registro de jornada laboral hoy.
-          </p>
+          <div class="table-empty">
+            <i class="bi bi-info-circle"></i>
+            Sin registro de jornada laboral hoy.
+          </div>
         {% endif %}
       </div>
 
-      <!-- ══ TABLA ENTRADAS / SALIDAS HOY ══ -->
-    <!--  <div class="table-panel mb-4">
-        <h5><i class="bi bi-clock"></i> Entradas / Salidas de hoy</h5>
-        {% if tiempos_hoy %}
-          <table class="table table-hover mb-0">
-            <thead>
-              <tr>
-                <th>Entrada</th>
-                <th>Salida</th>
-                <th>Horas trabajadas</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for ent, sal in tiempos_hoy %}
-              <tr>
-                <td>
-                  <span style="background:#dcfce7; color:#166534; padding:3px 10px;
-                                border-radius:20px; font-size:0.82rem; font-weight:500;">
-                    {{ ent.strftime('%H:%M') if ent else '—' }}
-                  </span>
-                </td>
-                <td>
-                  {% if sal %}
-                    <span style="background:#fee2e2; color:#991b1b; padding:3px 10px;
-                                  border-radius:20px; font-size:0.82rem; font-weight:500;">
-                      {{ sal.strftime('%H:%M') }}
-                    </span>
-                  {% else %}
-                    <span style="background:#f1f5f9; color:#64748b; padding:3px 10px;
-                                  border-radius:20px; font-size:0.82rem;">
-                      Pendiente
-                    </span>
-                  {% endif %}
-                </td>
-                <td style="font-weight:500; color:#374151;">
-                  {% if sal and ent %}
-                    {{ (sal - ent).seconds // 3600 }}h {{ ((sal - ent).seconds % 3600) // 60 }}m
-                  {% else %}
-                    <span style="color:#94a3b8;">—</span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        {% else %}
-          <p style="color:#94a3b8; font-size:0.875rem; margin:0;">
-            <i class="bi bi-info-circle"></i> Sin registros hoy.
-          </p>
-        {% endif %}
-      </div> -->
-
-      <!-- ══ TABLA ALMUERZO HOY ══ -->
-      <div class="table-panel">
-        <h5>
-          <i class="bi bi-cup-hot-fill" style="color:#f59e0b;"></i>
-          Pausa de Almuerzo de hoy
-        </h5>
+      <!-- PAUSA ALMUERZO -->
+      <div class="table-panel mb-3">
+        <div class="panel-head">
+          <div class="panel-head-icon" style="background:rgba(245,158,11,0.09);color:#f59e0b;">
+            <i class="bi bi-cup-hot-fill"></i>
+          </div>
+          <h5>Pausa de Almuerzo de hoy</h5>
+        </div>
         {% if lunch_hoy %}
           {% set sal_lunch = lunch_hoy[0] %}
           {% set ent_lunch = lunch_hoy[1] %}
@@ -363,58 +609,51 @@
             <tbody>
               <tr>
                 <td>
-                  <span style="background:#fffbeb; color:#92400e; padding:3px 10px;
-                                border-radius:20px; font-size:0.82rem; font-weight:500;">
-                    <i class="bi bi-cup-hot-fill" style="color:#f59e0b;"></i>
+                  <span class="chip chip-amber">
+                    <i class="bi bi-cup-hot-fill"></i>
                     {{ sal_lunch.strftime('%H:%M') if sal_lunch else '—' }}
                   </span>
                 </td>
                 <td>
                   {% if ent_lunch %}
-                    <span style="background:#ecfdf5; color:#065f46; padding:3px 10px;
-                                  border-radius:20px; font-size:0.82rem; font-weight:500;">
-                      <i class="bi bi-cup-straw" style="color:#10b981;"></i>
+                    <span class="chip chip-teal">
+                      <i class="bi bi-cup-straw"></i>
                       {{ ent_lunch.strftime('%H:%M') }}
                     </span>
                   {% else %}
-                    <span style="background:#f1f5f9; color:#64748b; padding:3px 10px;
-                                  border-radius:20px; font-size:0.82rem;">
-                      Pendiente
-                    </span>
+                    <span class="chip chip-slate">Pendiente</span>
                   {% endif %}
                 </td>
-                <td style="font-weight:500; color:#374151;">
+                <td style="font-weight:600;color:var(--text);font-size:0.835rem;">
                   {% if sal_lunch and ent_lunch %}
                     {% set mins = ((ent_lunch - sal_lunch).seconds // 60) %}
-                    {% if mins >= 60 %}
-                      {{ mins // 60 }}h {{ mins % 60 }}m
-                    {% else %}
-                      {{ mins }}m
-                    {% endif %}
+                    {% if mins >= 60 %}{{ mins // 60 }}h {{ mins % 60 }}m
+                    {% else %}{{ mins }}m{% endif %}
                   {% else %}
-                    <span style="color:#94a3b8;">—</span>
+                    <span style="color:var(--text-3);">—</span>
                   {% endif %}
                 </td>
               </tr>
             </tbody>
           </table>
         {% else %}
-          <p style="color:#94a3b8; font-size:0.875rem; margin:0;">
-            <i class="bi bi-info-circle"></i> Sin pausa de almuerzo registrada hoy.
-          </p>
+          <div class="table-empty">
+            <i class="bi bi-info-circle"></i>
+            Sin pausa de almuerzo registrada hoy.
+          </div>
         {% endif %}
       </div>
 
-    </div><!-- /content-area -->
+    </div>
 
     <footer>
-      <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
+      <p>
         &copy; {{ current_year }} Todos los derechos reservados —
-        Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
+        Desarrollado por <strong>Ariel Castro</strong>
       </p>
     </footer>
 
-  </div><!-- /main-content -->
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
@@ -441,17 +680,16 @@
       mainContent.classList.add('expanded');
     }
   </script>
-    <script>
-// ── NOTIFICACIÓN FICHAJE ──
-if ('Notification' in window && 'serviceWorker' in navigator) {
-  Notification.requestPermission().then(perm => {
-    if (perm === 'granted') {
-      navigator.serviceWorker.register('/static/js/sw.js')
-        .then(reg => console.log('SW registrado'))
-        .catch(err => console.error('SW error:', err));
+  <script>
+    if ('Notification' in window && 'serviceWorker' in navigator) {
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+          navigator.serviceWorker.register('/static/js/sw.js')
+            .then(reg => console.log('SW registrado'))
+            .catch(err => console.error('SW error:', err));
+        }
+      });
     }
-  });
-}
-</script>
+  </script>
 </body>
 </html>
