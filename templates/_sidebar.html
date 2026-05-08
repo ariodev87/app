@@ -61,31 +61,31 @@
     </a>
 
     <a href="{{ url_for('main.directorio') }}"
-       class="nav-item-link directorio {% if request.endpoint == 'main.directorio' %}active{% endif %}">
+       class="nav-item-link {% if request.endpoint == 'main.directorio' %}active{% endif %}">
       <i class="bi bi-telephone-fill"></i>
       <span class="link-text">Directorio</span>
     </a>
 
     <a href="{{ url_for('main.control_horario') }}"
-       class="nav-item-link horario {% if request.endpoint == 'main.control_horario' %}active{% endif %}">
+       class="nav-item-link {% if request.endpoint == 'main.control_horario' %}active{% endif %}">
       <i class="bi bi-calendar-check-fill"></i>
       <span class="link-text">Control Horario</span>
     </a>
 
     <a href="{{ url_for('main.lunch_out') }}"
-       class="nav-item-link lunch {% if request.endpoint == 'main.lunch_out' %}active{% endif %}">
+       class="nav-item-link {% if request.endpoint == 'main.lunch_out' %}active{% endif %}">
       <i class="bi bi-cup-hot-fill"></i>
       <span class="link-text">Salida a Comer</span>
     </a>
 
     <a href="{{ url_for('main.lunch_in') }}"
-       class="nav-item-link lunch-in {% if request.endpoint == 'main.lunch_in' %}active{% endif %}">
+       class="nav-item-link {% if request.endpoint == 'main.lunch_in' %}active{% endif %}">
       <i class="bi bi-cup-straw"></i>
       <span class="link-text">Vuelta de Comer</span>
     </a>
 
     <a href="{{ url_for('main.vacaciones') }}"
-       class="nav-item-link vacaciones {% if request.endpoint == 'main.vacaciones' %}active{% endif %}">
+       class="nav-item-link {% if request.endpoint == 'main.vacaciones' %}active{% endif %}">
       <i class="bi bi-airplane-fill"></i>
       <span class="link-text">Vacaciones</span>
     </a>
@@ -94,7 +94,7 @@
     <div class="nav-divider"></div>
     <div class="nav-section-label">Visitantes</div>
     <a href="{{ url_for('main.register_visitante') }}"
-       class="nav-item-link visitor {% if request.endpoint == 'main.register_visitante' %}active{% endif %}">
+       class="nav-item-link {% if request.endpoint == 'main.register_visitante' %}active{% endif %}">
       <i class="bi bi-person-badge-fill"></i>
       <span class="link-text">Agregar Visitante</span>
     </a>
@@ -118,35 +118,134 @@
 
   </div>
 
-  <!-- Footer -->
+  <!-- Footer sidebar -->
   <div class="sidebar-footer">
+    <!-- Botón ayuda / chatbot -->
+    <button id="sidebarChatBtn" class="nav-item-link" style="width:100%;background:none;border:none;cursor:pointer;text-align:left;" title="Ayuda TurnoApp">
+      <i class="bi bi-chat-dots-fill" style="color:#2563eb;"></i>
+      <span class="link-text" style="color:#2563eb;font-weight:600;">Ayuda</span>
+    </button>
+
     <a href="{{ url_for('main.logout') }}" class="nav-item-link logout">
       <i class="bi bi-box-arrow-left"></i>
       <span class="link-text">Cerrar Sesión</span>
     </a>
   </div>
 
-  <script>
-    if ('Notification' in window) {
-      Notification.requestPermission().then(perm => {
-        if (perm === 'granted') {
-          let notifEnviada = false;
-          setInterval(() => {
-            const ahora   = new Date();
-            const horas   = ahora.getHours();
-            const minutos = ahora.getMinutes();
-            if (horas === 0 && minutos === 0) notifEnviada = false;
-            if (horas === 17 && minutos === 50 && !notifEnviada) {
-              notifEnviada = true;
-              new Notification('⏰ TurnoApp', {
-                body: '¡No olvides fichar la salida!',
-                tag:  'fichaje-salida'
-              });
-            }
-          }, 30000);
+</nav>
+
+
+<!-- ══════════════════════════════════════════
+     BOTPRESS WEBCHAT — TurnoApp Assistant
+     Pasos:
+       1. Crea tu bot en botpress.com (gratis)
+       2. Ve a Webchat > Deploy Settings
+       3. Reemplaza TU_CLIENTID y TU_BOTID abajo
+     ══════════════════════════════════════════ -->
+<script src="https://cdn.botpress.cloud/webchat/v3.3/inject.js"async defer></script>
+
+    <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
+<script src="https://files.bpcontent.cloud/2026/05/08/09/20260508095110-LI8SXTW4.js" defer></script>
+    
+
+<script>
+  // ── Configuración del bot (reemplaza con tus IDs reales) ──
+  const BP_CLIENT_ID = '914d1f9e-4e70-4651-ad44-e7785e27253c';   // ← de Botpress Dashboard
+  const BP_BOT_ID    = '791337e0-aa7f-4cf9-8757-936974df653d';      // ← de Botpress Dashboard
+
+  window.botpressWebChat = {
+    clientId:   BP_CLIENT_ID,
+    botId:      BP_BOT_ID,
+    // UI / idioma
+    botName:            'TurnoApp Assistant',
+    botDescription:     'Ayuda con el sistema de turnos y fichajes',
+    composerPlaceholder:'Escribe tu pregunta...',
+    locale:             'es',
+    // Posición — esquina inferior derecha
+    fabPosition:        'br',
+    // Colores que usan el mismo token --accent del sistema
+    color:              '#2563eb',
+    variant:            'soft',
+    themeMode:          'light',
+    fontFamily:         "'Satoshi', 'Inter', system-ui, sans-serif",
+    // No mostrar automáticamente al cargar
+    showBotInfoPage:    false,
+    lazySocket:         true,
+  };
+
+  // Inicializar cuando esté listo el DOM
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof window.botpress !== 'undefined') {
+      window.botpress.init(window.botpressWebChat);
+    }
+
+    // El botón del sidebar abre/cierra el chat
+    const chatBtn = document.getElementById('sidebarChatBtn');
+    if (chatBtn) {
+      chatBtn.addEventListener('click', () => {
+        if (typeof window.botpress !== 'undefined') {
+          window.botpress.toggle();
         }
       });
     }
-  </script>
+  });
+</script>
 
-</nav>
+<style>
+  /* ── FAB (botón flotante de Botpress) — estilo TurnoApp ── */
+  .bpFab {
+    background: #2563eb !important;
+    border-radius: 50% !important;
+    width: 46px !important;
+    height: 46px !important;
+    box-shadow: 0 4px 16px rgba(37,99,235,0.30) !important;
+    bottom: 24px !important;
+    right: 24px !important;
+    transition: transform 150ms cubic-bezier(0.25,0.46,0.45,0.94),
+                box-shadow 150ms ease !important;
+  }
+  .bpFab:hover {
+    transform: scale(1.07) !important;
+    box-shadow: 0 6px 22px rgba(37,99,235,0.40) !important;
+  }
+
+  /* ── Ventana del chat — estilo Apple ── */
+  .bpWebchat {
+    border-radius: 20px !important;
+    border: 1px solid rgba(0,0,0,0.07) !important;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.13) !important;
+    font-family: 'Satoshi', 'Inter', system-ui, sans-serif !important;
+    bottom: 80px !important;
+    right: 24px !important;
+  }
+
+  /* Separar del sidebar en desktop */
+  @media (min-width: 768px) {
+    .bpFab     { right: 28px !important; }
+    .bpWebchat { right: 28px !important; }
+  }
+</style>
+
+<script>
+  /* ── Notificación 17:50 — fichar salida ── */
+  if ('Notification' in window) {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') {
+        let notifEnviada = false;
+        setInterval(() => {
+          const ahora   = new Date();
+          const horas   = ahora.getHours();
+          const minutos = ahora.getMinutes();
+          if (horas === 0 && minutos === 0) notifEnviada = false;
+          if (horas === 17 && minutos === 50 && !notifEnviada) {
+            notifEnviada = true;
+            new Notification('⏰ TurnoApp', {
+              body: '¡No olvides fichar la salida!',
+              tag:  'fichaje-salida'
+            });
+          }
+        }, 30000);
+      }
+    });
+  }
+</script>
