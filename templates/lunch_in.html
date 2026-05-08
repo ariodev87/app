@@ -6,81 +6,141 @@
   <title>Vuelta de Comer</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
   <style>
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #f1f5f9; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .card-confirm {
-      background: #fff; border-radius: 20px; border: 1px solid #e5e7eb;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
-      padding: 48px 40px; max-width: 420px; width: 100%; text-align: center;
+    :root {
+      --font:       'Satoshi', 'Inter', system-ui, sans-serif;
+      --bg:         #f5f5f7;
+      --surface:    #ffffff;
+      --border:     rgba(0,0,0,0.07);
+      --text:       #1d1d1f;
+      --text-2:     rgba(0,0,0,0.50);
+      --text-3:     rgba(0,0,0,0.28);
+      --transition: 150ms cubic-bezier(0.25,0.46,0.45,0.94);
     }
-    .icon-circle {
-      width: 80px; height: 80px; border-radius: 50%;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+
+    body {
+      background: var(--bg); min-height: 100vh;
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 24px;
     }
-    .icon-circle.activo      { background: #ecfdf5; border: 2px solid #6ee7b7; }
-    .icon-circle.activo i    { font-size: 2.2rem; color: #10b981; }
-    .icon-circle.bloqueado   { background: #fef9c3; border: 2px solid #fde047; }
-    .icon-circle.bloqueado i { font-size: 2.2rem; color: #ca8a04; }
 
-    h2 { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
-    p  { color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }
+    /* Card */
+    .card-confirm {
+      background: var(--surface);
+      border-radius: 28px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 2px rgba(0,0,0,0.03), 0 8px 32px rgba(0,0,0,0.08);
+      padding: 36px 32px 28px;
+      max-width: 400px; width: 100%; text-align: center;
+    }
 
-    .alerta-bloqueado {
-      background: #fefce8; border: 1px solid #fde047;
-      border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;
-      font-size: 0.85rem; color: #854d0e; text-align: left;
+    /* Icono */
+    .icon-wrap {
+      width: 52px; height: 52px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 16px;
+    }
+    .icon-wrap i { font-size: 1.35rem; }
+    .icon-wrap.activo    { background: rgba(16,185,129,0.09); }
+    .icon-wrap.activo i  { color: #10b981; }
+    .icon-wrap.bloqueado { background: rgba(217,119,6,0.09); }
+    .icon-wrap.bloqueado i { color: #d97706; }
+
+    /* Reloj */
+    .hora-actual {
+      font-size: 2.8rem; font-weight: 300; letter-spacing: -1px;
+      line-height: 1; margin-bottom: 14px;
+      font-variant-numeric: tabular-nums; color: var(--text);
+    }
+    .hora-sep { color: var(--text-3); font-weight: 200; }
+
+    /* Textos */
+    h2 {
+      font-size: 1.05rem; font-weight: 700; color: var(--text);
+      margin-bottom: 4px; letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 0.82rem; color: var(--text-2); margin-bottom: 20px; line-height: 1.5;
+    }
+
+    /* Alerta inline */
+    .alerta-inline {
+      border-radius: 12px; padding: 10px 14px; margin-bottom: 14px;
+      font-size: 0.8rem; text-align: left;
       display: flex; align-items: flex-start; gap: 8px;
     }
+    .alerta-warn { background: rgba(217,119,6,0.07); color: #92400e; border: 1px solid rgba(217,119,6,0.14); }
 
-    .btn-confirm {
-      color: #fff; border: none;
-      padding: 12px 32px; border-radius: 10px;
-      font-size: 0.95rem; font-weight: 600; width: 100%;
-      transition: background 0.2s;
+    /* Botón principal */
+    .btn-action {
+      width: 100%; border: none; border-radius: 14px;
+      padding: 13px; font-size: 0.9rem; font-weight: 600;
+      font-family: var(--font); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: filter var(--transition), transform var(--transition), box-shadow var(--transition);
     }
-    .btn-confirm.activo       { background: #10b981; }
-    .btn-confirm.activo:hover { background: #059669; }
-    .btn-confirm:disabled     { background: #d1d5db; color: #9ca3af; cursor: not-allowed; }
+    .btn-action.activo {
+      background: #10b981; color: #fff;
+      box-shadow: 0 2px 10px rgba(16,185,129,0.25);
+    }
+    .btn-action.activo:hover:not(:disabled) {
+      filter: brightness(1.07);
+      box-shadow: 0 4px 18px rgba(16,185,129,0.30);
+      transform: translateY(-1px);
+    }
+    .btn-action:disabled {
+      background: rgba(0,0,0,0.05);
+      color: rgba(0,0,0,0.25);
+      box-shadow: none; cursor: not-allowed; transform: none;
+    }
 
-    .btn-back {
-      display: block; margin-top: 14px;
-      color: #64748b; font-size: 0.85rem; text-decoration: none;
+    /* Volver */
+    .btn-volver {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      margin-top: 10px; background: transparent; border: none;
+      color: var(--text-3); font-size: 0.82rem; font-weight: 500;
+      font-family: var(--font); cursor: pointer; padding: 10px;
+      border-radius: 10px; text-decoration: none; width: 100%;
+      transition: color var(--transition), background var(--transition);
     }
-    .btn-back:hover { color: #374151; }
-    .hora-actual { font-size: 2rem; font-weight: 700; margin-bottom: 4px; }
-    .hora-actual.activo   { color: #10b981; }
-    .hora-actual.bloqueado { color: #ca8a04; }
+    .btn-volver:hover { color: var(--text-2); background: rgba(0,0,0,0.04); }
+
+    /* Flash */
+    .flash-container { position: fixed; top: 20px; right: 20px; z-index: 999; min-width: 280px; }
+    .alert { border-radius: 14px; font-size: 0.875rem; border: 1px solid var(--border); }
   </style>
 </head>
 <body>
 {% include '_sidebar.html' %}
+
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-      {% for category, message in messages %}
-        <div style="position:fixed; top:20px; right:20px; z-index:999;"
-             class="alert alert-{{ category }} alert-dismissible fade show shadow"
-             style="border-radius:10px; font-size:0.875rem;">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      {% endfor %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      </div>
     {% endif %}
   {% endwith %}
 
   <div class="card-confirm">
-    <div class="icon-circle {% if bloqueado %}bloqueado{% else %}activo{% endif %}">
+
+    <div class="icon-wrap {% if bloqueado %}bloqueado{% else %}activo{% endif %}">
       <i class="bi {% if bloqueado %}bi-lock-fill{% else %}bi-cup-straw{% endif %}"></i>
     </div>
 
-    <div class="hora-actual {% if bloqueado %}bloqueado{% else %}activo{% endif %}" id="horaActual">--:--</div>
+    <div class="hora-actual" id="horaActual">
+      <span id="hh">--</span><span class="hora-sep">:</span><span id="hm">--</span><span class="hora-sep">:</span><span id="hs">--</span>
+    </div>
 
     <h2>Vuelta de Comer</h2>
-
-    <p>
+    <p class="subtitle">
       {% if vuelta_hoy %}
         Ya registraste la vuelta de comer hoy.
       {% elif not salida_abierta %}
@@ -91,8 +151,8 @@
     </p>
 
     {% if bloqueado %}
-    <div class="alerta-bloqueado">
-      <i class="bi bi-exclamation-triangle-fill" style="color:#ca8a04; margin-top:1px;"></i>
+    <div class="alerta-inline alerta-warn">
+      <i class="bi bi-exclamation-triangle-fill" style="margin-top:1px; flex-shrink:0;"></i>
       <span>
         {% if vuelta_hoy %}
           Ya completaste la pausa de comida hoy. Este botón se reactiva mañana.
@@ -104,23 +164,25 @@
     {% endif %}
 
     <form method="POST">
-      <button type="submit" class="btn-confirm activo" {% if bloqueado %}disabled{% endif %}>
-        <i class="bi bi-check-circle-fill me-2"></i>
+      <button type="submit" class="btn-action activo" {% if bloqueado %}disabled{% endif %}>
+        <i class="bi bi-check-circle-fill"></i>
         {% if bloqueado %}No disponible{% else %}Confirmar Vuelta{% endif %}
       </button>
     </form>
 
-    <a href="{{ url_for('main.dashboard') }}" class="btn-back">
+    <a href="{{ url_for('main.dashboard') }}" class="btn-volver">
       <i class="bi bi-arrow-left"></i> Volver al Dashboard
     </a>
+
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     function actualizarHora() {
       const now = new Date();
-      document.getElementById('horaActual').textContent =
-        now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('hh').textContent = String(now.getHours()).padStart(2, '0');
+      document.getElementById('hm').textContent = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('hs').textContent = String(now.getSeconds()).padStart(2, '0');
     }
     actualizarHora();
     setInterval(actualizarHora, 1000);

@@ -7,182 +7,224 @@
   <title>Mis Vacaciones</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
   <style>
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #f1f5f9; min-height: 100vh; display: flex; }
-
-    
-
-    /* ── CONTENIDO ── */
-    #main-content {
-      margin-left: 260px; flex: 1;
-      display: flex; flex-direction: column;
-      min-height: 100vh; transition: margin-left 0.25s ease;
+    :root {
+      --font:        'Satoshi', 'Inter', system-ui, sans-serif;
+      --bg:          #f5f5f7;
+      --surface:     #ffffff;
+      --border:      rgba(0,0,0,0.07);
+      --border-row:  rgba(0,0,0,0.04);
+      --text:        #1d1d1f;
+      --text-2:      rgba(0,0,0,0.50);
+      --text-3:      rgba(0,0,0,0.28);
+      --amber:       #d97706;
+      --accent:      #2563eb;
+      --radius-card: 20px;
+      --shadow-card: 0 1px 1px rgba(0,0,0,0.03), 0 4px 18px rgba(0,0,0,0.06);
+      --transition:  150ms cubic-bezier(0.25,0.46,0.45,0.94);
     }
-    #main-content.expanded { margin-left: 68px; }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); min-height: 100vh; display: flex; }
+
+    /* Layout */
+    #main-content {
+      margin-left: 220px; flex: 1;
+      display: flex; flex-direction: column;
+      min-height: 100vh; transition: margin-left 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+    #main-content.expanded { margin-left: 64px; }
+
+    /* Topbar */
     .topbar {
-      background: #ffffff; border-bottom: 1px solid #e5e7eb;
-      padding: 0 28px; height: 64px;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 60px;
       display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 99;
     }
-    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
-    .topbar .fecha { font-size: 0.82rem; color: #64748b; }
+    .topbar .page-title {
+      font-size: 0.95rem; font-weight: 600; color: var(--text);
+      margin: 0; display: flex; align-items: center; gap: 8px;
+      letter-spacing: -0.01em;
+    }
+    .topbar .page-title i { color: var(--amber); }
+    .topbar .fecha { font-size: 0.8rem; color: var(--text-2); font-weight: 500; }
     .topbar .badge-role {
-      background: #eff6ff; color: #2563eb;
-      font-size: 0.75rem; font-weight: 600;
-      padding: 4px 10px; border-radius: 20px; border: 1px solid #bfdbfe;
+      font-size: 0.72rem; font-weight: 600; padding: 3px 10px;
+      border-radius: 20px; border: 1px solid;
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(37,99,235,0.08); color: #1e40af;
+      border-color: rgba(37,99,235,0.2);
     }
-    .content-area { flex: 1; padding: 28px; }
 
-    /* ── PANELS ── */
+    .content-area { flex: 1; padding: 28px 32px; }
+
+    /* Panels */
     .panel {
-      background: #ffffff; border-radius: 12px;
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-      padding: 24px; height: 100%;
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+      padding: 22px 24px;
+      height: 100%;
     }
-    .panel h5 {
-      font-size: 0.95rem; font-weight: 600; color: #1e293b;
-      margin-bottom: 20px;
-      display: flex; align-items: center; gap: 8px;
-      padding-bottom: 14px; border-bottom: 1px solid #f1f5f9;
-    }
-    .panel h5 i { color: #d97706; font-size: 1.1rem; }
 
-    /* Formulario */
-    .form-label { font-size: 0.82rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    .panel-head {
+      display: flex; align-items: center; gap: 9px;
+      padding-bottom: 14px; margin-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-head-icon {
+      width: 28px; height: 28px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.82rem; flex-shrink: 0;
+    }
+    .panel-head h5 {
+      font-size: 0.875rem; font-weight: 600; color: var(--text);
+      margin: 0; letter-spacing: -0.01em;
+    }
+
+    /* Form */
+    .form-label {
+      font-size: 0.78rem; font-weight: 600; color: var(--text-2);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 6px; display: block;
+    }
     .form-control {
-      border: 1px solid #e5e7eb; border-radius: 8px;
-      padding: 10px 14px; font-size: 0.875rem; color: #1e293b;
-      transition: border-color 0.15s, box-shadow 0.15s;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px; font-size: 0.875rem; color: var(--text);
+      background: var(--surface); width: 100%;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      font-family: var(--font);
     }
     .form-control:focus {
-      border-color: #d97706;
-      box-shadow: 0 0 0 3px rgba(217,119,6,0.12);
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px rgba(217,119,6,0.10);
       outline: none;
     }
 
-    /* Indicador de modo edicion */
+    /* Banner edicion */
     #modo-edicion-banner {
       display: none;
-      background: #fffbeb; border: 1px solid #fde68a;
-      border-radius: 8px; padding: 10px 14px;
-      font-size: 0.82rem; font-weight: 600; color: #92400e;
-      align-items: center; gap: 8px; margin-bottom: 14px;
+      background: rgba(217,119,6,0.07);
+      border: 1px solid rgba(217,119,6,0.18);
+      border-radius: 10px; padding: 9px 13px;
+      font-size: 0.79rem; font-weight: 600; color: #92400e;
+      align-items: center; gap: 7px; margin-bottom: 14px;
     }
     #modo-edicion-banner.visible { display: flex; }
 
-    .btn-registrar {
-      background: #d97706; color: white; border: none;
-      border-radius: 10px; padding: 12px;
-      font-size: 0.9rem; font-weight: 600;
-      width: 100%; cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      margin-top: 4px;
+    /* Botón principal */
+    .btn-action {
+      width: 100%; border: none; border-radius: 14px;
+      padding: 12px; font-size: 0.88rem; font-weight: 600;
+      font-family: var(--font); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      margin-top: 6px;
+      transition: filter var(--transition), transform var(--transition), box-shadow var(--transition);
     }
-    .btn-registrar:hover { background: #b45309; transform: translateY(-1px); }
-    .btn-registrar:active { transform: translateY(0); }
-
+    .btn-amber {
+      background: var(--amber); color: #fff;
+      box-shadow: 0 2px 10px rgba(217,119,6,0.22);
+    }
+    .btn-amber:hover {
+      filter: brightness(1.07);
+      box-shadow: 0 4px 18px rgba(217,119,6,0.30);
+      transform: translateY(-1px);
+    }
     .btn-cancelar-edicion {
-      background: #f1f5f9; color: #475569; border: 1px solid #e5e7eb;
-      border-radius: 10px; padding: 10px;
-      font-size: 0.85rem; font-weight: 600;
-      width: 100%; cursor: pointer;
-      transition: background 0.15s;
-      display: none; align-items: center; justify-content: center; gap: 8px;
-      margin-top: 8px;
+      display: none; width: 100%; border: none; border-radius: 12px;
+      padding: 10px; font-size: 0.84rem; font-weight: 600;
+      font-family: var(--font); cursor: pointer; margin-top: 8px;
+      align-items: center; justify-content: center; gap: 6px;
+      background: rgba(0,0,0,0.04); color: var(--text-2);
+      transition: background var(--transition);
     }
     .btn-cancelar-edicion.visible { display: flex; }
-    .btn-cancelar-edicion:hover { background: #e2e8f0; }
+    .btn-cancelar-edicion:hover { background: rgba(0,0,0,0.07); }
 
     /* Tabla */
-    .table { color: #374151; font-size: 0.875rem; margin: 0; }
+    .table { color: var(--text); font-size: 0.835rem; margin: 0; }
     .table thead th {
-      background: #f8fafc; color: #64748b;
-      font-size: 0.75rem; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.05em;
-      border-bottom: 1px solid #e5e7eb;
-      padding: 10px 14px;
+      background: transparent; color: var(--text-2);
+      font-size: 0.71rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      border-bottom: 1px solid var(--border); padding: 10px 14px;
     }
     .table tbody td {
-      padding: 10px 14px;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 10px 14px; border-bottom: 1px solid var(--border-row);
       vertical-align: middle;
     }
     .table tbody tr:last-child td { border-bottom: none; }
-    .table tbody tr.fila-editando { background: #fffbeb !important; }
+    .table tbody tr.fila-editando td { background: rgba(217,119,6,0.04); }
+    .table-hover tbody tr:hover td { background: rgba(0,0,0,0.015); }
 
+    /* Badge fecha */
     .badge-fecha {
-      background: #fffbeb; color: #92400e;
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(217,119,6,0.07); color: #92400e;
       padding: 3px 10px; border-radius: 20px;
-      font-size: 0.8rem; font-weight: 500;
-      border: 1px solid #fde68a; white-space: nowrap;
+      font-size: 0.78rem; font-weight: 500;
+      border: 1px solid rgba(217,119,6,0.15);
+      white-space: nowrap;
     }
 
-    .btn-delete {
-      background: #fee2e2; color: #dc2626;
+    /* Acciones tabla */
+    .acciones-td { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+
+    .btn-tbl {
       border: none; border-radius: 8px;
-      padding: 5px 10px; font-size: 0.8rem;
-      cursor: pointer; transition: background 0.15s;
+      padding: 4px 10px; font-size: 0.77rem; font-weight: 600;
+      font-family: var(--font); cursor: pointer;
       display: flex; align-items: center; gap: 4px;
+      transition: filter var(--transition);
     }
-    .btn-delete:hover { background: #fecaca; }
+    .btn-tbl:hover { filter: brightness(0.93); }
+    .btn-tbl.edit   { background: rgba(37,99,235,0.08); color: #1e40af; }
+    .btn-tbl.edit.activo { background: var(--amber); color: #fff; }
+    .btn-tbl.delete { background: rgba(220,38,38,0.07); color: #dc2626; }
 
-    .btn-editar-vac {
-      background: #eff6ff; color: #2563eb;
-      border: none; border-radius: 8px;
-      padding: 5px 10px; font-size: 0.8rem;
-      cursor: pointer; transition: background 0.15s;
-      display: flex; align-items: center; gap: 4px;
-    }
-    .btn-editar-vac:hover { background: #dbeafe; }
-    .btn-editar-vac.activo { background: #d97706; color: white; }
-
-    .acciones-td { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-
+    /* Empty */
     .empty-state {
-      text-align: center; padding: 32px 0;
-      color: #94a3b8; font-size: 0.875rem;
+      text-align: center; padding: 36px 0;
+      color: var(--text-3); font-size: 0.85rem;
     }
-    .empty-state i { font-size: 2rem; display: block; margin-bottom: 8px; color: #cbd5e1; }
+    .empty-state i { font-size: 2rem; display: block; margin-bottom: 10px; opacity: 0.35; }
 
-    footer {
-      background: #ffffff; border-top: 1px solid #e5e7eb;
-      padding: 16px 28px; text-align: center;
-    }
+    /* Alert */
+    .alert { border-radius: 14px; font-size: 0.875rem; border: 1px solid var(--border); }
 
-    @media (max-width: 768px) {
-      #sidebar { width: 68px; min-width: 68px; }
-      #sidebar .link-text, #sidebar .user-info,
-      #sidebar .brand-text, #sidebar .nav-section-label { opacity: 0; width: 0; overflow: hidden; }
-      #sidebar .nav-item-link { justify-content: center; padding: 10px 0; }
-      #main-content { margin-left: 68px; }
-    }
+    footer { background: transparent; border-top: 1px solid var(--border); padding: 14px 32px; text-align: center; }
+    footer p { color: var(--text-3); font-size: 0.76rem; margin: 0; font-weight: 500; }
+    footer strong { color: var(--text-2); }
+
+    @media (max-width: 768px) { #main-content { margin-left: 64px; } }
   </style>
 </head>
 <body>
 {% include '_sidebar.html' %}
-  
 
-  <!-- ══════════════ CONTENIDO ══════════════ -->
   <div id="main-content">
 
     <div class="topbar">
       <h1 class="page-title">
-        <i class="bi bi-calendar-sun" style="color:#d97706; margin-right:8px;"></i>
+        <i class="bi bi-calendar-sun"></i>
         Vacaciones — {{ nombre }} {{ apellido }}
       </h1>
-      <div class="d-flex align-items: center; gap-3">
+      <div class="d-flex align-items-center gap-3">
         <span class="fecha" id="fechaTopbar"></span>
         <span class="badge-role">
           {% if session.get('role')|int == 0 %}
-            <i class="bi bi-shield-check"></i> Admin
+            <i class="bi bi-shield-check-fill"></i> Admin
           {% else %}
-            <i class="bi bi-person-check"></i> Empleado
+            <i class="bi bi-person-check-fill"></i> Empleado
           {% endif %}
         </span>
       </div>
@@ -193,8 +235,7 @@
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4"
-                 style="border-radius:10px; font-size:0.875rem;">
+            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4">
               {{ message }}
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -204,21 +245,25 @@
 
       <div class="row g-4">
 
-        <!-- ── FORMULARIO ── -->
-        <div class="col-12 col-lg-5">
+        <!-- FORMULARIO -->
+        <div class="col-12 col-lg-4">
           <div class="panel">
-            <h5><i class="bi bi-calendar-plus"></i> <span id="form-titulo">Solicitar Vacaciones</span></h5>
+            <div class="panel-head">
+              <div class="panel-head-icon" style="background:rgba(217,119,6,0.09);color:var(--amber);">
+                <i class="bi bi-calendar-plus"></i>
+              </div>
+              <h5 id="form-titulo">Solicitar Vacaciones</h5>
+            </div>
 
-            <!-- Banner modo edicion -->
             <div id="modo-edicion-banner">
-              <i class="bi bi-pencil-square"></i>
+              <i class="bi bi-pencil-square" style="flex-shrink:0;"></i>
               Editando registro existente
             </div>
 
             <form method="post" id="form-vacaciones" action="{{ url_for('main.vacaciones') }}">
-              <!-- Campo oculto: id de vacacion (solo en modo edicion) -->
               <input type="hidden" name="vacacion_id" id="vacacion_id" value="">
-              <input type="hidden" name="uid" id="uid_form" value="{{ target_user if target_user is defined and target_user != session.get('user_id') else '' }}"> 
+              <input type="hidden" name="uid" id="uid_form"
+                     value="{{ target_user if target_user is defined and target_user != session.get('user_id') else '' }}">
 
               <div class="mb-3">
                 <label for="vacacionesin" class="form-label">Fecha y hora de inicio</label>
@@ -231,7 +276,7 @@
                        name="vacacionesout" required>
               </div>
 
-              <button type="submit" class="btn-registrar" id="btn-submit">
+              <button type="submit" class="btn-action btn-amber" id="btn-submit">
                 <i class="bi bi-save-fill"></i>
                 <span id="btn-submit-texto">Registrar Vacaciones</span>
               </button>
@@ -244,90 +289,93 @@
           </div>
         </div>
 
-        <!-- ── TABLA ── -->
-        <div class="col-12 col-lg-7">
+        <!-- TABLA -->
+        <div class="col-12 col-lg-8">
           <div class="panel">
-            <h5><i class="bi bi-card-list"></i> Mis Vacaciones Programadas</h5>
+            <div class="panel-head">
+              <div class="panel-head-icon" style="background:rgba(217,119,6,0.09);color:var(--amber);">
+                <i class="bi bi-card-list"></i>
+              </div>
+              <h5>Mis Vacaciones Programadas</h5>
+            </div>
 
             {% if vacaciones %}
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Inicio</th>
-                    <th>Fin</th>
-                    <th>Días / Horas</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for vac in vacaciones %}
-                    <tr id="fila-vac-{{ loop.index }}">
-                      <td>
-                        <span class="badge-fecha">
-                          <i class="bi bi-calendar3"></i>
-                          {{ vac[0].strftime('%d/%m/%Y %H:%M') if vac[0] else '' }}
-                        </span>
-                      </td>
-                      <td>
-                        <span class="badge-fecha">
-                          <i class="bi bi-calendar3"></i>
-                          {{ vac[1].strftime('%d/%m/%Y %H:%M') if vac[1] else '' }}
-                        </span>
-                      </td>
-                      <td style="font-weight:600; color:#374151;">
-  {% if vac[0] and vac[1] %}
-    {% set diff_segundos = (vac[1] - vac[0]).total_seconds() %}
-    {% set dias = (diff_segundos // 86400) | int %}
-    {% set horas_restantes = ((diff_segundos % 86400) // 3600) | int %}
-    {% if horas_restantes >= 8 %}
-      {% set dias = dias + 1 %}
-      {% set horas_restantes = horas_restantes - 8 %}
-    {% endif %}
-    {% if dias > 0 and horas_restantes > 0 %}
-      {{ dias }} día{{ 's' if dias != 1 }} y {{ horas_restantes }} h
-    {% elif dias > 0 %}
-      {{ dias }} día{{ 's' if dias != 1 }}
-    {% else %}
-      {{ horas_restantes }} h
-    {% endif %}
-  {% endif %}
-</td>
-                      <td>
-                        <div class="acciones-td">
-                          <!-- Boton editar -->
-                          <button type="button"
-                                  class="btn-editar-vac"
-                                  id="btn-edit-{{ loop.index }}"
-                                  title="Editar"
-                                  onclick="activarEdicion(
-                                    '{{ vac[2] }}',
-                                    '{{ vac[0].strftime('%Y-%m-%dT%H:%M') if vac[0] else '' }}',
-                                    '{{ vac[1].strftime('%Y-%m-%dT%H:%M') if vac[1] else '' }}',
-                                    {{ loop.index }}
-                                  )">
-                            <i class="bi bi-pencil"></i> Editar
-                          </button>
-
-                          <!-- Boton eliminar -->
-                          <form method="post" action="{{ url_for('main.delete_vacacion') }}"
-                                style="margin:0;">
-                            <input type="hidden" name="vacacion_id" value="{{ vac[2] }}">
-                            <input type="hidden" name="uid" value="{{ target_user if target_user != session.get('user_id') else '' }}">
-                            <button type="submit" class="btn-delete"
-                                    onclick="return confirm('¿Eliminar esta vacación?')">
-                              <i class="bi bi-trash"></i> Eliminar
-                            </button>
-                          </form>
-                        </div>
-                      </td>
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Inicio</th>
+                      <th>Fin</th>
+                      <th>Días / Horas</th>
+                      <th></th>
                     </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {% for vac in vacaciones %}
+                      <tr id="fila-vac-{{ loop.index }}">
+                        <td>
+                          <span class="badge-fecha">
+                            <i class="bi bi-calendar3"></i>
+                            {{ vac[0].strftime('%d/%m/%Y %H:%M') if vac[0] else '' }}
+                          </span>
+                        </td>
+                        <td>
+                          <span class="badge-fecha">
+                            <i class="bi bi-calendar3"></i>
+                            {{ vac[1].strftime('%d/%m/%Y %H:%M') if vac[1] else '' }}
+                          </span>
+                        </td>
+                        <td style="font-weight:600; color:var(--text); font-size:0.835rem;">
+                          {% if vac[0] and vac[1] %}
+                            {% set diff_segundos = (vac[1] - vac[0]).total_seconds() %}
+                            {% set dias = (diff_segundos // 86400) | int %}
+                            {% set horas_restantes = ((diff_segundos % 86400) // 3600) | int %}
+                            {% if horas_restantes >= 8 %}
+                              {% set dias = dias + 1 %}
+                              {% set horas_restantes = horas_restantes - 8 %}
+                            {% endif %}
+                            {% if dias > 0 and horas_restantes > 0 %}
+                              {{ dias }} día{{ 's' if dias != 1 }} y {{ horas_restantes }} h
+                            {% elif dias > 0 %}
+                              {{ dias }} día{{ 's' if dias != 1 }}
+                            {% else %}
+                              {{ horas_restantes }} h
+                            {% endif %}
+                          {% endif %}
+                        </td>
+                        <td>
+                          <div class="acciones-td">
+                            <button type="button"
+                                    class="btn-tbl edit"
+                                    id="btn-edit-{{ loop.index }}"
+                                    onclick="activarEdicion(
+                                      '{{ vac[2] }}',
+                                      '{{ vac[0].strftime('%Y-%m-%dT%H:%M') if vac[0] else '' }}',
+                                      '{{ vac[1].strftime('%Y-%m-%dT%H:%M') if vac[1] else '' }}',
+                                      {{ loop.index }}
+                                    )">
+                              <i class="bi bi-pencil"></i> Editar
+                            </button>
+                            <form method="post" action="{{ url_for('main.delete_vacacion') }}" style="margin:0;">
+                              <input type="hidden" name="vacacion_id" value="{{ vac[2] }}">
+                              <input type="hidden" name="uid"
+                                     value="{{ target_user if target_user != session.get('user_id') else '' }}">
+                              <button type="submit" class="btn-tbl delete"
+                                      onclick="return confirm('¿Eliminar esta vacación?')">
+                                <i class="bi bi-trash"></i> Eliminar
+                              </button>
+                            </form>
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
             {% else %}
               <div class="empty-state">
                 <i class="bi bi-calendar-x"></i>
-                No tienes vacaciones programadas.
+                No tienes vacaciones programadas
               </div>
             {% endif %}
           </div>
@@ -337,23 +385,18 @@
     </div>
 
     <footer>
-      <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
-        &copy; {{ current_year }} Todos los derechos reservados —
-        Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
-      </p>
+      <p>&copy; {{ current_year }} Todos los derechos reservados — Desarrollado por <strong>Ariel Castro</strong></p>
     </footer>
 
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Fecha topbar
     document.getElementById('fechaTopbar').textContent =
       new Date().toLocaleDateString('es-ES', {
         weekday:'long', year:'numeric', month:'long', day:'numeric'
       });
 
-    // Sidebar toggle
     const sidebar     = document.getElementById('sidebar');
     const mainContent = document.getElementById('main-content');
     const toggleBtn   = document.getElementById('toggleSidebar');
@@ -368,62 +411,42 @@
       mainContent.classList.add('expanded');
     }
 
-    // ── EDICION DE VACACIONES ──
     let filaActiva = null;
 
     function activarEdicion(vacacionId, fechaIn, fechaOut, indice) {
-      // Desmarcar fila anterior
       if (filaActiva) {
         document.getElementById('fila-vac-' + filaActiva)?.classList.remove('fila-editando');
-        const btnAnterior = document.getElementById('btn-edit-' + filaActiva);
-        if (btnAnterior) btnAnterior.classList.remove('activo');
+        document.getElementById('btn-edit-' + filaActiva)?.classList.remove('activo');
       }
-
-      // Si pulsamos la misma fila activa => cancelar
-      if (filaActiva === indice) {
-        cancelarEdicion();
-        return;
-      }
-
+      if (filaActiva === indice) { cancelarEdicion(); return; }
       filaActiva = indice;
 
-      // Rellenar formulario
-      document.getElementById('vacacion_id').value    = vacacionId;
-      document.getElementById('vacacionesin').value   = fechaIn;
-      document.getElementById('vacacionesout').value  = fechaOut;
-
-      // Cambiar accion del form a editar
+      document.getElementById('vacacion_id').value   = vacacionId;
+      document.getElementById('vacacionesin').value  = fechaIn;
+      document.getElementById('vacacionesout').value = fechaOut;
       document.getElementById('form-vacaciones').action = "{{ url_for('main.editar_vacacion') }}";
 
-      // UI: modo edicion
-      document.getElementById('form-titulo').textContent        = 'Editar Vacación';
-      document.getElementById('btn-submit-texto').textContent   = 'Guardar Cambios';
+      document.getElementById('form-titulo').textContent       = 'Editar Vacación';
+      document.getElementById('btn-submit-texto').textContent  = 'Guardar Cambios';
       document.getElementById('modo-edicion-banner').classList.add('visible');
       document.getElementById('btn-cancelar').classList.add('visible');
 
-      // Marcar fila
       document.getElementById('fila-vac-' + indice)?.classList.add('fila-editando');
       document.getElementById('btn-edit-' + indice)?.classList.add('activo');
-
-      // Scroll al formulario
-      document.getElementById('form-vacaciones').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('form-vacaciones').scrollIntoView({ behavior:'smooth', block:'start' });
     }
 
     function cancelarEdicion() {
       if (filaActiva) {
         document.getElementById('fila-vac-' + filaActiva)?.classList.remove('fila-editando');
-        const btnAnterior = document.getElementById('btn-edit-' + filaActiva);
-        if (btnAnterior) btnAnterior.classList.remove('activo');
+        document.getElementById('btn-edit-' + filaActiva)?.classList.remove('activo');
         filaActiva = null;
       }
-
-      // Resetear form
       document.getElementById('vacacion_id').value   = '';
       document.getElementById('vacacionesin').value  = '';
       document.getElementById('vacacionesout').value = '';
       document.getElementById('form-vacaciones').action = "{{ url_for('main.vacaciones') }}";
 
-      // UI: modo normal
       document.getElementById('form-titulo').textContent       = 'Solicitar Vacaciones';
       document.getElementById('btn-submit-texto').textContent  = 'Registrar Vacaciones';
       document.getElementById('modo-edicion-banner').classList.remove('visible');

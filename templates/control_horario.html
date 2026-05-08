@@ -7,143 +7,227 @@
   <title>Control Horario</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
   <style>
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #f1f5f9; min-height: 100vh; display: flex; }
-
-   
-
-    #main-content {
-      margin-left: 260px; flex: 1; display: flex;
-      flex-direction: column; min-height: 100vh; transition: margin-left 0.25s ease;
+    :root {
+      --font:        'Satoshi', 'Inter', system-ui, sans-serif;
+      --bg:          #f5f5f7;
+      --surface:     #ffffff;
+      --border:      rgba(0,0,0,0.07);
+      --text:        #1d1d1f;
+      --text-2:      rgba(0,0,0,0.50);
+      --text-3:      rgba(0,0,0,0.28);
+      --accent:      #2563eb;
+      --transition:  150ms cubic-bezier(0.25,0.46,0.45,0.94);
     }
-    #main-content.expanded { margin-left: 68px; }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); min-height: 100vh; display: flex; }
+
+    /* Layout */
+    #main-content {
+      margin-left: 220px; flex: 1; display: flex;
+      flex-direction: column; min-height: 100vh;
+      transition: margin-left 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+    #main-content.expanded { margin-left: 64px; }
+
+    /* Topbar */
     .topbar {
-      background: #ffffff; border-bottom: 1px solid #e5e7eb;
-      padding: 0 28px; height: 64px; display: flex;
-      align-items: center; justify-content: space-between;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 99;
     }
-    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
-    .topbar .fecha { font-size: 0.82rem; color: #64748b; }
+    .topbar .page-title {
+      font-size: 0.95rem; font-weight: 600; color: var(--text);
+      margin: 0; display: flex; align-items: center; gap: 8px;
+      letter-spacing: -0.01em;
+    }
+    .topbar .page-title i { color: var(--accent); }
+    .topbar .fecha { font-size: 0.8rem; color: var(--text-2); font-weight: 500; }
     .topbar .badge-role {
-      background: #eff6ff; color: #2563eb; font-size: 0.75rem; font-weight: 600;
-      padding: 4px 10px; border-radius: 20px; border: 1px solid #bfdbfe;
+      font-size: 0.72rem; font-weight: 600; padding: 3px 10px;
+      border-radius: 20px; border: 1px solid;
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(37,99,235,0.08); color: #1e40af;
+      border-color: rgba(37,99,235,0.2);
     }
+
+    /* Centro */
     .content-area {
-      flex: 1; padding: 28px; display: flex;
-      align-items: center; justify-content: center;
-    }
-    .entry-card {
-      background: #ffffff; border-radius: 16px; border: 1px solid #e5e7eb;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.07); padding: 40px 36px;
-      width: 100%; max-width: 460px; text-align: center;
-    }
-    .icon-wrap {
-      width: 72px; height: 72px; border-radius: 50%;
+      flex: 1; padding: 28px;
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 20px;
     }
-    .icon-wrap.activo    { background: #dbeafe; }
-    .icon-wrap.activo i  { font-size: 2rem; color: #2563eb; }
-    .icon-wrap.completo    { background: #dcfce7; }
-    .icon-wrap.completo i  { font-size: 2rem; color: #16a34a; }
-    .icon-wrap.bloqueado   { background: #fef9c3; }
-    .icon-wrap.bloqueado i { font-size: 2rem; color: #ca8a04; }
 
-    .entry-card h2 { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
-    .entry-card .subtitle { font-size: 0.875rem; color: #64748b; margin-bottom: 28px; }
+    /* Card principal */
+    .entry-card {
+      background: var(--surface);
+      border-radius: 28px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 2px rgba(0,0,0,0.03), 0 8px 32px rgba(0,0,0,0.08);
+      padding: 36px 32px 28px;
+      width: 100%; max-width: 420px;
+      text-align: center;
+    }
+
+    /* Icono superior */
+    .icon-wrap {
+      width: 52px; height: 52px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 18px;
+    }
+    .icon-wrap i { font-size: 1.35rem; }
+    .icon-wrap.activo    { background: rgba(37,99,235,0.09);  }
+    .icon-wrap.activo i  { color: var(--accent); }
+    .icon-wrap.completo  { background: rgba(22,163,74,0.09);  }
+    .icon-wrap.completo i{ color: #16a34a; }
+    .icon-wrap.bloqueado { background: rgba(217,119,6,0.09);  }
+    .icon-wrap.bloqueado i{ color: #d97706; }
+
+    /* Título */
+    .entry-card h2 {
+      font-size: 1.05rem; font-weight: 700; color: var(--text);
+      margin-bottom: 4px; letter-spacing: -0.02em;
+    }
+    .entry-card .subtitle {
+      font-size: 0.82rem; color: var(--text-2); margin-bottom: 22px;
+    }
+
+    /* Reloj */
     .clock-box {
-      background: #f8fafc; border: 1px solid #e5e7eb;
-      border-radius: 12px; padding: 18px 24px; margin-bottom: 28px;
+      background: rgba(0,0,0,0.025);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 22px;
     }
-    .clock-box .clock-date { font-size: 0.85rem; color: #64748b; font-weight: 500; text-transform: capitalize; margin-bottom: 4px; }
-    .clock-box .clock-time { font-size: 2.4rem; font-weight: 700; color: #1e293b; letter-spacing: 2px; line-height: 1; }
-    .clock-box .clock-time span { color: #2563eb; }
+    .clock-date {
+      font-size: 0.78rem; color: var(--text-2); font-weight: 500;
+      text-transform: capitalize; margin-bottom: 4px;
+    }
+    .clock-time {
+      font-size: 2.8rem; font-weight: 300; color: var(--text);
+      letter-spacing: -1px; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .clock-sep { color: var(--text-3); font-weight: 200; }
 
-    /* Estado visual de jornada */
+    /* Stepper minimalista */
     .estado-jornada {
-      display: flex; align-items: center; justify-content: center; gap: 16px;
-      margin-bottom: 24px;
+      display: flex; align-items: center;
+      gap: 0; margin-bottom: 20px; padding: 0 8px;
     }
     .estado-step {
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      font-size: 0.78rem; font-weight: 600;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      font-size: 0.72rem; font-weight: 600;
     }
-    .estado-step .dot {
-      width: 32px; height: 32px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center; font-size: 1rem;
+    .step-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      border: 2px solid;
+      transition: background var(--transition), border-color var(--transition);
     }
-    .estado-step .dot.done   { background: #dcfce7; color: #16a34a; }
-    .estado-step .dot.pending { background: #f1f5f9; color: #94a3b8; }
-    .estado-step .dot.active { background: #dbeafe; color: #2563eb; }
-    .estado-line { flex: 1; height: 2px; background: #e5e7eb; margin-bottom: 18px; }
+    .step-dot.active   { background: var(--accent); border-color: var(--accent); }
+    .step-dot.done     { background: #16a34a; border-color: #16a34a; }
+    .step-dot.pending  { background: transparent; border-color: rgba(0,0,0,0.15); }
+    .step-label.active  { color: var(--accent); }
+    .step-label.done    { color: #16a34a; }
+    .step-label.pending { color: var(--text-3); }
+    .estado-line {
+      flex: 1; height: 1.5px; background: rgba(0,0,0,0.08);
+      margin-bottom: 22px; margin-left: 4px; margin-right: 4px;
+    }
     .estado-line.done { background: #86efac; }
 
-    .btn-registrar {
-      color: white; border: none; border-radius: 10px;
-      padding: 14px; font-size: 1rem; font-weight: 600; width: 100%; cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-      display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;
+    /* Alerta inline */
+    .alerta-inline {
+      border-radius: 12px; padding: 10px 14px; margin-bottom: 14px;
+      font-size: 0.8rem; text-align: left;
+      display: flex; align-items: flex-start; gap: 8px;
     }
-    .btn-registrar.entrada { background: #2563eb; }
-    .btn-registrar.entrada:hover:not(:disabled) { background: #1d4ed8; transform: translateY(-1px); }
-    .btn-registrar.salida  { background: #dc2626; }
-    .btn-registrar.salida:hover:not(:disabled)  { background: #b91c1c; transform: translateY(-1px); }
-    .btn-registrar:disabled { background: #d1d5db; color: #9ca3af; cursor: not-allowed; transform: none; }
+    .alerta-ok-2   { background: rgba(22,163,74,0.07);  color: #15803d; border: 1px solid rgba(22,163,74,0.14); }
+    .alerta-info   { background: rgba(37,99,235,0.07);  color: #1d4ed8; border: 1px solid rgba(37,99,235,0.14); }
+    .alerta-warn   { background: rgba(217,119,6,0.07);  color: #92400e; border: 1px solid rgba(217,119,6,0.14); }
 
-    .alerta-bloqueado {
-      background: #fefce8; border: 1px solid #fde047;
-      border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
-      font-size: 0.85rem; color: #854d0e; text-align: left;
-      display: flex; align-items: flex-start; gap: 8px;
+    /* Botones */
+    .btn-action {
+      width: 100%; border: none; border-radius: 14px;
+      padding: 13px; font-size: 0.9rem; font-weight: 600;
+      font-family: var(--font); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      margin-bottom: 8px;
+      transition: filter var(--transition), transform var(--transition), box-shadow var(--transition);
     }
-    .alerta-ok {
-      background: #f0fdf4; border: 1px solid #86efac;
-      border-radius: 10px; padding: 12px 16px; margin-bottom: 16px;
-      font-size: 0.85rem; color: #166534; text-align: left;
-      display: flex; align-items: flex-start; gap: 8px;
+    .btn-action.entrada {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 2px 10px rgba(37,99,235,0.25);
     }
+    .btn-action.entrada:hover:not(:disabled) {
+      filter: brightness(1.07);
+      box-shadow: 0 4px 18px rgba(37,99,235,0.30);
+      transform: translateY(-1px);
+    }
+    .btn-action.salida {
+      background: #dc2626; color: #fff;
+      box-shadow: 0 2px 10px rgba(220,38,38,0.20);
+    }
+    .btn-action.salida:hover:not(:disabled) {
+      filter: brightness(1.07);
+      box-shadow: 0 4px 18px rgba(220,38,38,0.28);
+      transform: translateY(-1px);
+    }
+    .btn-action:disabled {
+      background: rgba(0,0,0,0.05);
+      color: rgba(0,0,0,0.25);
+      box-shadow: none; cursor: not-allowed; transform: none;
+    }
+
+    /* Volver */
     .btn-volver {
-      background: transparent; color: #64748b; border: 1px solid #e5e7eb;
-      border-radius: 10px; padding: 11px; font-size: 0.875rem; font-weight: 500;
-      width: 100%; cursor: pointer; text-decoration: none;
-      display: flex; align-items: center; justify-content: center;
-      gap: 8px; transition: all 0.15s;
+      width: 100%; background: transparent; border: none;
+      color: var(--text-3); font-size: 0.82rem; font-weight: 500;
+      font-family: var(--font); cursor: pointer; padding: 10px;
+      border-radius: 10px; text-decoration: none;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: color var(--transition), background var(--transition);
+      margin-top: 2px;
     }
-    .btn-volver:hover { background: #f8fafc; color: #374151; border-color: #cbd5e1; }
-    footer {
-      background: #ffffff; border-top: 1px solid #e5e7eb;
-      padding: 16px 28px; text-align: center;
-    }
+    .btn-volver:hover { color: var(--text-2); background: rgba(0,0,0,0.04); }
+
+    /* Alert Bootstrap */
+    .alert { border-radius: 14px; font-size: 0.875rem; border: 1px solid var(--border); }
+
+    /* Footer */
+    footer { background: transparent; border-top: 1px solid var(--border); padding: 14px 32px; text-align: center; }
+    footer p { color: var(--text-3); font-size: 0.76rem; margin: 0; font-weight: 500; }
+    footer strong { color: var(--text-2); }
+
     @media (max-width: 768px) {
-      #sidebar { width: 68px; min-width: 68px; }
-      #sidebar .link-text, #sidebar .user-info,
-      #sidebar .brand-text, #sidebar .nav-section-label { opacity: 0; width: 0; overflow: hidden; }
-      #sidebar .nav-item-link { justify-content: center; padding: 10px 0; }
-      #main-content { margin-left: 68px; }
+      #main-content { margin-left: 64px; }
     }
   </style>
 </head>
 <body>
 {% include '_sidebar.html' %}
-  
 
   <div id="main-content">
     <div class="topbar">
       <h1 class="page-title">
-        <i class="bi bi-calendar-check-fill" style="color:#2563eb; margin-right:8px;"></i>
+        <i class="bi bi-calendar-check-fill"></i>
         Control Horario
       </h1>
       <div class="d-flex align-items-center gap-3">
         <span class="fecha" id="fechaTopbar"></span>
         <span class="badge-role">
           {% if session.get('role')|int == 0 %}
-            <i class="bi bi-shield-check"></i> Admin
+            <i class="bi bi-shield-check-fill"></i> Admin
           {% else %}
-            <i class="bi bi-person-check"></i> Empleado
+            <i class="bi bi-person-check-fill"></i> Empleado
           {% endif %}
         </span>
       </div>
@@ -155,8 +239,7 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             {% for category, message in messages %}
-              <div class="alert alert-{{ category }} alert-dismissible fade show mb-3"
-                   style="border-radius:10px; font-size:0.875rem; text-align:left;">
+              <div class="alert alert-{{ category }} alert-dismissible fade show mb-3" style="text-align:left;">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
               </div>
@@ -164,19 +247,13 @@
           {% endif %}
         {% endwith %}
 
-        {# ── Icono dinámico según estado ── #}
+        {# Icono dinámico #}
         {% if salida_abierta %}
-          <div class="icon-wrap completo">
-            <i class="bi bi-check-circle-fill"></i>
-          </div>
+          <div class="icon-wrap completo"><i class="bi bi-check-circle-fill"></i></div>
         {% elif entrada_abierta %}
-          <div class="icon-wrap bloqueado">
-            <i class="bi bi-clock-history"></i>
-          </div>
+          <div class="icon-wrap bloqueado"><i class="bi bi-clock-history"></i></div>
         {% else %}
-          <div class="icon-wrap activo">
-            <i class="bi bi-calendar-check-fill"></i>
-          </div>
+          <div class="icon-wrap activo"><i class="bi bi-calendar-check-fill"></i></div>
         {% endif %}
 
         <h2>Control de Jornada Laboral</h2>
@@ -184,70 +261,67 @@
           {% if salida_abierta %}
             Jornada completada · Hasta mañana 👋
           {% elif entrada_abierta %}
-            Jornada en curso · Registra la salida cuando termines
+            Jornada en curso · Registra la salida al terminar
           {% else %}
             Registra el inicio de tu jornada laboral
           {% endif %}
         </p>
 
+        {# Reloj #}
         <div class="clock-box">
           <div class="clock-date" id="clockDate">—</div>
           <div class="clock-time" id="clockTime">
-            <span>--</span>:<span>--</span>:<span>--</span>
+            <span id="ch">--</span><span class="clock-sep">:</span><span id="cm">--</span><span class="clock-sep">:</span><span id="cs">--</span>
           </div>
         </div>
 
-        {# ── Indicador visual de estado ── #}
+        {# Stepper minimalista #}
         <div class="estado-jornada">
           <div class="estado-step">
-            <div class="dot {% if entrada_abierta or salida_abierta %}done{% else %}active{% endif %}">
-              <i class="bi {% if entrada_abierta or salida_abierta %}bi-check{% else %}bi-1-circle{% endif %}"></i>
-            </div>
-            <span style="color:{% if entrada_abierta or salida_abierta %}#16a34a{% else %}#2563eb{% endif %};">Entrada</span>
+            <div class="step-dot {% if entrada_abierta or salida_abierta %}done{% else %}active{% endif %}"></div>
+            <span class="step-label {% if entrada_abierta or salida_abierta %}done{% else %}active{% endif %}">Entrada</span>
           </div>
           <div class="estado-line {% if entrada_abierta or salida_abierta %}done{% endif %}"></div>
           <div class="estado-step">
-            <div class="dot {% if salida_abierta %}done{% elif entrada_abierta %}active{% else %}pending{% endif %}">
-              <i class="bi {% if salida_abierta %}bi-check{% else %}bi-2-circle{% endif %}"></i>
-            </div>
-            <span style="color:{% if salida_abierta %}#16a34a{% elif entrada_abierta %}#2563eb{% else %}#94a3b8{% endif %};">Salida</span>
+            <div class="step-dot {% if salida_abierta %}done{% elif entrada_abierta %}active{% else %}pending{% endif %}"></div>
+            <span class="step-label {% if salida_abierta %}done{% elif entrada_abierta %}active{% else %}pending{% endif %}">Salida</span>
           </div>
         </div>
 
-        {# ── Alertas informativas ── #}
+        {# Alertas informativas #}
         {% if salida_abierta %}
-          <div class="alerta-ok">
-            <i class="bi bi-check-circle-fill" style="color:#16a34a; margin-top:1px;"></i>
+          <div class="alerta-inline alerta-ok-2">
+            <i class="bi bi-check-circle-fill" style="margin-top:1px; flex-shrink:0;"></i>
             <span>Jornada completada hoy. Los botones se reactivan mañana.</span>
           </div>
         {% elif entrada_abierta %}
-          <div class="alerta-ok">
-            <i class="bi bi-info-circle-fill" style="color:#2563eb; margin-top:1px;"></i>
+          <div class="alerta-inline alerta-info">
+            <i class="bi bi-info-circle-fill" style="margin-top:1px; flex-shrink:0;"></i>
             <span>Jornada iniciada. Recuerda registrar la salida al terminar.</span>
           </div>
         {% endif %}
 
-        {# ── Botón Inicio de Jornada ── #}
+        {# Botón entrada #}
         <form method="post">
           <input type="hidden" name="accion" value="entrada">
-          <button type="submit" class="btn-registrar entrada"
+          <button type="submit" class="btn-action entrada"
                   {% if entrada_abierta or salida_abierta %}disabled{% endif %}>
             <i class="bi bi-box-arrow-in-right"></i>
             {% if entrada_abierta or salida_abierta %}Entrada ya registrada{% else %}Registrar Inicio de Jornada{% endif %}
           </button>
         </form>
 
-        {# ── Botón Fin de Jornada ── #}
+        {# Botón salida #}
         <form method="post">
           <input type="hidden" name="accion" value="salida">
-          <button type="submit" class="btn-registrar salida"
+          <button type="submit" class="btn-action salida"
                   {% if not entrada_abierta or salida_abierta %}disabled{% endif %}>
             <i class="bi bi-box-arrow-right"></i>
             {% if salida_abierta %}Salida ya registrada{% elif not entrada_abierta %}Registra primero la entrada{% else %}Registrar Fin de Jornada{% endif %}
           </button>
         </form>
 
-        <a href="{{ url_for('main.dashboard') }}" class="btn-volver mt-2">
+        <a href="{{ url_for('main.dashboard') }}" class="btn-volver">
           <i class="bi bi-arrow-left"></i> Volver al Dashboard
         </a>
 
@@ -255,10 +329,7 @@
     </div>
 
     <footer>
-      <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
-        &copy; {{ current_year }} Todos los derechos reservados —
-        Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
-      </p>
+      <p>&copy; {{ current_year }} Todos los derechos reservados — Desarrollado por <strong>Ariel Castro</strong></p>
     </footer>
   </div>
 
@@ -268,11 +339,9 @@
       const now = new Date();
       document.getElementById('clockDate').textContent =
         now.toLocaleDateString('es-ES', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
-      const h = String(now.getHours()).padStart(2,'0');
-      const m = String(now.getMinutes()).padStart(2,'0');
-      const s = String(now.getSeconds()).padStart(2,'0');
-      document.getElementById('clockTime').innerHTML =
-        `<span>${h}</span>:<span>${m}</span>:<span>${s}</span>`;
+      document.getElementById('ch').textContent = String(now.getHours()).padStart(2,'0');
+      document.getElementById('cm').textContent = String(now.getMinutes()).padStart(2,'0');
+      document.getElementById('cs').textContent = String(now.getSeconds()).padStart(2,'0');
     }
     setInterval(updateClock, 1000);
     updateClock();
