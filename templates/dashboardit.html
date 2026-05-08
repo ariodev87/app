@@ -7,68 +7,98 @@
   <title>Dashboard IT</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
   <style>
-    /* ── IT CARDS ESTILO APPLE ── */
-    .it-card {
-      background: #ffffff;
-      border-radius: 20px;
-      border: 1px solid #e5e7eb;
-      padding: 24px 20px;
-      text-align: center;
-      cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .it-card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 32px rgba(0,0,0,0.12);
-    }
-    .it-card-icon {
-      width: 64px; height: 64px;
-      border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 16px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
-    }
-    .it-card-icon i {
-      font-size: 1.8rem;
-      color: white;
-    }
-    .it-card-title {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: #1e293b;
-      margin: 0 0 4px;
-    }
-    .it-card-sub {
-      font-size: 0.75rem;
-      color: #94a3b8;
-      margin: 0;
+    :root {
+      --font: 'Satoshi', 'Inter', system-ui, sans-serif;
+      --bg: #f5f5f7;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.07);
+      --border-row: rgba(0,0,0,0.04);
+      --text: #1d1d1f;
+      --text-2: rgba(0,0,0,0.52);
+      --text-3: rgba(0,0,0,0.30);
+      --accent: #2563eb;
+      --radius-card: 20px;
+      --radius-sm: 8px;
+      --shadow-card: 0 1px 1px rgba(0,0,0,0.03), 0 4px 18px rgba(0,0,0,0.06);
+      --transition: 150ms cubic-bezier(0.25,0.46,0.45,0.94);
     }
 
-    /* Cards con datos */
-    .card:hover { transform: translateY(-4px); }
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #f1f5f9; min-height: 100vh; display: flex; }
+    *, *::before, *::after { box-sizing: border-box; }
+    * { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); min-height: 100vh; display: flex; }
+
     .topbar {
-      background: #ffffff; border-bottom: 1px solid #e5e7eb;
-      padding: 0 28px; height: 64px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 99;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 99;
     }
-    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
-    .topbar .fecha { font-size: 0.82rem; color: #64748b; }
-    .topbar .badge-role {
-      font-size: 0.75rem; font-weight: 600;
-      padding: 4px 10px; border-radius: 20px; border: 1px solid;
-    }
-    .content-area { flex: 1; padding: 28px; }
-    footer {
-      background: #ffffff; border-top: 1px solid #e5e7eb;
-      padding: 16px 28px; text-align: center;
-    }
+    .topbar .page-title { font-size: 0.95rem; font-weight: 600; color: var(--text); margin: 0; display: flex; align-items: center; gap: 8px; letter-spacing: -0.01em; }
+    .topbar .page-title i { color: var(--accent); }
+    .topbar .fecha { font-size: 0.8rem; color: var(--text-2); font-weight: 500; }
+    .topbar .badge-role { font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 20px; border: 1px solid; display: inline-flex; align-items: center; gap: 5px; }
+    .btn-salir { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 500; color: var(--text-2); text-decoration: none; padding: 5px 12px; border-radius: var(--radius-sm); transition: background var(--transition), color var(--transition); }
+    .btn-salir:hover { background: rgba(239,68,68,0.08); color: #dc2626; }
+
+    .content-area { flex: 1; padding: 28px 32px; }
+
+    .hero h4 { font-size: 1.3rem; font-weight: 700; color: var(--text); margin: 0 0 4px; letter-spacing: -0.02em; }
+    .hero p { font-size: 0.875rem; color: var(--text-2); margin: 0; }
+
+    .card-apple { background: var(--surface); border-radius: var(--radius-card); border: 1px solid var(--border); box-shadow: var(--shadow-card); overflow: hidden; height: 100%; }
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
+    .card-head-left { display: flex; align-items: center; gap: 10px; }
+    .card-head-icon { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.88rem; flex-shrink: 0; }
+    .card-head h5 { font-size: 0.875rem; font-weight: 600; color: var(--text); margin: 0; letter-spacing: -0.01em; }
+    .card-body-p { padding: 16px 20px 18px; }
+
+    .summary-card { text-decoration: none; color: inherit; display: block; transition: transform var(--transition), box-shadow var(--transition); }
+    .summary-card:hover { transform: translateY(-2px); }
+
+    .summary-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+    .summary-icon { width: 56px; height: 56px; border-radius: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 18px rgba(0,0,0,0.08); flex-shrink: 0; }
+    .summary-icon i { color: #fff; font-size: 1.55rem; }
+    .summary-title { font-size: 1rem; font-weight: 700; color: var(--text); margin: 0 0 4px; letter-spacing: -0.01em; }
+    .summary-sub { font-size: 0.78rem; color: var(--text-2); margin: 0; }
+    .summary-pill { font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+    .summary-list { list-style: none; padding: 0; margin: 0 0 14px; }
+    .summary-list li { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; border-bottom: 1px solid var(--border-row); font-size: 0.83rem; color: var(--text); }
+    .summary-list li:last-child { border-bottom: none; }
+    .summary-list .muted { color: var(--text-2); }
+    .summary-foot { display: flex; justify-content: space-between; align-items: center; color: var(--text-2); font-size: 0.8rem; padding-top: 2px; }
+    .summary-foot i { color: rgba(0,0,0,0.35); font-size: 0.9rem; }
+
+    .chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+    .chip-green { background: rgba(22,163,74,0.10); color: #15803d; }
+    .chip-red { background: rgba(220,38,38,0.10); color: #b91c1c; }
+    .chip-amber { background: rgba(217,119,6,0.10); color: #92400e; }
+    .chip-slate { background: rgba(0,0,0,0.05); color: var(--text-2); }
+
+    .progress-soft { height: 10px; border-radius: 999px; background: rgba(0,0,0,0.06); overflow: hidden; }
+    .progress-soft .progress-bar { border-radius: 999px; }
+
+    .table-panel { background: var(--surface); border-radius: var(--radius-card); border: 1px solid var(--border); box-shadow: var(--shadow-card); overflow: hidden; }
+    .table-panel .table { margin: 0; color: var(--text); font-size: 0.835rem; }
+    .table-panel .table thead th { background: transparent; color: var(--text-2); font-size: 0.71rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border); padding: 10px 22px; }
+    .table-panel .table tbody td { padding: 11px 22px; border-bottom: 1px solid var(--border-row); vertical-align: middle; }
+    .table-panel .table tbody tr:last-child td { border-bottom: none; }
+    .table-panel .table-hover tbody tr:hover td { background: rgba(0,0,0,0.015); }
+
+    .alert { border-radius: 16px; font-size: 0.875rem; border: 1px solid var(--border); box-shadow: var(--shadow-card); }
+    footer { background: transparent; border-top: 1px solid var(--border); padding: 14px 32px; text-align: center; }
+    footer p { color: var(--text-3); font-size: 0.76rem; margin: 0; font-weight: 500; }
+    footer strong { color: var(--text-2); }
   </style>
 </head>
 <body>
@@ -79,40 +109,26 @@
   {% if role|int == 0 and dep in ['financiero', 'melia'] %}
     {% set rol_label = 'Supervisora' %}
     {% set rol_icon  = 'bi-star-fill' %}
-    {% set rol_color = 'background:#fdf4ff; color:#7e22ce; border-color:#d8b4fe;' %}
+    {% set rol_color = 'background:rgba(124,58,237,0.08); color:#6d28d9; border-color:rgba(124,58,237,0.2);' %}
   {% elif role|int == 0 %}
     {% set rol_label = 'Admin' %}
     {% set rol_icon  = 'bi-shield-check-fill' %}
-    {% set rol_color = 'background:#dbeafe; color:#1e40af; border-color:#93c5fd;' %}
+    {% set rol_color = 'background:rgba(37,99,235,0.08); color:#1e40af; border-color:rgba(37,99,235,0.2);' %}
   {% else %}
     {% set rol_label = 'Empleado' %}
     {% set rol_icon  = 'bi-person-check-fill' %}
-    {% set rol_color = 'background:#eff6ff; color:#2563eb; border-color:#bfdbfe;' %}
+    {% set rol_color = 'background:rgba(37,99,235,0.07); color:#2563eb; border-color:rgba(37,99,235,0.18);' %}
   {% endif %}
 
   {% include '_sidebar.html' %}
 
   <div id="main-content">
     <div class="topbar">
-      <h1 class="page-title">
-        <i class="bi bi-pc-display" style="color:#2563eb; margin-right:8px;"></i>
-        Dashboard IT
-      </h1>
+      <h1 class="page-title"><i class="bi bi-pc-display"></i> Dashboard IT</h1>
       <div class="d-flex align-items-center gap-3">
         <span class="fecha" id="fechaTopbar"></span>
-        <span class="badge-role" style="{{ rol_color }}">
-          <i class="bi {{ rol_icon }}"></i> {{ rol_label }}
-        </span>
-        <a href="{{ url_for('main.logout') }}"
-           style="display:flex; align-items:center; gap:6px; font-size:0.82rem;
-                  color:#ef4444; text-decoration:none; font-weight:500;
-                  border:1px solid #fca5a5; border-radius:8px; padding:5px 12px;
-                  background:#fff; transition:background 0.15s;"
-           onmouseover="this.style.background='#fef2f2'"
-           onmouseout="this.style.background='#fff'">
-          <i class="bi bi-box-arrow-left"></i>
-          <span>Salir</span>
-        </a>
+        <span class="badge-role" style="{{ rol_color }}"><i class="bi {{ rol_icon }}"></i> {{ rol_label }}</span>
+        <a href="{{ url_for('main.logout') }}" class="btn-salir"><i class="bi bi-box-arrow-left"></i><span>Salir</span></a>
       </div>
     </div>
 
@@ -120,8 +136,7 @@
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
           {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4"
-                 style="border-radius:10px; font-size:0.875rem;">
+            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4">
               {{ message }}
               <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -129,195 +144,197 @@
         {% endif %}
       {% endwith %}
 
-      <div class="mb-4">
-        <h4 style="color:#1e293b; font-weight:700;">Dashboard IT 🖥️</h4>
-        <p style="color:#64748b; font-size:0.9rem; margin:0;">
-          Panel de administración del departamento IT.
-        </p>
+      <div class="hero mb-4">
+        <h4>Dashboard IT 🖥️</h4>
+        <p>Panel de administración del departamento IT.</p>
       </div>
 
-      <!-- ══ CARDS UNA AL LADO DE LA OTRA ══ -->
       <div class="row g-4 mb-5">
-        <!-- Card Equipos con Datos -->
-        <div class="col-md-6">
-          <a href="{{ url_for('main.inventario_equipos') }}" style="text-decoration:none;">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="transition: transform 0.2s;">
-              <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                  <div class="bg-primary rounded-circle p-3 d-flex align-items-center justify-content-center" style="width:60px; height:60px;">
-                    <i class="bi bi-pc-display-horizontal text-white fs-4"></i>
+        <div class="col-12 col-md-6">
+          <a href="{{ url_for('main.inventario_equipos') }}" class="summary-card">
+            <div class="card-apple h-100">
+              <div class="card-body-p">
+                <div class="summary-top">
+                  <div class="d-flex gap-3">
+                    <div class="summary-icon" style="background: linear-gradient(160deg, #3b82f6 0%, #2563eb 100%);">
+                      <i class="bi bi-pc-display-horizontal"></i>
+                    </div>
+                    <div>
+                      <h5 class="summary-title">Inventario Equipos</h5>
+                      <p class="summary-sub">{{ total_equipos }} equipos registrados</p>
+                    </div>
                   </div>
-                  <div>
-                    <span class="badge bg-primary rounded-pill">{{ total_equipos }} Equipos</span>
-                  </div>
+                  <span class="summary-pill" style="background: rgba(37,99,235,0.10); color:#1d4ed8;">{{ total_equipos }} Equipos</span>
                 </div>
-                <h5 class="card-title fw-bold mb-2">Inventario Equipos</h5>
-                <ul class="list-unstyled small text-muted mb-3">
+
+                <ul class="summary-list">
                   {% for eq in equipos_resumen[:3] %}
-                  <li class="d-flex justify-content-between py-1">
-                    <span>{{ eq.nombre }} ({{ eq.usuario }})</span>
-                    <span class="text-primary">{{ eq.ip or 'Sin serie' }}</span>
-                  </li>
+                    <li>
+                      <span>{{ eq.nombre }} <span class="muted">({{ eq.usuario }})</span></span>
+                      <span class="muted">{{ eq.ip or 'Sin IP' }}</span>
+                    </li>
                   {% endfor %}
-                  {% if total_equipos > 3 %}<li class="text-primary">... y {{ total_equipos - 3 }} más</li>{% endif %}
+                  {% if total_equipos > 3 %}
+                    <li><span class="muted">... y {{ total_equipos - 3 }} más</span><span></span></li>
+                  {% endif %}
                 </ul>
-                <div class="d-flex justify-content-between">
-                  <small class="text-muted">Ver todos</small>
-                  <i class="bi bi-chevron-right text-primary"></i>
+
+                <div class="summary-foot">
+                  <span>Ver todos</span>
+                  <i class="bi bi-chevron-right"></i>
                 </div>
               </div>
             </div>
           </a>
         </div>
 
-        <!-- Card Servidores con Datos -->
-        <div class="col-md-6">
-          <a href="{{ url_for('main.inventario_servidores') }}" style="text-decoration:none;">
-            <div class="card border-0 shadow-sm rounded-3 h-100" style="transition: transform 0.2s;">
-              <div class="card-body p-4">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                  <div class="bg-success rounded-circle p-3 d-flex align-items-center justify-content-center" style="width:60px; height:60px;">
-                    <i class="bi bi-server text-white fs-4"></i>
+        <div class="col-12 col-md-6">
+          <a href="{{ url_for('main.inventario_servidores') }}" class="summary-card">
+            <div class="card-apple h-100">
+              <div class="card-body-p">
+                <div class="summary-top">
+                  <div class="d-flex gap-3">
+                    <div class="summary-icon" style="background: linear-gradient(160deg, #34d399 0%, #059669 100%);">
+                      <i class="bi bi-server"></i>
+                    </div>
+                    <div>
+                      <h5 class="summary-title">Inventario Servidores</h5>
+                      <p class="summary-sub">{{ total_servidores }} servidores registrados</p>
+                    </div>
                   </div>
-                  <div>
-                    <span class="badge bg-success rounded-pill">{{ total_servidores }} Servidores</span>
-                  </div>
+                  <span class="summary-pill" style="background: rgba(5,150,105,0.10); color:#047857;">{{ total_servidores }} Servidores</span>
                 </div>
-                <h5 class="card-title fw-bold mb-2">Inventario Servidores</h5>
-                <ul class="list-unstyled small text-muted mb-3">
+
+                <ul class="summary-list">
                   {% for s in servidores_resumen[:3] %}
-                  <li class="d-flex justify-content-between py-1">
-                    <span>{{ s.nombre }}</span>
-                    <span class="text-success">{{ s.ip or 'Sin IP' }}</span>
-                  </li>
+                    <li>
+                      <span>{{ s.nombre }}</span>
+                      <span class="muted">{{ s.ip or 'Sin IP' }}</span>
+                    </li>
                   {% endfor %}
-                  {% if total_servidores > 3 %}<li class="text-success">... y {{ total_servidores - 3 }} más</li>{% endif %}
+                  {% if total_servidores > 3 %}
+                    <li><span class="muted">... y {{ total_servidores - 3 }} más</span><span></span></li>
+                  {% endif %}
                 </ul>
-                <div class="d-flex justify-content-between">
-                  <small class="text-muted">Ver todos</small>
-                  <i class="bi bi-chevron-right text-success"></i>
+
+                <div class="summary-foot">
+                  <span>Ver todos</span>
+                  <i class="bi bi-chevron-right"></i>
                 </div>
               </div>
             </div>
           </a>
         </div>
       </div>
-  <!-- ══ BACKUPS + TICKETS JUNTOS (fila perfecta) ══ -->
-<div class="row g-4">
-  <!-- CARD BACKUPS (TU CÓDIGO EXACTO) -->
-  <div class="col-12 col-lg-6">
-    <div class="card border-0 shadow-sm rounded-3 h-100">
-      <div class="card-body p-4">
-        <div class="d-flex align-items-center mb-3">
-          <div class="bg-warning rounded-circle p-3 me-3">
-            <i class="bi bi-cloud-arrow-up text-white fs-4"></i>
-          </div>
-          <div>
-            <h5 class="mb-1 fw-bold">Backups Recientes</h5>
-            <small class="text-muted">Último: {{ ultimo_backup or 'Ninguno' }} | {{ total_backups }} total</small>
+
+      <div class="row g-4">
+        <div class="col-12 col-lg-6">
+          <div class="table-panel h-100">
+            <div class="card-head">
+              <div class="card-head-left">
+                <div class="card-head-icon" style="background:rgba(245,158,11,0.10); color:#f59e0b;"><i class="bi bi-cloud-arrow-up-fill"></i></div>
+                <h5>Backups Recientes</h5>
+              </div>
+              <span class="summary-pill" style="background:rgba(245,158,11,0.10); color:#b45309;">{{ total_backups }} total</span>
+            </div>
+            <div class="card-body-p">
+              <div class="d-flex justify-content-between small text-muted mb-1">
+                <span>Éxito {{ backup_exito_pct }}%</span>
+                <span>{{ backup_fallos }} fallos</span>
+              </div>
+              <div class="progress progress-soft mb-3">
+                <div class="progress-bar bg-success" style="width: {{ backup_exito_pct }}%"></div>
+                <div class="progress-bar bg-danger" style="width: {{ backup_fallos_pct }}%"></div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                  <thead>
+                    <tr><th>Fecha</th><th>Servidor</th><th>Estado</th></tr>
+                  </thead>
+                  <tbody>
+                    {% for b in backups_recientes[:3] %}
+                    <tr>
+                      <td>{{ b.fecha.strftime('%d/%m %H:%M') }}</td>
+                      <td>{{ b.servidor }}</td>
+                      <td>
+                        {% if b.estado == 'OK' %}
+                          <span class="chip chip-green">OK</span>
+                        {% else %}
+                          <span class="chip chip-red">Error</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+
+              <a href="{{ url_for('main.backups') }}" class="btn btn-outline-primary btn-sm mt-3">Ver Todos</a>
+            </div>
           </div>
         </div>
-        
-        <!-- Barra Progreso -->
-        <div class="mb-3">
-          <div class="d-flex justify-content-between small text-muted mb-1">
-            <span>Éxito {{ backup_exito_pct }}%</span>
-            <span>{{ backup_fallos }} fallos</span>
-          </div>
-          <div class="progress rounded-pill" style="height:12px;">
-            <div class="progress-bar bg-success" style="width: {{ backup_exito_pct }}%"></div>
-            <div class="progress-bar bg-danger" style="width: {{ backup_fallos_pct }}%"></div>
-          </div>
+
+        <div class="col-12 col-lg-6">
+          <a href="{{ url_for('main.tickets') }}" class="summary-card">
+            <div class="table-panel h-100">
+              <div class="card-head">
+                <div class="card-head-left">
+                  <div class="card-head-icon" style="background:rgba(239,68,68,0.10); color:#ef4444;"><i class="bi bi-ticket-perforated-fill"></i></div>
+                  <h5 style="color:#b91c1c;">Tickets Pendientes</h5>
+                </div>
+                <span class="summary-pill" style="background:rgba(239,68,68,0.10); color:#b91c1c;">{{ tickets_abiertos }} abiertos</span>
+              </div>
+              <div class="card-body-p">
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover mb-0">
+                    <thead>
+                      <tr><th>Título</th><th>Usuario</th><th>Estado</th></tr>
+                    </thead>
+                    <tbody>
+                      {% for t in tickets_resumen[:3] %}
+                      <tr>
+                        <td class="fw-medium">{{ t.titulo[:25] }}{% if t.titulo|length > 25 %}...{% endif %}</td>
+                        <td>{{ t.usuario }}</td>
+                        <td>
+                          {% if t.estado == 'Abierto' %}
+                            <span class="chip chip-red">Abierto</span>
+                          {% elif t.estado == 'En Progreso' %}
+                            <span class="chip chip-amber">Progreso</span>
+                          {% else %}
+                            <span class="chip chip-green">Cerrado</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+                <div class="d-flex justify-content-start mt-3">
+                  <span class="btn btn-outline-danger btn-sm">Ver Todos</span>
+                </div>
+              </div>
+            </div>
+          </a>
         </div>
-        
-        <!-- Tabla 3 backups -->
-        <div class="table-responsive">
-          <table class="table table-sm table-hover mb-0">
-            <thead class="table-light"><tr><th>Fecha</th><th>Servidor</th><th>Estado</th></tr></thead>
-            <tbody>
-              {% for b in backups_recientes[:3] %}
-              <tr>
-                <td>{{ b.fecha.strftime('%d/%m %H:%M') }}</td>
-                <td>{{ b.servidor }}</td>
-                <td>
-                  {% if b.estado == 'OK' %}<span class="badge bg-success">OK</span>{% endif %}
-                  {% if b.estado == 'Error' %}<span class="badge bg-danger">Error</span>{% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <a href="{{ url_for('main.backups') }}" class="btn btn-outline-primary btn-sm mt-2">Ver Todos</a>
       </div>
     </div>
-  </div>
-
-  <!-- CARD TICKETS (AL LADO - MISMO ESTILO) -->
-  <div class="col-12 col-lg-6">
-    <a href="{{ url_for('main.tickets') }}" style="text-decoration:none;">
-      <div class="card border-0 shadow-sm rounded-3 h-100">
-        <div class="card-body p-4">
-          <div class="d-flex align-items-center mb-3">
-            <div class="bg-danger rounded-circle p-3 me-3">
-              <i class="bi bi-ticket-perforated text-white fs-4"></i>
-            </div>
-            <div>
-              <h5 class="mb-1 fw-bold text-danger">Tickets Pendientes</h5>
-              <small class="text-muted">{{ tickets_abiertos }} abiertos | {{ tickets_resumen|length }} total</small>
-            </div>
-          </div>
-          
-          <!-- Tabla 3 tickets -->
-          <div class="table-responsive">
-            <table class="table table-sm table-hover mb-0">
-              <thead class="table-light"><tr><th>Título</th><th>Usuario</th><th>Estado</th></tr></thead>
-              <tbody>
-                {% for t in tickets_resumen[:3] %}
-                <tr>
-                  <td class="fw-medium">{{ t.titulo[:25] }}{% if t.titulo|length > 25 %}...{% endif %}</td>
-                  <td>{{ t.usuario }}</td>
-                  <td>
-                    {% if t.estado == 'Abierto' %}<span class="badge bg-danger">Abierto</span>{% endif %}
-                    {% if t.estado == 'En Progreso' %}<span class="badge bg-warning">Progreso</span>{% endif %}
-                    {% if t.estado == 'Cerrado' %}<span class="badge bg-success">Cerrado</span>{% endif %}
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-          <a href="{{ url_for('main.tickets') }}" class="btn btn-outline-danger btn-sm mt-2">Ver Todos</a>
-        </div>
-      </div>
-    </a>
-  </div>
-</div>
-
 
     <footer>
-      <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
-        &copy; {{ current_year }} Todos los derechos reservados —
-        Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
-      </p>
+      <p>&copy; {{ current_year }} Todos los derechos reservados — Desarrollado por <strong>Ariel Castro</strong></p>
     </footer>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    document.getElementById('fechaTopbar').textContent =
-      new Date().toLocaleDateString('es-ES', {
-        weekday:'long', year:'numeric', month:'long', day:'numeric'
-      });
-
-    const sidebar     = document.getElementById('sidebar');
+    document.getElementById('fechaTopbar').textContent = new Date().toLocaleDateString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    const sidebar = document.getElementById('sidebar');
     const mainContent = document.getElementById('main-content');
-    const toggleBtn   = document.getElementById('toggleSidebar');
+    const toggleBtn = document.getElementById('toggleSidebar');
     toggleBtn.addEventListener('click', () => {
       sidebar.classList.toggle('collapsed');
       mainContent.classList.toggle('expanded');
-      localStorage.setItem('sidebar_collapsed',
-        sidebar.classList.contains('collapsed') ? '1' : '0');
+      localStorage.setItem('sidebar_collapsed', sidebar.classList.contains('collapsed') ? '1' : '0');
     });
     if (localStorage.getItem('sidebar_collapsed') === '1') {
       sidebar.classList.add('collapsed');

@@ -1,590 +1,536 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%232563eb' viewBox='0 0 16 16'><path d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z'/><path d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z'/></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%232563eb' viewBox='0 0 16 16'><path d='M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z'/><path d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z'/></svg>">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Directorio Telefónico</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
   <style>
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #f1f5f9; min-height: 100vh; display: flex; }
+    :root {
+      --font: 'Satoshi', 'Inter', system-ui, sans-serif;
+      --bg: #f5f5f7;
+      --surface: #ffffff;
+      --border: rgba(0,0,0,0.07);
+      --text: #1d1d1f;
+      --text-2: rgba(0,0,0,0.50);
+      --text-3: rgba(0,0,0,0.30);
+      --accent: #2563eb;
+      --radius-card: 20px;
+      --shadow: 0 1px 1px rgba(0,0,0,0.03), 0 4px 18px rgba(0,0,0,0.06);
+      --transition: 150ms cubic-bezier(0.25,0.46,0.45,0.94);
+    }
 
-    /* ── SIDEBAR ── */
-    #sidebar {
-      width: 260px; min-width: 260px;
-      background: #ffffff; border-right: 1px solid #e5e7eb;
+    *, *::before, *::after { box-sizing: border-box; }
+    * { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); min-height: 100vh; display: flex; }
+
+    /* Layout */
+    #main-content {
+      margin-left: 220px; flex: 1;
       display: flex; flex-direction: column;
       min-height: 100vh;
-      transition: width 0.25s ease, min-width 0.25s ease;
-      position: fixed; top: 0; left: 0;
-      z-index: 100; overflow: hidden;
+      transition: margin-left 0.22s cubic-bezier(0.4,0,0.2,1);
     }
-    #sidebar.collapsed { width: 68px; min-width: 68px; }
+    #main-content.expanded { margin-left: 64px; }
 
-    .sidebar-brand {
-      display: flex; align-items: center; gap: 10px;
-      padding: 18px 20px; border-bottom: 1px solid #e5e7eb;
-      min-height: 64px; position: relative;
-    }
-    .sidebar-brand .brand-icon { color: #2563eb; font-size: 1.6rem; flex-shrink: 0; }
-    .sidebar-brand .brand-text { font-size: 1rem; font-weight: 700; color: #1e293b; white-space: nowrap; transition: opacity 0.2s; }
-    #sidebar.collapsed .brand-text { opacity: 0; width: 0; overflow: hidden; }
-
-    #toggleSidebar {
-      position: absolute; top: 18px; right: -14px;
-      width: 28px; height: 28px; border-radius: 50%;
-      background: #2563eb; color: white; border: none;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem; z-index: 101;
-      box-shadow: 0 2px 6px rgba(37,99,235,0.4); transition: transform 0.25s;
-    }
-    #sidebar.collapsed #toggleSidebar { transform: rotate(180deg); }
-
-    .sidebar-user {
-      display: flex; align-items: center; gap: 12px;
-      padding: 16px 20px; border-bottom: 1px solid #e5e7eb;
-    }
-    .sidebar-user img {
-      width: 40px; height: 40px; border-radius: 50%;
-      object-fit: cover; border: 2px solid #2563eb; flex-shrink: 0;
-    }
-    .sidebar-user .user-info { transition: opacity 0.2s; white-space: nowrap; overflow: hidden; }
-    #sidebar.collapsed .user-info { opacity: 0; width: 0; }
-    .sidebar-user .user-name { font-size: 0.875rem; font-weight: 600; color: #1e293b; margin: 0; }
-    .sidebar-user .user-role { font-size: 0.75rem; color: #64748b; margin: 0; }
-
-    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
-
-    .nav-section-label {
-      font-size: 0.7rem; font-weight: 600; color: #94a3b8;
-      text-transform: uppercase; letter-spacing: 0.08em;
-      padding: 10px 20px 4px; white-space: nowrap; transition: opacity 0.2s;
-    }
-    #sidebar.collapsed .nav-section-label { opacity: 0; }
-
-    .nav-item-link {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 20px; color: #475569; text-decoration: none;
-      font-size: 0.875rem; font-weight: 500;
-      border-left: 3px solid transparent;
-      transition: all 0.15s ease; white-space: nowrap;
-    }
-    .nav-item-link:hover { background: #eff6ff; color: #2563eb; border-left-color: #93c5fd; }
-    .nav-item-link.active { background: #eff6ff; color: #2563eb; border-left-color: #2563eb; font-weight: 600; }
-    .nav-item-link i { font-size: 1.1rem; color: #2563eb; flex-shrink: 0; width: 22px; text-align: center; }
-    .nav-item-link .link-text { transition: opacity 0.2s; }
-    #sidebar.collapsed .link-text { opacity: 0; width: 0; overflow: hidden; }
-    #sidebar.collapsed .nav-item-link { justify-content: center; padding: 10px 0; }
-
-    .nav-item-link.lunch i     { color: #f59e0b; }
-    .nav-item-link.lunch:hover { background: #fffbeb; color: #d97706; border-left-color: #fcd34d; }
-    .nav-item-link.lunch-in i     { color: #10b981; }
-    .nav-item-link.lunch-in:hover { background: #ecfdf5; color: #059669; border-left-color: #6ee7b7; }
-    .nav-item-link.visitor i     { color: #8b5cf6; }
-    .nav-item-link.visitor:hover { background: #f5f3ff; color: #7c3aed; border-left-color: #c4b5fd; }
-    .nav-item-link.directorio i     { color: #059669; }
-    .nav-item-link.directorio:hover { background: #ecfdf5; color: #059669; border-left-color: #6ee7b7; }
-    .nav-item-link.directorio.active { background: #ecfdf5; color: #059669; border-left-color: #059669; }
-
-    .nav-divider { border-top: 1px solid #e5e7eb; margin: 8px 0; }
-    .sidebar-footer { padding: 12px 0; border-top: 1px solid #e5e7eb; }
-    .nav-item-link.logout i { color: #ef4444; }
-    .nav-item-link.logout:hover { background: #fef2f2; color: #ef4444; border-left-color: #fca5a5; }
-
-    /* ── CONTENIDO ── */
-    #main-content {
-      margin-left: 260px; flex: 1;
-      display: flex; flex-direction: column;
-      min-height: 100vh; transition: margin-left 0.25s ease;
-    }
-    #main-content.expanded { margin-left: 68px; }
-
+    /* Topbar */
     .topbar {
-      background: #ffffff; border-bottom: 1px solid #e5e7eb;
-      padding: 0 28px; height: 64px;
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 60px;
       display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; z-index: 99;
     }
-    .topbar .page-title { font-size: 1.1rem; font-weight: 600; color: #1e293b; margin: 0; }
-    .topbar .fecha { font-size: 0.82rem; color: #64748b; }
-
-    .content-area { flex: 1; padding: 28px; }
-
-    footer {
-      background: #ffffff; border-top: 1px solid #e5e7eb;
-      padding: 16px 28px; text-align: center;
+    .topbar .page-title {
+      font-size: 0.95rem; font-weight: 600; color: var(--text);
+      margin: 0; display: flex; align-items: center; gap: 8px;
+      letter-spacing: -0.01em;
     }
+    .topbar .page-title i { color: #059669; }
+    .topbar .fecha { font-size: 0.8rem; color: var(--text-2); font-weight: 500; }
 
-    /* ── DIRECTORIO ── */
+    .content-area { flex: 1; padding: 28px 32px; }
+
+    /* Hero — pastel desaturado */
     .dir-header {
-      background: linear-gradient(135deg, #1e40af 0%, #2563eb 60%, #3b82f6 100%);
-      border-radius: 20px; padding: 28px 32px;
-      margin-bottom: 28px; color: #fff;
-      display: flex; align-items: center; gap: 20px;
-      box-shadow: 0 8px 32px rgba(37,99,235,0.25);
+      background: linear-gradient(160deg, #dbeafe 0%, #bfdbfe 60%, #ede9fe 100%);
+      border-radius: var(--radius-card);
+      border: 1px solid rgba(37,99,235,0.10);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      display: flex; align-items: center; gap: 18px;
     }
     .dir-header .hicon {
-      width: 56px; height: 56px; border-radius: 14px;
-      background: rgba(255,255,255,0.15);
+      width: 48px; height: 48px; border-radius: 14px;
+      background: rgba(37,99,235,0.12);
       display: flex; align-items: center; justify-content: center;
-      font-size: 1.8rem; flex-shrink: 0;
+      font-size: 1.4rem; flex-shrink: 0; color: var(--accent);
     }
-    .dir-header h1 { font-size: 1.4rem; font-weight: 800; margin: 0 0 4px; }
-    .dir-header p  { font-size: 0.85rem; margin: 0; opacity: 0.8; }
+    .dir-header h1 {
+      font-size: 1.1rem; font-weight: 700; color: var(--text);
+      margin: 0 0 3px; letter-spacing: -0.02em;
+    }
+    .dir-header p { font-size: 0.8rem; color: var(--text-2); margin: 0; }
 
+    /* Search */
     .search-wrap { position: relative; margin-bottom: 28px; }
     .search-wrap i {
-      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
-      color: #94a3b8; font-size: 1rem;
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--text-3); font-size: 0.9rem;
     }
     .search-input {
-      width: 100%; padding: 12px 16px 12px 44px;
-      border-radius: 12px; border: 1px solid #e5e7eb;
-      background: #fff; font-size: 0.9rem; color: #1e293b;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%; padding: 10px 14px 10px 38px;
+      border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface); font-size: 0.875rem; color: var(--text);
+      box-shadow: var(--shadow); outline: none; font-family: var(--font);
+      transition: border-color var(--transition), box-shadow var(--transition);
     }
+    .search-input::placeholder { color: var(--text-3); }
     .search-input:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37,99,235,0.10);
     }
 
+    /* Section title */
     .section-block { margin-bottom: 28px; }
     .section-title {
-      display: flex; align-items: center; gap: 10px;
-      font-size: 0.72rem; font-weight: 700; color: #64748b;
-      text-transform: uppercase; letter-spacing: 0.1em;
-      margin-bottom: 12px; padding: 0 4px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.62rem; font-weight: 700; color: var(--text-3);
+      text-transform: uppercase; letter-spacing: 0.10em;
+      margin-bottom: 12px; padding: 0 2px;
     }
-    .section-title::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+    .section-title i { font-size: 0.82rem; color: var(--text-3); }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
 
+    /* Grid */
     .dir-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+      gap: 10px;
     }
 
+    /* Card */
     .dir-card {
-      background: #fff; border-radius: 14px;
-      border: 1px solid #e5e7eb;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      padding: 14px 16px;
-      display: flex; align-items: center; gap: 12px;
-      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      background: var(--surface);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 11px;
+      transition: transform var(--transition), box-shadow var(--transition);
+      text-decoration: none;
     }
     .dir-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-      border-color: #bfdbfe;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.09);
     }
+
     .dir-card .avatar {
-      width: 40px; height: 40px; border-radius: 10px;
+      width: 38px; height: 38px; border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 0.85rem; font-weight: 700; flex-shrink: 0; color: #fff;
+      font-size: 0.78rem; font-weight: 700; flex-shrink: 0; color: #fff;
     }
+
     .dir-card .info { min-width: 0; }
     .dir-card .info .cname {
-      font-size: 0.78rem; font-weight: 600; color: #1e293b;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 4px;
+      font-size: 0.775rem; font-weight: 600; color: var(--text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      margin: 0 0 4px; letter-spacing: -0.01em;
     }
     .dir-card .info .cext {
       display: inline-flex; align-items: center; gap: 4px;
-      background: #eff6ff; color: #2563eb;
-      border: 1px solid #bfdbfe;
-      border-radius: 20px; padding: 2px 9px;
-      font-size: 0.78rem; font-weight: 700;
+      background: rgba(37,99,235,0.07); color: #1d4ed8;
+      border-radius: 999px; padding: 2px 9px;
+      font-size: 0.75rem; font-weight: 700;
     }
-    .dir-card.offline { opacity: 0.5; }
-    .dir-card.offline .info .cext { background: #f1f5f9; color: #94a3b8; border-color: #e5e7eb; }
-    .dir-card.noname .info .cname { color: #94a3b8; font-style: italic; font-weight: 400; }
+    .dir-card .info .cnote {
+      font-size: 0.68rem; color: var(--text-3); display: block; margin-top: 2px;
+    }
 
-    .av-it       { background: linear-gradient(135deg, #2563eb, #3b82f6); }
-    .av-admin    { background: linear-gradient(135deg, #d97706, #f59e0b); }
-    .av-conta    { background: linear-gradient(135deg, #0891b2, #06b6d4); }
-    .av-reservas { background: linear-gradient(135deg, #059669, #10b981); }
-    .av-cobros   { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
-    .av-otros    { background: linear-gradient(135deg, #475569, #64748b); }
-    .av-numeros-cliente-servicio {background: linear-gradient(135deg, #766f0f, #b8ad14); }
-    .av-numeros-ra {background: linear-gradient(135deg, #760f0f, #b81414); }
-    .av-transferencias {background: linear-gradient(135deg, #760f6d, #b8148f);}
+    .dir-card.offline { opacity: 0.45; }
+    .dir-card.offline .info .cext {
+      background: rgba(0,0,0,0.05); color: var(--text-3);
+    }
+
+    /* Paleta unificada — solo 4 variantes */
+    .av-blue    { background: linear-gradient(140deg, #3b82f6, #2563eb); }
+    .av-green   { background: linear-gradient(140deg, #34d399, #059669); }
+    .av-violet  { background: linear-gradient(140deg, #a78bfa, #7c3aed); }
+    .av-slate   { background: linear-gradient(140deg, #94a3b8, #475569); }
+    .av-amber   { background: linear-gradient(140deg, #fbbf24, #d97706); }
+    .av-cyan    { background: linear-gradient(140deg, #22d3ee, #0891b2); }
+    .av-rose    { background: linear-gradient(140deg, #fb7185, #e11d48); }
+    .av-indigo  { background: linear-gradient(140deg, #818cf8, #4f46e5); }
+
+    /* Leyenda transferencias */
     .transfer-note {
-  margin: -4px 4px 14px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #28303b;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: 0.88rem;
-}
+      margin: -4px 0 20px;
+      background: rgba(0,0,0,0.02);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
 
-
-    .no-results { text-align: center; padding: 48px 0; color: #94a3b8; }
+    .no-results { text-align: center; padding: 48px 0; color: var(--text-3); }
     .no-results i { font-size: 2.5rem; display: block; margin-bottom: 12px; }
 
+    footer { background: transparent; border-top: 1px solid var(--border); padding: 14px 32px; text-align: center; }
+    footer p { color: var(--text-3); font-size: 0.76rem; margin: 0; font-weight: 500; }
+    footer strong { color: var(--text-2); }
+
     @media (max-width: 768px) {
-      #sidebar { width: 68px; min-width: 68px; }
-      #sidebar .link-text, #sidebar .user-info,
-      #sidebar .brand-text, #sidebar .nav-section-label { opacity: 0; width: 0; overflow: hidden; }
-      #sidebar .nav-item-link { justify-content: center; padding: 10px 0; }
-      #main-content { margin-left: 68px; }
+      #main-content { margin-left: 64px; padding: 16px; }
     }
   </style>
 </head>
 <body>
+{% include '_sidebar.html' %}
 
-  {% set avatar = url_for('static', filename=user_foto) if user_foto else url_for('static', filename='img/user.png') %}
+{% set avatar = url_for('static', filename=user_foto) if user_foto else url_for('static', filename='img/user.png') %}
+{% set dep = departamento | lower %}
+{% if role|int == 0 and dep in ['financiero', 'melia'] %}
+  {% set rol_label = 'Supervisora' %}
+  {% set rol_icon  = 'bi-star-fill' %}
+{% elif role|int == 0 %}
+  {% set rol_label = 'Admin' %}
+  {% set rol_icon  = 'bi-shield-check-fill' %}
+{% else %}
+  {% set rol_label = 'Empleado' %}
+  {% set rol_icon  = 'bi-person-check-fill' %}
+{% endif %}
 
-  {% set dep = departamento | lower %}
-  {% if role|int == 0 and dep in ['financiero', 'melia'] %}
-    {% set rol_label = 'Supervisora' %}
-    {% set rol_icon  = 'bi-star-fill' %}
-  {% elif role|int == 0 %}
-    {% set rol_label = 'Admin' %}
-    {% set rol_icon  = 'bi-shield-check-fill' %}
-  {% else %}
-    {% set rol_label = 'Empleado' %}
-    {% set rol_icon  = 'bi-person-check-fill' %}
-  {% endif %}
-
-  <!-- ══════════════ SIDEBAR ══════════════ -->
-  <nav id="sidebar">
-    <div class="sidebar-brand" style="position:relative;">
-      <i class="bi bi-clock-history brand-icon"></i>
-      <span class="brand-text">TurnoApp</span>
-      <button id="toggleSidebar" title="Colapsar menú">
-        <i class="bi bi-chevron-left"></i>
-      </button>
-    </div>
-
-    <div class="sidebar-user">
-      <img src="{{ avatar }}" alt="Avatar">
-      <div class="user-info">
-        <p class="user-name">{{ user }}</p>
-        <p class="user-role">{{ rol_label }}</p>
-      </div>
-    </div>
-
-    <div class="sidebar-nav">
-      <div class="nav-section-label">Principal</div>
-      <a href="{{ url_for('main.dashboard') }}" class="nav-item-link">
-        <i class="bi bi-house-door-fill"></i>
-        <span class="link-text">Dashboard</span>
-      </a>
-      <a href="{{ url_for('main.perfil') }}" class="nav-item-link">
-        <i class="bi bi-person-circle"></i>
-        <span class="link-text">Mi Perfil</span>
-      </a>
-
-      <!--<div class="nav-section-label">Turnos</div>
-      <a href="{{ url_for('main.register_entry') }}" class="nav-item-link">
-        <i class="bi bi-box-arrow-in-right"></i>
-        <span class="link-text">Registrar Entrada</span>
-      </a>
-      <a href="{{ url_for('main.register_exit') }}" class="nav-item-link">
-        <i class="bi bi-box-arrow-right"></i>
-        <span class="link-text">Registrar Salida</span>
-      </a>-->
-      <a href="{{ url_for('main.lunch_out') }}" class="nav-item-link lunch">
-        <i class="bi bi-cup-hot-fill"></i>
-        <span class="link-text">Salida a Comer</span>
-      </a>
-      <a href="{{ url_for('main.lunch_in') }}" class="nav-item-link lunch-in">
-        <i class="bi bi-cup-straw"></i>
-        <span class="link-text">Vuelta de Comer</span>
-      </a>
-      <a href="{{ url_for('main.vacaciones') }}" class="nav-item-link">
-        <i class="bi bi-calendar-sun"></i>
-        <span class="link-text">Vacaciones</span>
-      </a>
-      <a href="{{ url_for('main.directorio') }}" class="nav-item-link directorio active">
-        <i class="bi bi-telephone-fill"></i>
-        <span class="link-text">Directorio</span>
-      </a>
-
-      {% if role|int == 0 %}
-      <div class="nav-divider"></div>
-      <div class="nav-section-label">Visitantes</div>
-      <a href="{{ url_for('main.register_visitante') }}" class="nav-item-link visitor">
-        <i class="bi bi-person-badge-fill"></i>
-        <span class="link-text">Agregar Visitante</span>
-      </a>
-      <div class="nav-divider"></div>
-      <div class="nav-section-label">Administración</div>
-      <a href="{{ url_for('main.create_user') }}" class="nav-item-link">
-        <i class="bi bi-person-plus-fill"></i>
-        <span class="link-text">Crear Usuario</span>
-      </a>
-      <a href="{{ url_for('main.admin_empleados') }}" class="nav-item-link">
-        <i class="bi bi-people-fill"></i>
-        <span class="link-text">Ver Empleados</span>
-      </a>
-      {% endif %}
-    </div>
-
-    <div class="sidebar-footer">
-      <a href="{{ url_for('main.logout') }}" class="nav-item-link logout">
-        <i class="bi bi-box-arrow-left"></i>
-        <span class="link-text">Cerrar Sesión</span>
-      </a>
-    </div>
-  </nav>
-
-  <!-- ══════════════ CONTENIDO ══════════════ -->
-  <div id="main-content">
-
-    <div class="topbar">
-      <h1 class="page-title">
-        <i class="bi bi-telephone" style="color:#059669; margin-right:8px;"></i>
-        Directorio Telefónico
-      </h1>
-      <div class="d-flex align-items-center gap-3">
-        <span class="fecha" id="fechaHoy"></span>
-      </div>
-    </div>
-
-    <div class="content-area">
-
-      <div class="dir-header">
-        <div class="hicon"><i class="bi bi-telephone-fill"></i></div>
-        <div>
-          <h1>Directorio Telefónico</h1>
-          <p>RESORTS ADVANTAGE, SPAIN, S.L.U. &nbsp;·&nbsp; Extensiones internas</p>
-        </div>
-      </div>
-
-      <div class="search-wrap">
-        <i class="bi bi-search"></i>
-        <input type="text" id="searchInput" class="search-input"
-               placeholder="Buscar por nombre o extensión...">
-      </div>
-
-      <div id="directorioWrap">
-
-        <!-- ══ ADMINISTRACIÓN ══ -->
-        <div class="section-block" data-section>
-          <div class="section-title">
-            <i class="bi bi-building" style="color:#d97706;"></i>
-            Administración
-          </div>
-          <div class="dir-grid">
-            <div class="dir-card" data-name="rafael diaz cortes" data-ext="421">
-              <div class="avatar av-admin">RD</div>
-              <div class="info">
-                <p class="cname">Rafael Díaz Cortés</p>
-                <span class="cext"><i class="bi bi-telephone"></i> 421</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══ SISTEMAS · IT ══ -->
-        <div class="section-block" data-section>
-          <div class="section-title">
-            <i class="bi bi-cpu" style="color:#2563eb;"></i>
-            Sistemas · IT
-          </div>
-          <div class="dir-grid">
-            <div class="dir-card" data-name="ariel castro" data-ext="423">
-              <div class="avatar av-it">AC</div>
-              <div class="info">
-                <p class="cname">Ariel Castro</p>
-                <span class="cext"><i class="bi bi-telephone"></i> 423</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══ CONTABILIDAD ══ -->
-        <div class="section-block" data-section>
-          <div class="section-title">
-            <i class="bi bi-calculator" style="color:#0891b2;"></i>
-            Contabilidad / Accounting
-          </div>
-          <div class="dir-grid">
-            <div class="dir-card" data-name="amaya bedate" data-ext="420">
-              <div class="avatar av-conta">AB</div>
-              <div class="info">
-                <p class="cname">Amaya Bedate</p>
-                <span class="cext"><i class="bi bi-telephone"></i> 420</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ══ RESERVAS ══ -->
-        <div class="section-block" data-section>
-          <div class="section-title">
-            <i class="bi bi-calendar-check-fill" style="color:#059669;"></i>
-            Reservas / Reservations
-          </div>
-          <div class="dir-grid" id="gridReservas"></div>
-        </div>
-
-        <!-- ══ COBRANZAS ══ -->
-        <div class="section-block" data-section>
-          <div class="section-title">
-            <i class="bi bi-currency-euro" style="color:#7c3aed;"></i>
-            Cobranzas / Collections
-          </div>
-          <div class="dir-grid" id="gridCobros"></div>
-        </div>
-
-        <!-- ══ OTROS ══ -->
-        <div class="section-block" data-section>
-          <div class="section-title">
-            <i class="bi bi-three-dots" style="color:#475569;"></i>
-            Otros
-          </div>
-          <div class="dir-grid" id="gridOtros"></div>
-        </div>
-             <!-- ══ Números por Cliente /Servicio ══ -->
-        <div class="section-block" data-section>
-          <div class="section-title">
-            <i class="bi bi-three-dots" style="color:#475569;"></i>
-            Números por Cliente /Servicio
-          </div>
-          <div class="dir-grid" id="gridNumerosClienteServicio"></div>
-        </div>
-          <!-- ══ Números RA ══ -->
-        <div class="section-block" data-section>
-          <div class="section-title">
-            <i class="bi bi-three-dots" style="color:#475569;"></i>
-            Números RA
-          </div>
-          <div class="dir-grid" id="gridNumerosRA"></div>
-        </div>
-        
-        <div class="section-block" data-section>
-  <div class="section-title">
-    <i class="bi bi-arrow-left-right" style="color:#0f766e;"></i>
-    Códigos de transferencia
+<!-- Sidebar -->
+<nav id="sidebar">
+  <div class="sidebar-brand" style="position:relative;">
+    <i class="bi bi-clock-history brand-icon"></i>
+    <span class="brand-text">TurnoApp</span>
+    <button id="toggleSidebar" title="Colapsar menú">
+      <i class="bi bi-chevron-left"></i>
+    </button>
   </div>
-  <div class="dir-grid" id="gridTransferencias"></div>
-</div>
+  <div class="sidebar-user">
+    <img src="{{ avatar }}" alt="Avatar">
+    <div class="user-info">
+      <p class="user-name">{{ user }}</p>
+      <p class="user-role">{{ rol_label }}</p>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-section-label">Principal</div>
+    <a href="{{ url_for('main.dashboard') }}" class="nav-item-link">
+      <i class="bi bi-house-door-fill"></i>
+      <span class="link-text">Dashboard</span>
+    </a>
+    <a href="{{ url_for('main.perfil') }}" class="nav-item-link">
+      <i class="bi bi-person-circle"></i>
+      <span class="link-text">Mi Perfil</span>
+    </a>
+    <a href="{{ url_for('main.lunch_out') }}" class="nav-item-link lunch">
+      <i class="bi bi-cup-hot-fill"></i>
+      <span class="link-text">Salida a Comer</span>
+    </a>
+    <a href="{{ url_for('main.lunch_in') }}" class="nav-item-link lunch-in">
+      <i class="bi bi-cup-straw"></i>
+      <span class="link-text">Vuelta de Comer</span>
+    </a>
+    <a href="{{ url_for('main.vacaciones') }}" class="nav-item-link">
+      <i class="bi bi-calendar-sun"></i>
+      <span class="link-text">Vacaciones</span>
+    </a>
+    <a href="{{ url_for('main.directorio') }}" class="nav-item-link directorio active">
+      <i class="bi bi-telephone-fill"></i>
+      <span class="link-text">Directorio</span>
+    </a>
+    {% if role|int == 0 %}
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Visitantes</div>
+    <a href="{{ url_for('main.register_visitante') }}" class="nav-item-link visitor">
+      <i class="bi bi-person-badge-fill"></i>
+      <span class="link-text">Agregar Visitante</span>
+    </a>
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Administración</div>
+    <a href="{{ url_for('main.create_user') }}" class="nav-item-link">
+      <i class="bi bi-person-plus-fill"></i>
+      <span class="link-text">Crear Usuario</span>
+    </a>
+    <a href="{{ url_for('main.admin_empleados') }}" class="nav-item-link">
+      <i class="bi bi-people-fill"></i>
+      <span class="link-text">Ver Empleados</span>
+    </a>
+    {% endif %}
+  </div>
+  <div class="sidebar-footer">
+    <a href="{{ url_for('main.logout') }}" class="nav-item-link logout">
+      <i class="bi bi-box-arrow-left"></i>
+      <span class="link-text">Cerrar Sesión</span>
+    </a>
+  </div>
+</nav>
 
-<div class="transfer-note">
-  <strong>Leyenda:</strong>
-  X=1 ES · 2 EN · 3 PT · 4 DE · 5 FR · 6 RU · 7 IT
-</div>
+<!-- Contenido -->
+<div id="main-content">
 
+  <div class="topbar">
+    <h1 class="page-title">
+      <i class="bi bi-telephone-fill"></i>
+      Directorio Telefónico
+    </h1>
+    <div class="d-flex align-items-center gap-3">
+      <span class="fecha" id="fechaHoy"></span>
+    </div>
+  </div>
 
+  <div class="content-area">
 
-      </div><!-- /directorioWrap -->
+    <div class="dir-header">
+      <div class="hicon"><i class="bi bi-telephone-fill"></i></div>
+      <div>
+        <h1>Directorio Telefónico</h1>
+        <p>RESORTS ADVANTAGE, SPAIN, S.L.U. &nbsp;·&nbsp; Extensiones internas</p>
+      </div>
+    </div>
 
-      <div id="noResults" class="no-results" style="display:none;">
-        <i class="bi bi-search"></i>
-        Sin resultados para tu búsqueda
+    <div class="search-wrap">
+      <i class="bi bi-search"></i>
+      <input type="text" id="searchInput" class="search-input"
+             placeholder="Buscar por nombre o extensión...">
+    </div>
+
+    <div id="directorioWrap">
+
+      <!-- ADMINISTRACIÓN -->
+      <div class="section-block" data-section>
+        <div class="section-title">
+          <i class="bi bi-building"></i>
+          Administración
+        </div>
+        <div class="dir-grid">
+          <div class="dir-card" data-name="rafael diaz cortes" data-ext="421">
+            <div class="avatar av-amber">RD</div>
+            <div class="info">
+              <p class="cname">Rafael Díaz Cortés</p>
+              <span class="cext"><i class="bi bi-telephone"></i> 421</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-    </div><!-- /content-area -->
+      <!-- SISTEMAS · IT -->
+      <div class="section-block" data-section>
+        <div class="section-title">
+          <i class="bi bi-cpu"></i>
+          Sistemas · IT
+        </div>
+        <div class="dir-grid">
+          <div class="dir-card" data-name="ariel castro" data-ext="423">
+            <div class="avatar av-blue">AC</div>
+            <div class="info">
+              <p class="cname">Ariel Castro</p>
+              <span class="cext"><i class="bi bi-telephone"></i> 423</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <footer>
-      <p style="color:#94a3b8; font-size:0.8rem; margin:0;">
-        &copy; {{ current_year }} Todos los derechos reservados —
-        Desarrollado por <strong style="color:#475569;">Ariel Castro</strong>
-      </p>
-    </footer>
+      <!-- CONTABILIDAD -->
+      <div class="section-block" data-section>
+        <div class="section-title">
+          <i class="bi bi-calculator"></i>
+          Contabilidad / Accounting
+        </div>
+        <div class="dir-grid">
+          <div class="dir-card" data-name="amaya bedate" data-ext="420">
+            <div class="avatar av-cyan">AB</div>
+            <div class="info">
+              <p class="cname">Amaya Bedate</p>
+              <span class="cext"><i class="bi bi-telephone"></i> 420</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  </div><!-- /main-content -->
+      <!-- RESERVAS -->
+      <div class="section-block" data-section>
+        <div class="section-title">
+          <i class="bi bi-calendar-check-fill"></i>
+          Reservas / Reservations
+        </div>
+        <div class="dir-grid" id="gridReservas"></div>
+      </div>
+
+      <!-- COBRANZAS -->
+      <div class="section-block" data-section>
+        <div class="section-title">
+          <i class="bi bi-currency-euro"></i>
+          Cobranzas / Collections
+        </div>
+        <div class="dir-grid" id="gridCobros"></div>
+      </div>
+
+      <!-- OTROS -->
+      <div class="section-block" data-section>
+        <div class="section-title">
+          <i class="bi bi-three-dots"></i>
+          Otros
+        </div>
+        <div class="dir-grid" id="gridOtros"></div>
+      </div>
+
+      <!-- NÚMEROS CLIENTE / SERVICIO -->
+      <div class="section-block" data-section>
+        <div class="section-title">
+          <i class="bi bi-person-lines-fill"></i>
+          Números por Cliente / Servicio
+        </div>
+        <div class="dir-grid" id="gridNumerosClienteServicio"></div>
+      </div>
+
+      <!-- NÚMEROS RA -->
+      <div class="section-block" data-section>
+        <div class="section-title">
+          <i class="bi bi-building-fill"></i>
+          Números RA
+        </div>
+        <div class="dir-grid" id="gridNumerosRA"></div>
+      </div>
+
+      <!-- TRANSFERENCIAS -->
+      <div class="section-block" data-section>
+        <div class="section-title">
+          <i class="bi bi-arrow-left-right"></i>
+          Códigos de transferencia
+        </div>
+        <div class="dir-grid" id="gridTransferencias"></div>
+      </div>
+
+      <div class="transfer-note">
+        <strong>Leyenda:</strong> X = 1 ES &nbsp;·&nbsp; 2 EN &nbsp;·&nbsp; 3 PT &nbsp;·&nbsp; 4 DE &nbsp;·&nbsp; 5 FR &nbsp;·&nbsp; 6 RU &nbsp;·&nbsp; 7 IT
+      </div>
+
+    </div><!-- /directorioWrap -->
+
+    <div id="noResults" class="no-results" style="display:none;">
+      <i class="bi bi-search"></i>
+      Sin resultados para tu búsqueda
+    </div>
+
+  </div><!-- /content-area -->
+
+  <footer>
+    <p>&copy; {{ current_year }} Todos los derechos reservados — Desarrollado por <strong>Ariel Castro</strong></p>
+  </footer>
+
+</div><!-- /main-content -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 const DIRECTORIO = {
   reservas: [
-    { name: 'Mercedes Bustamante',     ext: '411', initials: 'MB' },
-    { name: 'Marta Ruiz',              ext: '410', initials: 'MR' },
-    { name: 'Elzbieta Pawlik',         ext: '407', initials: 'EP' },
-    { name: 'Manuela Dos Santos',      ext: '405', initials: 'MD' },
-    { name: 'Wendy Rault',             ext: '408', initials: 'WR' },
-    { name: 'Arianna Deulofeu',        ext: '412', initials: 'AD' },
-    { name: 'Mary Alexandra Simancas', ext: '413', initials: 'MS' },
-    { name: 'Kateryna Hetmanenko',     ext: '415', initials: 'KH' },
-    { name: 'Alejandro Salvo Dominguez', ext: '414', initials: 'AS' },
-    { name: 'Diana Paola Márquez',     ext: '409', initials: 'DM' },
+    { name: 'Mercedes Bustamante',       ext: '411', initials: 'MB' },
+    { name: 'Marta Ruiz',                ext: '410', initials: 'MR' },
+    { name: 'Elzbieta Pawlik',           ext: '407', initials: 'EP' },
+    { name: 'Manuela Dos Santos',        ext: '405', initials: 'MD' },
+    { name: 'Wendy Rault',              ext: '408', initials: 'WR' },
+    { name: 'Arianna Deulofeu',         ext: '412', initials: 'AD' },
+    { name: 'Mary Alexandra Simancas',  ext: '413', initials: 'MS' },
+    { name: 'Kateryna Hetmanenko',      ext: '415', initials: 'KH' },
+    { name: 'Alejandro Salvo Dominguez',ext: '414', initials: 'AS' },
+    { name: 'Diana Paola Márquez',      ext: '409', initials: 'DM' },
   ],
   cobros: [
-    { name: 'Mónica Hagen',           ext: '401', initials: 'MH' },
-    { name: 'Abir El Masri ',            ext: '402', initials: 'AM' },
-    { name: 'Marilia Luisa',         ext: '403', initials: 'ML' },
-    { name: 'Raquel Santamaría',      ext: '404', initials: 'RS' },
-    { name: 'Paloma Zaragoza',        ext: '400', initials: 'PZ' },
-    { name: 'Arthur MÜller Valente ',        ext: '416', initials: 'AV' },
-    { name: 'Oleksandra Herasymenko', ext: '424', initials: 'OH' },
+    { name: 'Mónica Hagen',            ext: '401', initials: 'MH' },
+    { name: 'Abir El Masri',           ext: '402', initials: 'AM' },
+    { name: 'Marilia Luisa',           ext: '403', initials: 'ML' },
+    { name: 'Raquel Santamaría',       ext: '404', initials: 'RS' },
+    { name: 'Paloma Zaragoza',         ext: '400', initials: 'PZ' },
+    { name: 'Arthur Müller Valente',   ext: '416', initials: 'AV' },
+    { name: 'Oleksandra Herasymenko',  ext: '424', initials: 'OH' },
   ],
   otros: [
-    { name: 'Sala de Juntas / Conf. Room', ext: '422', initials: '🔇', offline: true, note: 'No conectado' },
-    { name: 'Altavoz / Speaker',           ext: '438', initials: '🔇', offline: true, note: 'No conectado' },
-    { name: 'Inalámbrico',                 ext: '437', initials: '📵', offline: true, note: 'No existe' },
+    { name: 'Sala de Juntas / Conf. Room', ext: '422', initials: 'SJ', offline: true, note: 'No conectado' },
+    { name: 'Altavoz / Speaker',           ext: '438', initials: 'AV', offline: true, note: 'No conectado' },
+    { name: 'Inalámbrico',                ext: '437', initials: 'IN', offline: true, note: 'No existe' },
   ],
   numerosClienteServicio: [
-    { name: 'Clubs de Melia',ext: '911987403', initials: 'CM' },
-    { name: 'Travel Smart y Prime Travelers',           ext: '915723108', initials: 'TS'},
-    { name: 'Krystal Vacation Club',           ext: '915727095', initials: 'KVC' },
-    { name: 'Club vacacional (Cay/Coco/Carac/TPC)',           ext: '915722454', initials: 'CV' },
+    { name: 'Clubs de Melia',                        ext: '911987403', initials: 'CM' },
+    { name: 'Travel Smart y Prime Travelers',        ext: '915723108', initials: 'TS' },
+    { name: 'Krystal Vacation Club',                ext: '915727095', initials: 'KV' },
+    { name: 'Club vacacional (Cay/Coco/Carac/TPC)', ext: '915722454', initials: 'CV' },
   ],
-    numerosRA: [
-    { name: 'Recepción / Administración',ext: '915721168', initials: 'RA' },
-    { name: 'Fax',           ext: '915727096', initials: 'FX'},
+  numerosRA: [
+    { name: 'Recepción / Administración', ext: '915721168', initials: 'RA' },
+    { name: 'Fax',                       ext: '915727096', initials: 'FX' },
   ],
   transferencias: [
-  { name: 'Prime Travelers Club', ext: '27X', initials: 'PT' },
-  { name: 'Destinations Network', ext: '28X', initials: 'DN' },
-  { name: 'Destinations Financiero', ext: '29X', initials: 'DF' },
-  { name: 'Club Melia Financiero', ext: '30X', initials: 'CM' },
-  { name: 'Club Melia Network', ext: '34X', initials: 'CM' },
-  { name: 'Circle Financiero', ext: '37X', initials: 'CF' },
-  { name: 'Circle Network', ext: '36X', initials: 'CN' },
-  { name: 'Infinite Black', ext: '36B', initials: 'IB' },
-  { name: 'MVC Financiero', ext: '33X', initials: 'MF' },
-  { name: 'MVC Reservas', ext: '39X', initials: 'MR' },
-  { name: 'Member Services Melia', ext: '35X', initials: 'MS' },
-  { name: 'Travel Smart', ext: '31X', initials: 'TS' },
-  { name: 'Krystal Vacation Club', ext: '32X', initials: 'KV' },
-  { name: '(Cayena/Coco B./Caracol/TPC)', ext: '38X', initials: 'CC' }
-]
+    { name: 'Prime Travelers Club',          ext: '27X', initials: 'PT' },
+    { name: 'Destinations Network',          ext: '28X', initials: 'DN' },
+    { name: 'Destinations Financiero',       ext: '29X', initials: 'DF' },
+    { name: 'Club Melia Financiero',         ext: '30X', initials: 'CF' },
+    { name: 'Club Melia Network',            ext: '34X', initials: 'CM' },
+    { name: 'Circle Financiero',             ext: '37X', initials: 'CF' },
+    { name: 'Circle Network',               ext: '36X', initials: 'CN' },
+    { name: 'Infinite Black',               ext: '36B', initials: 'IB' },
+    { name: 'MVC Financiero',               ext: '33X', initials: 'MF' },
+    { name: 'MVC Reservas',                 ext: '39X', initials: 'MR' },
+    { name: 'Member Services Melia',        ext: '35X', initials: 'MS' },
+    { name: 'Travel Smart',                 ext: '31X', initials: 'TS' },
+    { name: 'Krystal Vacation Club',        ext: '32X', initials: 'KV' },
+    { name: '(Cayena/Coco B./Caracol/TPC)', ext: '38X', initials: 'CC' }
+  ]
 };
 
-const COBROS_COLORS = [
-  '#7c3aed','#6d28d9','#8b5cf6','#a78bfa',
-  '#7c3aed','#6d28d9','#8b5cf6','#a78bfa',
-];
+// Paleta reducida: una clase por sección
+const AVATAR_CLASSES = {
+  reservas:               'av-green',
+  cobros:                 'av-violet',
+  otros:                  'av-slate',
+  numerosClienteServicio: 'av-amber',
+  numerosRA:              'av-rose',
+  transferencias:         'av-indigo',
+};
 
-function buildCard(item, avClass, colorOverride) {
+function buildCard(item, avClass) {
   const offline  = item.offline || false;
-  const noname   = !item.name;
-  const bgStyle  = colorOverride ? `style="background:${colorOverride}"` : '';
   const noteHtml = item.note
-    ? `<span style="font-size:0.7rem;color:#94a3b8;display:block;margin-top:2px;">${item.note}</span>`
+    ? `<span class="cnote">${item.note}</span>`
     : '';
   return `
-    <div class="dir-card${offline ? ' offline' : ''}${noname ? ' noname' : ''}"
+    <div class="dir-card${offline ? ' offline' : ''}"
          data-name="${item.name.toLowerCase()}" data-ext="${item.ext}">
-      <div class="avatar ${avClass}" ${bgStyle}>${item.initials}</div>
+      <div class="avatar ${avClass}">${item.initials}</div>
       <div class="info">
-        <p class="cname">${item.name || 'Sin asignar'}</p>
+        <p class="cname">${item.name}</p>
         <span class="cext"><i class="bi bi-telephone"></i> ${item.ext}</span>
         ${noteHtml}
       </div>
     </div>`;
 }
 
-function renderSection(gridId, items, avClass, colors) {
+function renderSection(gridId, key) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
-  grid.innerHTML = items.map((item, i) =>
-    buildCard(item, avClass, colors ? colors[i % colors.length] : null)
-  ).join('');
+  const avClass = AVATAR_CLASSES[key];
+  grid.innerHTML = DIRECTORIO[key].map(item => buildCard(item, avClass)).join('');
 }
 
-renderSection('gridReservas', DIRECTORIO.reservas, 'av-reservas', null);
-renderSection('gridCobros',   DIRECTORIO.cobros,   'av-cobros',   COBROS_COLORS);
-renderSection('gridOtros',    DIRECTORIO.otros,    'av-otros',    null);
-renderSection('gridNumerosClienteServicio', DIRECTORIO.numerosClienteServicio, 'av-numeros-cliente-servicio', null);
-renderSection('gridNumerosRA', DIRECTORIO.numerosRA, 'av-numeros-ra', null);
-renderSection('gridTransferencias', DIRECTORIO.transferencias, 'av-transferencias', null);
+renderSection('gridReservas',               'reservas');
+renderSection('gridCobros',                 'cobros');
+renderSection('gridOtros',                  'otros');
+renderSection('gridNumerosClienteServicio',  'numerosClienteServicio');
+renderSection('gridNumerosRA',              'numerosRA');
+renderSection('gridTransferencias',         'transferencias');
 
 // Buscador
 document.getElementById('searchInput').addEventListener('input', function () {

@@ -1,6 +1,8 @@
 <!-- app/templates/_sidebar.html -->
 <nav id="sidebar">
-  <div class="sidebar-brand" style="position:relative;">
+
+  <!-- Brand -->
+  <div class="sidebar-brand">
     <i class="bi bi-clock-history brand-icon"></i>
     <span class="brand-text">TurnoApp</span>
     <button id="toggleSidebar" title="Colapsar menú">
@@ -8,8 +10,8 @@
     </button>
   </div>
 
+  <!-- Usuario -->
   <div class="sidebar-user">
-    <!--<p style="font-size:0.6rem; color:red;">{{ avatar }}</p>-->
     <img src="{{ avatar }}" alt="Avatar">
     <div class="user-info">
       <p class="user-name">{{ user }}</p>
@@ -17,8 +19,11 @@
     </div>
   </div>
 
+  <!-- Navegación -->
   <div class="sidebar-nav">
+
     <div class="nav-section-label">Principal</div>
+
     <a href="{{ url_for('main.dashboard') }}"
        class="nav-item-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
       <i class="bi bi-house-door-fill"></i>
@@ -32,13 +37,15 @@
       <span class="link-text">Usuarios en Lote</span>
     </a>
     {% endif %}
+
     {% if dep == 'it' or session.get('user_id') == 1 %}
     <a href="{{ url_for('main.admin_usuarios_gestion') }}"
        class="nav-item-link {% if request.endpoint == 'main.admin_usuarios_gestion' %}active{% endif %}">
-      <i class="bi bi-person-lines-fill"></i>
-      <span class="link-text">Gestion de Usuarios</span>
+      <i class="bi bi-sliders"></i>
+      <span class="link-text">Gestión de Usuarios</span>
     </a>
     {% endif %}
+
     {% if role|int == 0 and dep in ['it', 'administración', 'administracion', 'melia', 'financiero'] %}
     <a href="{{ url_for('main.dashboardit') }}"
        class="nav-item-link {% if request.endpoint == 'main.dashboardit' %}active{% endif %}">
@@ -54,8 +61,8 @@
     </a>
 
     <a href="{{ url_for('main.directorio') }}"
-       class="nav-item-link {% if request.endpoint == 'main.directorio' %}active{% endif %}">
-      <i class="bi bi-telephone-fill" style="color:#059669;"></i>
+       class="nav-item-link directorio {% if request.endpoint == 'main.directorio' %}active{% endif %}">
+      <i class="bi bi-telephone-fill"></i>
       <span class="link-text">Directorio</span>
     </a>
 
@@ -78,8 +85,8 @@
     </a>
 
     <a href="{{ url_for('main.vacaciones') }}"
-       class="nav-item-link {% if request.endpoint == 'main.vacaciones' %}active{% endif %}">
-      <i class="bi bi-airplane"></i>
+       class="nav-item-link vacaciones {% if request.endpoint == 'main.vacaciones' %}active{% endif %}">
+      <i class="bi bi-airplane-fill"></i>
       <span class="link-text">Vacaciones</span>
     </a>
 
@@ -102,50 +109,44 @@
       <span class="link-text">Crear Usuario</span>
     </a>
     {% endif %}
+
     <a href="{{ url_for('main.admin_empleados') }}"
        class="nav-item-link {% if request.endpoint == 'main.admin_empleados' %}active{% endif %}">
       <i class="bi bi-people-fill"></i>
       <span class="link-text">Ver Empleados</span>
     </a>
-    
 
   </div>
 
+  <!-- Footer -->
   <div class="sidebar-footer">
     <a href="{{ url_for('main.logout') }}" class="nav-item-link logout">
       <i class="bi bi-box-arrow-left"></i>
       <span class="link-text">Cerrar Sesión</span>
     </a>
   </div>
+
   <script>
-// ── NOTIFICACIÓN FICHAJE SIN SERVICE WORKER ──
-if ('Notification' in window) {
-  Notification.requestPermission().then(perm => {
-    if (perm === 'granted') {
-
-      let notifEnviada = false;
-
-      setInterval(() => {
-        const ahora   = new Date();
-        const horas   = ahora.getHours();
-        const minutos = ahora.getMinutes();
-
-        // Reset diario
-        if (horas === 0 && minutos === 0) notifEnviada = false;
-
-        // Dispara a las 17:40
-        if (horas === 17 && minutos === 50 && !notifEnviada) {
-          notifEnviada = true;
-          new Notification('⏰ TurnoApp', {
-            body: '¡No olvides fichar la salida!',
-            tag:  'fichaje-salidas hola mundo'
-          });
+    if ('Notification' in window) {
+      Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+          let notifEnviada = false;
+          setInterval(() => {
+            const ahora   = new Date();
+            const horas   = ahora.getHours();
+            const minutos = ahora.getMinutes();
+            if (horas === 0 && minutos === 0) notifEnviada = false;
+            if (horas === 17 && minutos === 50 && !notifEnviada) {
+              notifEnviada = true;
+              new Notification('⏰ TurnoApp', {
+                body: '¡No olvides fichar la salida!',
+                tag:  'fichaje-salida'
+              });
+            }
+          }, 30000);
         }
-      }, 30000); // comprueba cada 30 segundos
-
+      });
     }
-  });
-}
-</script>
+  </script>
 
 </nav>
