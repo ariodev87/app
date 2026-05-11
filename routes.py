@@ -1039,6 +1039,11 @@ from datetime import datetime
 from calendar import monthrange
 from flask import request, redirect, url_for, flash, session, render_template, make_response
 
+@main.route('/doc')
+@login_required
+def doc():
+    return render_template('doc.html', current_year=date.today().year)
+
 @main.route('/exportar-asistencia-pdf', methods=['POST'])
 @login_required
 def exportar_asistencia_pdf():
