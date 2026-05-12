@@ -985,24 +985,34 @@ def editar_lunch():
 @main.route('/asistencia-mes', methods=['GET'])
 @login_required
 def asistencia_mes():
-    if session.get('role') != 0 and session.get('role') != 1:
-        return jsonify({'status': 'error'}), 403
+    if session.get('role') not in [0, 1]:
+        return jsonify({'error': 'Sin permisos'}), 403
 
-    user_id        = request.args.get('user_id', type=int)
-    mes            = request.args.get('mes')
-    year, month    = map(int, mes.split('-'))
-    primer_dia     = f"{year}-{month:02d}-01"
+    user_id = request.args.get('user_id', type=int)
+    mes = request.args.get('mes')  # formato YYYY-MM
+
+    if not user_id or not mes:
+        return jsonify({'registros': []})
+
+    try:
+        year, month = map(int, mes.split('-'))
+    except:
+        return jsonify({'registros': []})
+
+    from calendar import monthrange
     ultimo_dia_num = monthrange(year, month)[1]
-    ultimo_dia     = f"{year}-{month:02d}-{ultimo_dia_num}"
+    primer_dia = f"{year}-{month:02d}-01"
+    ultimo_dia = f"{year}-{month:02d}-{ultimo_dia_num}"
 
     cur = mysql.connection.cursor()
     cur.execute("""
         SELECT
-            til.timein,
-            tol.timeout,
-            til.nota,
-            tl.salida   AS lunch_salida,
-            tl.entrada  AS lunch_entrada
+            DATE(til.timein)        AS fecha,
+            MIN(til.timein)         AS timein,
+            MAX(tol.timeout)        AS timeout,
+            MAX(til.nota)           AS nota,
+            MIN(tl.salida)          AS lunch_salida,
+            MAX(tl.entrada)         AS lunch_entrada
         FROM turn_in_laboral til
         LEFT JOIN turn_out_laboral tol
             ON til.iduser = tol.iduser
@@ -1012,24 +1022,24 @@ def asistencia_mes():
             AND DATE(til.timein) = DATE(tl.salida)
         WHERE til.iduser = %s
           AND DATE(til.timein) BETWEEN %s AND %s
-        ORDER BY til.timein
+        GROUP BY DATE(til.timein)
+        ORDER BY fecha ASC
     """, (user_id, primer_dia, ultimo_dia))
+
     rows = cur.fetchall()
     cur.close()
 
-    registros = [
-        {
-            'timein':        str(row[0]) if row[0] else None,
-            'timeout':       str(row[1]) if row[1] else None,
-            'nota':          row[2] or '',
-            'lunch_salida':  row[3].strftime('%H:%M') if row[3] else None,
-            'lunch_entrada': row[4].strftime('%H:%M') if row[4] else None,
-        }
-        for row in rows
-    ]
+    registros = []
+    for row in rows:
+        registros.append({
+            'timein':        row[1].strftime('%Y-%m-%d %H:%M:%S') if row[1] else None,
+            'timeout':       row[2].strftime('%Y-%m-%d %H:%M:%S') if row[2] else None,
+            'nota':          row[3] or '',
+            'lunchsalida':   row[4].strftime('%H:%M') if row[4] else None,
+            'lunchentrada':  row[5].strftime('%H:%M') if row[5] else None,
+        })
 
     return jsonify({'registros': registros})
-
 
 # ══════════════════════════════════════════════════════
 #  EXPORTAR PDF — turn_in_laboral + turn_out_laboral
