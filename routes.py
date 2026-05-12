@@ -759,17 +759,18 @@ def admin_empleados():
         if accion == 'asistencia':
             cur.execute("""
                 SELECT
-                    til.id,
-                    til.timein,
-                    tol.timeout,
-                    til.nota
+                   MIN(til.id)         AS id,
+                   MIN(til.timein)     AS timein,
+                    MAX(tol.timeout)    AS timeout,
+                    MAX(til.nota)       AS nota
                 FROM turn_in_laboral til
                 LEFT JOIN turn_out_laboral tol
                     ON til.iduser = tol.iduser
                     AND DATE(til.timein) = DATE(tol.timeout)
-                WHERE til.iduser = %s AND DATE(til.timein) = %s
-                ORDER BY til.timein
-                LIMIT 30
+                WHERE til.iduser = %s
+                AND DATE(til.timein) = %s
+                GROUP BY DATE(til.timein)
+                
             """, (seleccionado, fecha))
             asistencia = cur.fetchall()
 
