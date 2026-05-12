@@ -1230,42 +1230,37 @@ function guardarRetribuidas() {
               style="color:#94a3b8; padding:20px;">
               Sin registros este mes.</td></tr>`;
           } else {
-            data.registros.forEach(r => {
-              const fecha   = r.timein ? r.timein.split(' ')[0] : '—';
-              const timein  = r.timein ? r.timein.split(' ')[1].substring(0,5) : '—';
-              const timeout = r.timeout ? r.timeout.split(' ')[1].substring(0,5) : null;
-              const lunchS  = r.lunch_salida
-                ? `<span class="badge-hora lunch-s">
-                     <i class="bi bi-cup-hot-fill"></i> ${r.lunch_salida}
-                   </span>`
-                : `<span class="badge-hora pending">—</span>`;
-              const lunchE  = r.lunch_entrada
-                ? `<span class="badge-hora lunch-e">
-                     <i class="bi bi-cup-straw"></i> ${r.lunch_entrada}
-                   </span>`
-                : `<span class="badge-hora pending">—</span>`;
+           data.registros.forEach(r => {
+  const fecha   = r.timein ? r.timein.split(' ')[0] : '—';
+  const timein  = r.timein ? r.timein.split(' ')[1].substring(0,5) : '—';
+  const timeout = r.timeout ? r.timeout.split(' ')[1].substring(0,5) : null;
 
-              tbody.innerHTML += `
-                <tr>
-                  <td style="font-size:0.82rem; color:#64748b; font-weight:500;">
-                    ${fecha}
-                  </td>
-                  <td>
-                    <span class="badge-hora entrada">
-                      <i class="bi bi-box-arrow-in-right"></i> ${timein}
-                    </span>
-                  </td>
-                  <td>${timeout
-                    ? `<span class="badge-hora salida">
-                         <i class="bi bi-box-arrow-right"></i> ${timeout}
-                       </span>`
-                    : '<span class="badge-hora pending">Pendiente</span>'}
-                  </td>
-                  <td>${lunchS}</td>
-                  <td>${lunchE}</td>
-                  <td style="font-size:0.82rem; color:#374151;">${r.nota || ''}</td>
-                </tr>`;
-            });
+  // ← CAMBIO: comprueba si existe antes de usarlo
+  const lunchS = r.lunchsalida
+    ? `<span class="badge-hora lunch-s"><i class="bi bi-cup-hot-fill"></i> ${r.lunchsalida}</span>`
+    : `<span class="badge-hora pending">—</span>`;
+
+  const lunchE = r.lunchentrada
+    ? `<span class="badge-hora lunch-e"><i class="bi bi-cup-straw"></i> ${r.lunchentrada}</span>`
+    : `<span class="badge-hora pending">—</span>`;
+
+  tbody.innerHTML += `
+    <tr>
+      <td style="font-size:0.82rem; color:#64748b; font-weight:500;">${fecha}</td>
+      <td>
+        <span class="badge-hora entrada">
+          <i class="bi bi-box-arrow-in-right"></i> ${timein}
+        </span>
+      </td>
+      <td>${timeout
+        ? `<span class="badge-hora salida"><i class="bi bi-box-arrow-right"></i> ${timeout}</span>`
+        : '<span class="badge-hora pending">Pendiente</span>'}
+      </td>
+      <td>${lunchS}</td>
+      <td>${lunchE}</td>
+      <td style="font-size:0.82rem; color:#374151;">${r.nota || ''}</td>
+    </tr>`;
+});
           }
 
           document.getElementById('labelMes').textContent = mes;

@@ -990,7 +990,7 @@ def asistencia_mes():
         return jsonify({'error': 'Sin permisos'}), 403
 
     user_id = request.args.get('user_id', type=int)
-    mes = request.args.get('mes')  # formato YYYY-MM
+    mes = request.args.get('mes')
 
     if not user_id or not mes:
         return jsonify({'registros': []})
@@ -1008,24 +1008,31 @@ def asistencia_mes():
     cur = mysql.connection.cursor()
     cur.execute("""
         SELECT
-            DATE(til.timein)        AS fecha,
-            MIN(til.timein)         AS timein,
-            MAX(tol.timeout)        AS timeout,
-            MAX(til.nota)           AS nota,
-            MIN(tl.salida)          AS lunch_salida,
-            MAX(tl.entrada)         AS lunch_entrada
-        FROM turn_in_laboral til
-        LEFT JOIN turn_out_laboral tol
-            ON til.iduser = tol.iduser
-            AND DATE(til.timein) = DATE(tol.timeout)
+            d.fecha,
+            d.timein,
+            d.timeout,
+            d.nota,
+            tl.salida AS lunch_salida,
+            tl.entrada AS lunch_entrada
+        FROM (
+            SELECT
+                DATE(til.timein) AS fecha,
+                MIN(til.timein)  AS timein,
+                MAX(tol.timeout) AS timeout,
+                MAX(til.nota)    AS nota
+            FROM turn_in_laboral til
+            LEFT JOIN turn_out_laboral tol
+                ON til.iduser = tol.iduser
+                AND DATE(til.timein) = DATE(tol.timeout)
+            WHERE til.iduser = %s
+              AND DATE(til.timein) BETWEEN %s AND %s
+            GROUP BY DATE(til.timein)
+        ) d
         LEFT JOIN turn_lunch tl
-            ON til.iduser = tl.iduser
-            AND DATE(til.timein) = DATE(tl.salida)
-        WHERE til.iduser = %s
-          AND DATE(til.timein) BETWEEN %s AND %s
-        GROUP BY DATE(til.timein)
-        ORDER BY fecha ASC
-    """, (user_id, primer_dia, ultimo_dia))
+            ON tl.iduser = %s
+            AND DATE(tl.salida) = d.fecha
+        ORDER BY d.fecha ASC
+    """, (user_id, primer_dia, ultimo_dia, user_id))
 
     rows = cur.fetchall()
     cur.close()
@@ -1033,11 +1040,11 @@ def asistencia_mes():
     registros = []
     for row in rows:
         registros.append({
-            'timein':        row[1].strftime('%Y-%m-%d %H:%M:%S') if row[1] else None,
-            'timeout':       row[2].strftime('%Y-%m-%d %H:%M:%S') if row[2] else None,
-            'nota':          row[3] or '',
-            'lunchsalida':   row[4].strftime('%H:%M') if row[4] else None,
-            'lunchentrada':  row[5].strftime('%H:%M') if row[5] else None,
+            'timein': row[1].strftime('%Y-%m-%d %H:%M:%S') if row[1] else None,
+            'timeout': row[2].strftime('%Y-%m-%d %H:%M:%S') if row[2] else None,
+            'nota': row[3] or '',
+            'lunchsalida': row[4].strftime('%H:%M') if row[4] else None,
+            'lunchentrada': row[5].strftime('%H:%M') if row[5] else None,
         })
 
     return jsonify({'registros': registros})
