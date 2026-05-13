@@ -27,7 +27,6 @@
     * { font-family: var(--font); -webkit-font-smoothing: antialiased; }
     body { background: var(--bg); min-height: 100vh; display: flex; }
 
-    /* Layout */
     #main-content {
       margin-left: 220px; flex: 1;
       display: flex; flex-direction: column;
@@ -36,7 +35,6 @@
     }
     #main-content.expanded { margin-left: 64px; }
 
-    /* Topbar */
     .topbar {
       background: rgba(255,255,255,0.82);
       backdrop-filter: blur(20px);
@@ -63,7 +61,6 @@
 
     .content-area { flex: 1; padding: 28px 32px; }
 
-    /* Sección intro */
     .doc-intro { margin-bottom: 28px; }
     .doc-intro h4 {
       font-size: 1.1rem; font-weight: 700; color: var(--text);
@@ -71,7 +68,6 @@
     }
     .doc-intro p { font-size: 0.875rem; color: var(--text-2); margin: 0; }
 
-    /* Panel de sección */
     .doc-panel {
       background: var(--surface);
       border-radius: var(--radius-card);
@@ -112,7 +108,6 @@
 
     .doc-panel-body { padding: 24px; }
 
-    /* Grid de videos */
     .video-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -133,7 +128,7 @@
     .video-wrapper {
       position: relative;
       width: 100%;
-      padding-top: 56.25%; /* 16:9 */
+      padding-top: 56.25%;
       background: #000;
     }
     .video-wrapper video {
@@ -142,16 +137,12 @@
       width: 100%; height: 100%;
       object-fit: cover;
     }
-    .video-info {
-      padding: 12px 14px;
-    }
+    .video-info { padding: 12px 14px; }
     .video-info .video-title {
       font-size: 0.845rem; font-weight: 600; color: var(--text);
       margin-bottom: 2px;
     }
-    .video-info .video-desc {
-      font-size: 0.775rem; color: var(--text-2);
-    }
+    .video-info .video-desc { font-size: 0.775rem; color: var(--text-2); }
 
     footer {
       background: transparent;
@@ -169,7 +160,6 @@
 
   <div id="main-content">
 
-    <!-- Topbar -->
     <div class="topbar">
       <h1 class="page-title">
         <i class="bi bi-book-fill"></i>
@@ -189,7 +179,6 @@
 
     <div class="content-area">
 
-      <!-- Intro -->
       <div class="doc-intro">
         <h4>Centro de Documentación 📚</h4>
         <p>Recursos formativos y guías de cumplimiento del sistema TurnoApp.</p>
@@ -198,9 +187,7 @@
       <!-- ══ PANEL PCI-DSS ══ -->
       <div class="doc-panel">
         <div class="doc-panel-header" onclick="togglePanel(this)">
-          <div class="doc-panel-icon">
-            <i class="bi bi-shield-lock-fill"></i>
-          </div>
+          <div class="doc-panel-icon"><i class="bi bi-shield-lock-fill"></i></div>
           <h5>PCI-DSS</h5>
           <span class="doc-badge">Cumplimiento</span>
           <i class="bi bi-chevron-down chevron"></i>
@@ -218,8 +205,7 @@
             <!-- Video 1 -->
             <div class="video-card">
               <div class="video-wrapper">
-                <video controls preload="metadata"
-                       poster="{{ url_for('static', filename='video/video1_thumb.jpg') if false }}">
+                <video controls preload="metadata">
                   <source src="{{ url_for('static', filename='video/Qué_es_PCI_DSS.mp4') }}" type="video/mp4">
                   Tu navegador no soporta vídeo HTML5.
                 </video>
@@ -229,57 +215,133 @@
                 <p class="video-desc"></p>
               </div>
             </div>
-               <!-- Video 2 -->
+
+            <!-- Video 2 -->
             <div class="video-card">
               <div class="video-wrapper">
-                <video controls preload="metadata"
-                       poster="{{ url_for('static', filename='video/video1_thumb.jpg') if false }}">
+                <video controls preload="metadata">
                   <source src="{{ url_for('static', filename='video/ingSocial.mp4') }}" type="video/mp4">
                   Tu navegador no soporta vídeo HTML5.
                 </video>
               </div>
               <div class="video-info">
-                <p class="video-title">INGENIERÍA SOCIAL: Cómo los ciberdelincuentes explotan tu confianza
-</p>
+                <p class="video-title">INGENIERÍA SOCIAL: Cómo los ciberdelincuentes explotan tu confianza</p>
                 <p class="video-desc"></p>
               </div>
             </div>
-                 <!-- Video 2 -->
+
+            <!-- Video 3 -->
             <div class="video-card">
               <div class="video-wrapper">
-                <video controls preload="metadata"
-                       poster="{{ url_for('static', filename='video/video1_thumb.jpg') if false }}">
+                <video controls preload="metadata">
                   <source src="{{ url_for('static', filename='video/videoplayback.mp4') }}" type="video/mp4">
                   Tu navegador no soporta vídeo HTML5.
                 </video>
               </div>
               <div class="video-info">
-                <p class="video-title">¿Sabes qué es INGENIERÍA SOCIAL?
-</p>
+                <p class="video-title">¿Sabes qué es INGENIERÍA SOCIAL?</p>
                 <p class="video-desc"></p>
               </div>
             </div>
 
-            <!-- Aquí puedes duplicar el bloque anterior para video2, video3, etc. -->
-            <!--
-            <div class="video-card">
-              <div class="video-wrapper">
-                <video controls preload="metadata">
-                  <source src="{{ url_for('static', filename='video/video2.mp4') }}" type="video/mp4">
-                </video>
-              </div>
-              <div class="video-info">
-                <p class="video-title">Controles de acceso</p>
-                <p class="video-desc">Requisitos 7 y 8 del estándar</p>
-              </div>
-            </div>
-            -->
+            <!-- ➕ AÑADIR MÁS VÍDEOS AQUÍ — copia el bloque de arriba y cambia el .mp4 y el título -->
 
           </div>
         </div>
       </div>
+      <!-- ══ FIN PANEL PCI-DSS ══ -->
 
-      <!-- Aquí puedes añadir más paneles: ISO 27001, ENS, NIS2, etc. -->
+
+      <!-- ══ PANEL DOCUMENTOS DE INTERÉS ══ -->
+      <div class="doc-panel">
+        <div class="doc-panel-header" onclick="togglePanel(this)">
+          <div class="doc-panel-icon"><i class="bi bi-file-earmark-text-fill"></i></div>
+          <h5>Documentos de Interés</h5>
+          <span class="doc-badge">Cumplimiento</span>
+          <i class="bi bi-chevron-down chevron"></i>
+        </div>
+
+        <div class="doc-panel-body">
+          <div class="video-grid">
+
+            <!-- ════════════════════════════════════════
+                 PDF 1 — Estatuto de los Trabajadores
+                 Archivo: app/static/doc/abrir_pdf.pdf
+                 ════════════════════════════════════════ -->
+            <div class="video-card">
+              <a href="{{ url_for('static', filename='doc/abrir_pdf.pdf') }}"
+                 target="_blank" style="text-decoration:none; display:block;">
+                <div class="video-wrapper"
+                     style="background:#f1f5f9; display:flex; align-items:center; justify-content:center;">
+                  <div style="position:absolute; top:0; left:0; width:100%; height:100%;
+                              display:flex; flex-direction:column;
+                              align-items:center; justify-content:center; gap:8px;">
+                    <i class="bi bi-file-earmark-pdf-fill" style="font-size:3.5rem; color:#dc2626;"></i>
+                    <span style="font-size:0.75rem; font-weight:600; color:#64748b; letter-spacing:0.04em;">PDF</span>
+                  </div>
+                </div>
+              </a>
+              <div class="video-info">
+                <p class="video-title">📄 Estatuto de los Trabajadores</p>
+                <p class="video-desc">
+                  <a href="{{ url_for('static', filename='doc/abrir_pdf.pdf') }}"
+                     target="_blank"
+                     style="color:var(--accent); font-size:0.775rem; font-weight:600; text-decoration:none;">
+                    <i class="bi bi-box-arrow-up-right"></i> Abrir documento
+                  </a>
+                </p>
+              </div>
+            </div>
+            <!-- ════════════════════════════════════════
+                 FIN PDF 1
+                 ════════════════════════════════════════ -->
+
+
+            <!-- ════════════════════════════════════════
+                 ➕ AÑADIR MÁS PDFs AQUÍ
+                 Copia desde "PDF X" hasta "FIN PDF X",
+                 cambia el nombre del archivo en filename='doc/TUNOMBRE.pdf'
+                 y cambia el texto del video-title
+                 ════════════════════════════════════════ -->
+
+            <!-- ════════════════════════════════════════
+                 PDF 2 — Ejemplo: Convenio Oficinas y Despachos
+                 Archivo: app/static/doc/convenio.pdf
+                 ════════════════════════════════════════ -->
+            
+            <div class="video-card">
+              <a href="{{ url_for('static', filename='doc/oficinas.pdf') }}"
+                 target="_blank" style="text-decoration:none; display:block;">
+                <div class="video-wrapper"
+                     style="background:#f1f5f9; display:flex; align-items:center; justify-content:center;">
+                  <div style="position:absolute; top:0; left:0; width:100%; height:100%;
+                              display:flex; flex-direction:column;
+                              align-items:center; justify-content:center; gap:8px;">
+                    <i class="bi bi-file-earmark-pdf-fill" style="font-size:3.5rem; color:#dc2626;"></i>
+                    <span style="font-size:0.75rem; font-weight:600; color:#64748b; letter-spacing:0.04em;">PDF</span>
+                  </div>
+                </div>
+              </a>
+              <div class="video-info">
+                <p class="video-title">📄 Convenio Oficinas y Despachos 2025-2026</p>
+                <p class="video-desc">
+                  <a href="{{ url_for('static', filename='doc/oficinas.pdf') }}"
+                     target="_blank"
+                     style="color:var(--accent); font-size:0.775rem; font-weight:600; text-decoration:none;">
+                    <i class="bi bi-box-arrow-up-right"></i> Abrir documento
+                  </a>
+                </p>
+              </div>
+            </div>
+            
+            <!-- ════════════════════════════════════════
+                 FIN PDF 2 (quita los comentarios <!-- y - -> para activarlo)
+                 ════════════════════════════════════════ -->
+
+          </div>
+        </div>
+      </div>
+      <!-- ══ FIN PANEL DOCUMENTOS DE INTERÉS ══ -->
 
     </div>
 
@@ -291,13 +353,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Fecha topbar
     document.getElementById('fechaTopbar').textContent =
       new Date().toLocaleDateString('es-ES', {
         weekday:'long', year:'numeric', month:'long', day:'numeric'
       });
 
-    // Sidebar toggle
     const sidebar     = document.getElementById('sidebar');
     const mainContent = document.getElementById('main-content');
     const toggleBtn   = document.getElementById('toggleSidebar');
@@ -312,7 +372,6 @@
       mainContent.classList.add('expanded');
     }
 
-    // Toggle panel collapse
     function togglePanel(header) {
       const body = header.nextElementSibling;
       const isOpen = !header.classList.contains('collapsed');
