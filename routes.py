@@ -1174,7 +1174,9 @@ def exportar_asistencia_pdf():
         vacaciones_mes=vacaciones_mes,
         month=month,
         year=year,
-        ultimo_dia_num=ultimo_dia_num
+        ultimo_dia_num=ultimo_dia_num,
+        añadir_20min=añadir_20min,        # ← ESTO FALTABA
+        añadir_iniciales=añadir_iniciales  # ← ESTO FALTABA
     )
 
     pdf = BytesIO()

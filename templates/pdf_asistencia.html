@@ -320,14 +320,19 @@
   </div>
 
   <table class="firmas">
-    <tr>
-      <td>Firma de la empresa:</td>
-      <td>
-        <div>{{ empleado }}</div>
-        Firma del trabajador: {% if añadir_20min %}20 minutos diarios no efectivos{% endif %}
-      </td>
-    </tr>
-  </table>
+  <tr>
+    <td>Firma de la empresa:</td>
+    <td>
+      <div>{{ empleado }}</div>
+      <div style="margin-top: 4px;">Firma del trabajador:</div>
+      {% if añadir_20min %}
+        <div style="font-size: 7.5pt; font-style: italic; margin-top: 2px;">
+          20 minutos diarios no efectivos
+        </div>
+      {% endif %}
+    </td>
+  </tr>
+</table>
 
   <div class="footer-doc">
     Registro realizado en cumplimiento de la letra h) del artículo 1 del R.D.-Ley 16/2013, de 20 de diciembre
