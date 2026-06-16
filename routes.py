@@ -607,7 +607,7 @@ def create_user():
         return redirect(url_for('main.create_user'))
 
     return render_template('create_user.html')
-current_year = datetime.now().year,
+    current_year = datetime.now().year,
 
 
 @main.route('/vacaciones', methods=['GET', 'POST'])
@@ -1324,7 +1324,52 @@ def visitantes_mes():
         visitantes_mes = resultado,
         mes            = mes
     )
+from datetime import datetime
 
+@main.route('/editar_visitante/<int:vid>', methods=['POST'])
+@login_required
+def editar_visitante(vid):
+    # Obtener y limpiar los datos de texto del formulario
+    nombre = request.form.get('nombre', '').strip()
+    apellido = request.form.get('apellido', '').strip()
+    nota = request.form.get('nota', '').strip()
+
+    # Obtener los strings de fecha y hora
+    entrada_raw = request.form.get('entrada', '').strip()
+    salida_raw = request.form.get('salida', '').strip()
+
+    # Procesar fecha de entrada (Obligatoria)
+    entrada = None
+    if entrada_raw:
+        try:
+            # HTML5 datetime-local usualmente envía: YYYY-MM-DDTHH:MM
+            entrada = datetime.strptime(entrada_raw, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            # En caso de que algún navegador incluya los segundos (:SS)
+            entrada = datetime.strptime(entrada_raw, '%Y-%m-%dT%H:%M:%S')
+
+    # Procesar fecha de salida (Opcional, puede ser None/NULL)
+    salida = None
+    if salida_raw:
+        try:
+            salida = datetime.strptime(salida_raw, '%Y-%m-%dT%H:%M')
+        except ValueError:
+            salida = datetime.strptime(salida_raw, '%Y-%m-%dT%H:%M:%S')
+
+    # Actualizar el registro en la base de datos
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        UPDATE visitantes 
+        SET nombre = %s, apellido = %s, nota = %s, entrada = %s, salida = %s
+        WHERE id = %s
+    """, (nombre, apellido, nota or None, entrada, salida, vid))
+    
+    mysql.connection.commit()
+    cur.close()
+
+    # Enviar mensaje de éxito y redirigir a la vista principal de visitantes
+    flash(f'El registro de {nombre} {apellido} ha sido actualizado con sus horarios.', 'success')
+    return redirect(url_for('main.register_visitante'))
 
 @main.route('/perfil', methods=['GET', 'POST'])
 @main.route('/perfil/<int:target_id>', methods=['GET', 'POST'])

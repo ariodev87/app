@@ -60,6 +60,12 @@
       font-size: 0.8rem; font-weight: 600; transition: background 0.2s;
     }
     .btn-salida:hover { background: #fecaca; }
+    .btn-editar {
+      background: #e0e7ff; color: #4338ca; border: none;
+      padding: 4px 12px; border-radius: 8px;
+      font-size: 0.8rem; font-weight: 600; transition: background 0.2s;
+    }
+    .btn-editar:hover { background: #c7d2fe; }
     .btn-back {
       display: inline-flex; align-items: center; gap: 6px;
       color: #64748b; font-size: 0.85rem; text-decoration: none;
@@ -108,7 +114,6 @@
       </div>
     </div>
 
-    <!-- ── FORMULARIO REGISTRO ── -->
     <form method="POST" class="row g-3 mt-2">
       <div class="col-12 col-md-4">
         <label for="nombre">Nombre</label>
@@ -134,7 +139,6 @@
 
     <div class="divider"></div>
 
-    <!-- ── SECCIÓN VISITANTES HOY ── -->
     <div class="section-header">
       <h6 style="font-size:0.95rem; font-weight:600; color:#1e293b; margin:0;">
         <i class="bi bi-list-ul" style="color:#8b5cf6;"></i> Visitantes de hoy
@@ -149,7 +153,7 @@
           <thead>
             <tr>
               <th>Nombre</th><th>Apellido</th><th>Entrada</th>
-              <th>Salida</th><th>Nota</th><th>Estado</th><th></th>
+              <th>Salida</th><th>Nota</th><th>Estado</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -184,13 +188,27 @@
                 {% endif %}
               </td>
               <td>
-                {% if not salida %}
-                  <form method="POST" action="{{ url_for('main.visitante_salida', vid=vid) }}">
-                    <button type="submit" class="btn-salida">
-                      <i class="bi bi-box-arrow-right"></i> Salida
-                    </button>
-                  </form>
-                {% endif %}
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <button type="button" class="btn-editar"
+                          data-bs-toggle="modal" 
+                          data-bs-target="#modalEditar"
+                          data-vid="{{ vid }}"
+                          data-nombre="{{ nombre }}"
+                          data-apellido="{{ apellido }}"
+                          data-nota="{{ nota or '' }}"
+                          data-entrada="{{ entrada.strftime('%Y-%m-%dT%H:%M') if entrada else '' }}"
+                          data-salida="{{ salida.strftime('%Y-%m-%dT%H:%M') if salida else '' }}">
+                    <i class="bi bi-pencil-fill"></i>
+                  </button>
+                  
+                  {% if not salida %}
+                    <form method="POST" action="{{ url_for('main.visitante_salida', vid=vid) }}" style="margin: 0;">
+                      <button type="submit" class="btn-salida">
+                        <i class="bi bi-box-arrow-right"></i> Salida
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
               </td>
             </tr>
             {% endfor %}
@@ -206,7 +224,6 @@
 
     <div class="divider"></div>
 
-    <!-- ── SECCIÓN VER POR MES ── -->
     <div class="section-header">
       <h6 style="font-size:0.95rem; font-weight:600; color:#1e293b; margin:0;">
         <i class="bi bi-calendar-month" style="color:#8b5cf6;"></i> Buscar visitantes por mes
@@ -241,7 +258,7 @@
           <thead>
             <tr>
               <th>Nombre</th><th>Apellido</th><th>Entrada</th>
-              <th>Salida</th><th>Nota</th><th>Estado</th>
+              <th>Salida</th><th>Nota</th><th>Estado</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -275,6 +292,19 @@
                   </span>
                 {% endif %}
               </td>
+              <td>
+                <button type="button" class="btn-editar"
+                        data-bs-toggle="modal" 
+                        data-bs-target="#modalEditar"
+                        data-vid="{{ vid }}"
+                        data-nombre="{{ nombre }}"
+                        data-apellido="{{ apellido }}"
+                        data-nota="{{ nota or '' }}"
+                        data-entrada="{{ entrada.strftime('%Y-%m-%dT%H:%M') if entrada else '' }}"
+                        data-salida="{{ salida.strftime('%Y-%m-%dT%H:%M') if salida else '' }}">
+                  <i class="bi bi-pencil-fill"></i>
+                </button>
+              </td>
             </tr>
             {% endfor %}
           </tbody>
@@ -287,6 +317,47 @@
         No hay visitantes registrados en {{ mes }}
       </div>
     {% endif %}
+
+    <div class="modal fade" id="modalEditar" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+          <div class="modal-header" style="border-bottom: 1px solid #f1f5f9; padding: 20px 24px;">
+            <h5 class="modal-title" id="modalEditarLabel" style="font-weight: 600; color: #1e293b;">
+              <i class="bi bi-pencil-square" style="color: #8b5cf6; margin-right: 8px;"></i> Editar Visitante
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <form id="formEditar" method="POST" action="">
+            <div class="modal-body" style="padding: 24px;">
+              <div class="mb-3">
+                <label for="editNombre" class="form-label">Nombre</label>
+                <input type="text" class="form-control" id="editNombre" name="nombre" required>
+              </div>
+              <div class="mb-3">
+                <label for="editApellido" class="form-label">Apellido</label>
+                <input type="text" class="form-control" id="editApellido" name="apellido" required>
+              </div>
+              <div class="mb-3">
+                <label for="editEntrada" class="form-label">Fecha y Hora de Entrada</label>
+                <input type="datetime-local" class="form-control" id="editEntrada" name="entrada" required>
+              </div>
+              <div class="mb-3">
+                <label for="editSalida" class="form-label">Fecha y Hora de Salida</label>
+                <input type="datetime-local" class="form-control" id="editSalida" name="salida">
+              </div>
+              <div class="mb-3">
+                <label for="editNota" class="form-label">Nota / Motivo</label>
+                <input type="text" class="form-control" id="editNota" name="nota">
+              </div>
+            </div>
+            <div class="modal-footer" style="border-top: 1px solid #f1f5f9; padding: 16px 24px;">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="border-radius: 8px; font-weight: 500;">Cancelar</button>
+              <button type="submit" class="btn-register" style="padding: 8px 20px;">Guardar Cambios</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 
   </div>
 
@@ -301,6 +372,34 @@
         const apellido = fila.cells[1]?.textContent.toLowerCase() || '';
         fila.style.display = (nombre.includes(texto) || apellido.includes(texto)) ? '' : 'none';
       });
+    }
+
+    // Lógica para llenar el Modal de Edición al abrirse
+    const modalEditar = document.getElementById('modalEditar')
+    if (modalEditar) {
+      modalEditar.addEventListener('show.bs.modal', event => {
+        // Botón que activó el modal
+        const button = event.relatedTarget
+        
+        // Extraer la información de los atributos data-*
+        const vid = button.getAttribute('data-vid')
+        const nombre = button.getAttribute('data-nombre')
+        const apellido = button.getAttribute('data-apellido')
+        const nota = button.getAttribute('data-nota')
+        const entrada = button.getAttribute('data-entrada')
+        const salida = button.getAttribute('data-salida')
+        
+        // Llenar los campos del formulario
+        document.getElementById('editNombre').value = nombre
+        document.getElementById('editApellido').value = apellido
+        document.getElementById('editEntrada').value = entrada
+        document.getElementById('editSalida').value = salida
+        document.getElementById('editNota').value = nota
+        
+        // Actualizar la ruta del formulario con el ID del visitante (vid)
+        const formEditar = document.getElementById('formEditar')
+        formEditar.action = `/editar_visitante/${vid}` 
+      })
     }
   </script>
 </body>
