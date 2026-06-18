@@ -42,7 +42,43 @@
       background: linear-gradient(135deg, rgba(15,23,42,0.75) 0%, rgba(37,99,235,0.45) 100%);
       z-index: 0; pointer-events: none;
     }
-
+        /* ── Estilos para Typed.js ── */
+    .terminal-container {
+      margin-bottom: 24px;
+      text-align: center;
+      font-family: 'Courier New', Courier, monospace;
+      color: rgba(255, 255, 255, 0.85); /* Texto blanco/gris claro */
+      font-size: 0.85rem;
+      min-height: 40px; 
+      background: rgba(0, 0, 0, 0.3); /* Fondo oscuro translúcido para que destaque */
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    
+    .terminal-container a {
+      color: #93c5fd; /* Color azul claro para el enlace */
+      text-decoration: none;
+      transition: color 180ms ease;
+      font-weight: bold;
+    }
+    
+    .terminal-container a:hover {
+      color: #bfdbfe;
+      text-decoration: underline;
+    }
+    
+    /* Cursor verde estilo terminal */
+    .typed-cursor {
+      color: #00ff00; 
+      font-weight: bold;
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
     /* ── Lluvia / Nieve / Flash / Niebla ── */
     #lluvia{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
 
@@ -206,6 +242,10 @@
         <div class="brand-icon"><i class="bi bi-clock-history"></i></div>
         <h1>TurnoApp</h1>
         <p>Control de asistencia y turnos</p>
+        <div class="terminal-container">
+  <!-- El span donde Typed.js inyectará el texto -->
+  <span class="typewriter-text" id="typed-output"></span>
+</div>
       </div>
 
       {% if error %}
@@ -383,6 +423,23 @@
     cargarTiempo();
     setInterval(cargarTiempo,10*60*1000);
   </script>
-
+<script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+<script>
+  var typed = new Typed('#typed-output', {
+    // Strings simula comandos de terminal y luego el enlace real
+    strings: [
+      "Alerta Nueva Información ...",
+      
+      "TURNO APP se encuentra alojado en <br><a href='http://turnoapp.ra.es:8080/' target='_blank' style='color:#93c5fd; text-decoration:none;'>http://turnoapp.ra.es:8080/</a>"
+    ],
+    typeSpeed: 40, // Velocidad de escritura
+    backSpeed: 20, // Velocidad de borrado al cambiar de frase
+    backDelay: 1000, // Pausa antes de borrar
+    startDelay: 500, // Pausa inicial
+    loop: false, // false para que se quede fijo en el enlace final
+    showCursor: true,
+    cursorChar: '█' // Un cursor tipo bloque muy usado en Linux
+  });
+</script>
 </body>
 </html>

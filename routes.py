@@ -109,6 +109,10 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
+@main.route('/')
+def index():
+    
+    return redirect(url_for('main.login'))
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
