@@ -250,6 +250,8 @@
         {# Icono dinámico #}
         {% if salida_abierta %}
           <div class="icon-wrap completo"><i class="bi bi-check-circle-fill"></i></div>
+        {% elif en_comida %}
+          <div class="icon-wrap bloqueado"><i class="bi bi-cup-hot-fill"></i></div>
         {% elif entrada_abierta %}
           <div class="icon-wrap bloqueado"><i class="bi bi-clock-history"></i></div>
         {% else %}
@@ -260,6 +262,8 @@
         <p class="subtitle">
           {% if salida_abierta %}
             Jornada completada · Hasta mañana 👋
+          {% elif en_comida %}
+            Descanso activado · Debes volver de comer
           {% elif entrada_abierta %}
             Jornada en curso · Registra la salida al terminar
           {% else %}
@@ -294,6 +298,11 @@
             <i class="bi bi-check-circle-fill" style="margin-top:1px; flex-shrink:0;"></i>
             <span>Jornada completada hoy. Los botones se reactivan mañana.</span>
           </div>
+        {% elif en_comida %}
+          <div class="alerta-inline alerta-warn">
+            <i class="bi bi-exclamation-triangle-fill" style="margin-top:1px; flex-shrink:0;"></i>
+            <span>Estás en pausa de comida. Registra tu <a href="{{ url_for('main.lunch_in') }}" style="color: inherit; text-decoration: underline; font-weight: bold;">vuelta de comer aquí</a> antes de salir.</span>
+          </div>
         {% elif entrada_abierta %}
           <div class="alerta-inline alerta-info">
             <i class="bi bi-info-circle-fill" style="margin-top:1px; flex-shrink:0;"></i>
@@ -315,9 +324,17 @@
         <form method="post">
           <input type="hidden" name="accion" value="salida">
           <button type="submit" class="btn-action salida"
-                  {% if not entrada_abierta or salida_abierta %}disabled{% endif %}>
+                  {% if not entrada_abierta or salida_abierta or en_comida %}disabled{% endif %}>
             <i class="bi bi-box-arrow-right"></i>
-            {% if salida_abierta %}Salida ya registrada{% elif not entrada_abierta %}Registra primero la entrada{% else %}Registrar Fin de Jornada{% endif %}
+            {% if salida_abierta %}
+              Salida ya registrada
+            {% elif en_comida %}
+              Pendiente regresar de comer
+            {% elif not entrada_abierta %}
+              Registra primero la entrada
+            {% else %}
+              Registrar Fin de Jornada
+            {% endif %}
           </button>
         </form>
 

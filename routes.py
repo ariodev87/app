@@ -538,6 +538,9 @@ def control_horario():
     cur = mysql.connection.cursor()
     entrada_laboral_hoy = tiene_entrada_laboral_hoy(cur, session['user_id'])
     salida_laboral_hoy  = tiene_salida_laboral_hoy(cur, session['user_id'])
+    
+    # Verificamos si el usuario se fue a comer y NO ha vuelto usando tu función existente
+    en_comida = tiene_salida_comida_abierta(cur, session['user_id'])
 
     if request.method == 'POST':
         accion = request.form.get('accion')
@@ -553,6 +556,9 @@ def control_horario():
         elif accion == 'salida':
             if not entrada_laboral_hoy:
                 flash('No puedes registrar la salida sin haber registrado la entrada.', 'warning')
+            elif en_comida:
+                # Bloqueo en backend si intenta trampear el formulario
+                flash('No puedes finalizar tu jornada. Primero debes registrar tu vuelta de comer.', 'danger')
             elif salida_laboral_hoy:
                 flash('Ya tienes una salida de jornada registrada hoy.', 'warning')
             else:
@@ -566,7 +572,8 @@ def control_horario():
     cur.close()
     return render_template('control_horario.html',
                            entrada_abierta=entrada_laboral_hoy,
-                           salida_abierta=salida_laboral_hoy)
+                           salida_abierta=salida_laboral_hoy,
+                           en_comida=en_comida)
 
 
 @main.route('/create_user', methods=['GET', 'POST'])
