@@ -1173,6 +1173,8 @@ def exportar_asistencia_pdf():
         'pdf_asistencia.html',
         empleado=f"{empleado[0]} {empleado[1]}" if empleado else "Desconocido",
         mes=f"{MESES_ES[month]} {year}",
+        nif=empleado[2] if empleado else "",      # ← NUEVO: Pasamos el NIF
+        nass=empleado[3] if empleado else "",
         registros=registros,
         horas_ret=horas_ret,
         total_minutos_ret=total_minutos_ret,
