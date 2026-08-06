@@ -300,17 +300,37 @@
 
     function pad(n){return String(n).padStart(2,"0");}
 
-    function actualizarReloj(){
-      const now=new Date();
-      document.getElementById("clockH").textContent=pad(now.getHours());
-      document.getElementById("clockM").textContent=pad(now.getMinutes());
-      document.getElementById("clockS").textContent=pad(now.getSeconds());
-      document.getElementById("clockDate").textContent=
-        DIAS[now.getDay()]+", "+now.getDate()+" de "+
-        MESES_R[now.getMonth()]+" "+now.getFullYear();
-    }
-    actualizarReloj();
-    setInterval(actualizarReloj,1000);
+    async function actualizarReloj() {
+  try {
+    const respuesta = await fetch('/hora-servidor');
+    const datos = await respuesta.json();
+
+    const partesHora = datos.hora.split(':');
+    const partesFecha = datos.fecha.split('-');
+
+    document.getElementById('clockH').textContent = partesHora[0];
+    document.getElementById('clockM').textContent = partesHora[1];
+    document.getElementById('clockS').textContent = partesHora[2];
+
+    const fechaServidor = new Date(
+      Number(partesFecha[0]),
+      Number(partesFecha[1]) - 1,
+      Number(partesFecha[2])
+    );
+
+    document.getElementById('clockDate').textContent =
+      DIAS[fechaServidor.getDay()] + ', ' +
+      fechaServidor.getDate() + ' de ' +
+      MESES_R[fechaServidor.getMonth()] + ' ' +
+      fechaServidor.getFullYear();
+
+  } catch (error) {
+    console.error('No se pudo obtener la hora del servidor:', error);
+  }
+}
+
+actualizarReloj();
+setInterval(actualizarReloj, 1000);
 
     const contenedorLluvia=document.getElementById("lluvia");
     const flashEl=document.getElementById("flashOverlay");

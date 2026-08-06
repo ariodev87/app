@@ -1897,6 +1897,15 @@ def eliminar_usuario():
     return redirect(url_for('main.admin_usuarios_gestion'))
 
 
+from datetime import datetime
+
+@main.route('/hora-servidor')
+def hora_servidor():
+    return jsonify({
+        'hora': datetime.now().strftime('%H:%M:%S'),
+        'fecha': datetime.now().strftime('%Y-%m-%d')
+    })
+
 @main.route('/admin/restaurar-usuario', methods=['POST'])
 @login_required
 def restaurar_usuario():
