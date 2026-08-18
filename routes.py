@@ -15,6 +15,7 @@ from flask import (
 )
 from app import mysql, bcrypt
 from app.models import (
+    obtener_hora_timeapi,
     get_user_by_username,
     tiene_salida_laboral_hoy,
     record_timeout_laboral,
@@ -1275,6 +1276,8 @@ def exportar_asistencia_pdf():
 @main.route('/lunch-out', methods=['GET', 'POST'])
 @login_required
 def lunch_out():
+    
+
     if session.get('role') not in [0, 1]:
         flash('No tienes permisos.', 'warning')
         return redirect(url_for('main.dashboard'))
@@ -1291,7 +1294,8 @@ def lunch_out():
             else:
                 flash('Ya completaste la pausa de comida hoy.', 'warning')
         else:
-            cur.execute("INSERT INTO turn_lunch (iduser, salida) VALUES (%s, NOW())", (session['user_id'],))
+            hora_actual = obtener_hora_timeapi()
+            cur.execute("INSERT INTO turn_lunch (iduser, salida) VALUES (%s, %s)", (session['user_id'], hora_actual))
             mysql.connection.commit()
             flash('¡Salida a comer registrada!', 'success')
         cur.close()
@@ -1308,6 +1312,8 @@ def lunch_out():
 @main.route('/lunch-in', methods=['GET', 'POST'])
 @login_required
 def lunch_in():
+    
+
     if session.get('role') not in [0, 1]:
         flash('No tienes permisos.', 'warning')
         return redirect(url_for('main.dashboard'))
@@ -1324,10 +1330,11 @@ def lunch_in():
             else:
                 flash('No tienes ninguna salida a comer registrada hoy.', 'warning')
         else:
+            hora_actual = obtener_hora_timeapi()
             cur.execute("""
-                UPDATE turn_lunch SET entrada = NOW()
+                UPDATE turn_lunch SET entrada = %s
                 WHERE iduser = %s AND DATE(salida) = CURDATE() AND entrada IS NULL
-            """, (session['user_id'],))
+            """, (hora_actual, session['user_id']))
             mysql.connection.commit()
             flash('¡Vuelta de comer registrada!', 'success')
         cur.close()

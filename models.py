@@ -1,4 +1,30 @@
 # turno/app/models.py
+import requests
+def obtener_hora_timeapi():
+    respuesta = requests.get(
+        'https://timeapi.io/api/Time/current/zone',
+        params={
+            'timeZone': 'Europe/Madrid'
+        },
+        timeout=5
+    )
+
+    respuesta.raise_for_status()
+
+    datos = respuesta.json()
+    fecha_hora = datos.get('dateTime')
+
+    if not fecha_hora:
+        raise RuntimeError(
+            'TimeAPI no devolvió dateTime'
+        )
+
+    # Ejemplo recibido:
+    # 2026-08-18T11:42:35.123
+    #
+    # Resultado:
+    # 2026-08-18 11:42:35
+    return fecha_hora[:19].replace('T', ' ')
 
 def get_user_by_username(cursor, username):
     """
@@ -14,16 +40,18 @@ def record_timein(cursor, user_id):
     """
     Inserta en turn_in (iduser, timein) la hora actual.
     """
-    sql = "INSERT INTO turn_in (iduser, timein) VALUES (%s, NOW())"
-    cursor.execute(sql, (user_id,))
+    hora_actual = obtener_hora_timeapi()
+    sql = "INSERT INTO turn_in (iduser, timein) VALUES (%s, %s)"
+    cursor.execute(sql, (user_id,hora_actual))
 
 
 def record_timeout(cursor, user_id):
     """
     Inserta en turn_out (iduser, timeout) la hora actual.
     """
-    sql = "INSERT INTO turn_out (iduser, timeout) VALUES (%s, NOW())"
-    cursor.execute(sql, (user_id,))
+    hora_actual = obtener_hora_timeapi()
+    sql = "INSERT INTO turn_out (iduser, timeout) VALUES (%s, %s)"
+    cursor.execute(sql, (user_id,hora_actual))
 
 
 def insert_user(cursor, username, pass_hash, role=1, foto=None):
@@ -234,8 +262,9 @@ def get_user_foto(cursor, user_id):
 
 def record_timein_laboral(cursor, user_id):
     """Inserta entrada en turn_in_laboral."""
-    sql = "INSERT INTO turn_in_laboral (iduser, timein) VALUES (%s, NOW())"
-    cursor.execute(sql, (user_id,))
+    hora_actual = obtener_hora_timeapi()
+    sql = "INSERT INTO turn_in_laboral (iduser, timein) VALUES (%s, %s)"
+    cursor.execute(sql, (user_id,hora_actual))
 
 def tiene_entrada_laboral_hoy(cursor, user_id):
     """
@@ -306,10 +335,12 @@ def tiene_vuelta_comida_hoy(cursor, user_id):
     return cursor.fetchone() is not None
 
 def record_timeout_laboral(cursor, user_id):
+    hora_actual = obtener_hora_timeapi()
     cursor.execute("""
+   
         INSERT INTO turn_out_laboral (iduser, timeout)
-        VALUES (%s, NOW())
-    """, (user_id,))
+        VALUES (%s, %s)
+    """, (user_id, hora_actual))
 
 def tiene_salida_laboral_hoy(cursor, user_id):
     cursor.execute("""
