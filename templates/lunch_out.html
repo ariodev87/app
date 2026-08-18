@@ -116,14 +116,53 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    function actualizarHora() {
-      const now = new Date();
-      document.getElementById('horaActual').textContent =
-        now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+ <script>
+  async function updateClock() {
+    const horaElement =
+      document.getElementById('horaActual');
+
+    try {
+      const response = await fetch(
+        window.TURNOAPP.horaApiUrl,
+        {
+          cache: 'no-store'
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const [hours, minutes] = data.hora.split(':');
+
+      if (horaElement) {
+        horaElement.textContent =
+          `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+      }
+
+    } catch (error) {
+      console.error(
+        'No se pudo obtener la hora desde TimeAPI:',
+        error
+      );
+
+      if (horaElement) {
+        horaElement.textContent = '--:--';
+      }
     }
-    actualizarHora();
-    setInterval(actualizarHora, 1000);
-  </script>
+  }
+
+  // Primera consulta al cargar la página
+  updateClock();
+
+  // Nueva consulta cada 20 segundos
+  setInterval(updateClock, 20 * 1000);
+</script>
 </body>
 </html>

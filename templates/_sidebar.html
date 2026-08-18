@@ -9,6 +9,12 @@
       <i class="bi bi-chevron-left"></i>
     </button>
   </div>
+  <!-- Reloj de TimeAPI -->
+  <div class="sidebar-clock" id="sidebarClock">
+    <i class="bi bi-clock-fill"></i>
+    <span id="sidebarClockTime">--:--</span>
+    <span id="sidebarClockDate">--/--/----</span>
+  </div>
 
   <!-- Usuario -->
   <div class="sidebar-user">
@@ -138,6 +144,12 @@
   </div>
 
 </nav>
+<script>
+  window.TURNOAPP = window.TURNOAPP || {};
+
+  window.TURNOAPP.horaApiUrl =
+    "{{ url_for('main.hora_api') }}";
+</script>
 
 
 <!-- ══════════════════════════════════════════
@@ -152,7 +164,74 @@
     <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
 <script src="https://files.bpcontent.cloud/2026/05/08/09/20260508095110-LI8SXTW4.js" defer></script>
     
+<script>
+  async function actualizarRelojSidebar() {
+    try {
+      const respuesta = await fetch(
+        window.TURNOAPP.horaApiUrl,
+        {
+          cache: 'no-store'
+        }
+      );
 
+      if (!respuesta.ok) {
+        throw new Error(`HTTP ${respuesta.status}`);
+      }
+
+      const datos = await respuesta.json();
+
+      if (datos.error) {
+        throw new Error(datos.error);
+      }
+
+      const partesHora = datos.hora.split(':');
+      const partesFecha = datos.fecha.split('-');
+
+      const elementoHora =
+        document.getElementById('sidebarClockTime');
+
+      const elementoFecha =
+        document.getElementById('sidebarClockDate');
+
+      if (elementoHora) {
+        elementoHora.textContent =
+          `${partesHora[0]}:${partesHora[1]}`;
+      }
+
+      if (elementoFecha) {
+        elementoFecha.textContent =
+          `${partesFecha[2]}/${partesFecha[1]}/${partesFecha[0]}`;
+      }
+
+    } catch (error) {
+      console.error(
+        'No se pudo obtener la hora de TimeAPI:',
+        error
+      );
+
+      const elementoHora =
+        document.getElementById('sidebarClockTime');
+
+      const elementoFecha =
+        document.getElementById('sidebarClockDate');
+
+      if (elementoHora) {
+        elementoHora.textContent = '--:--';
+      }
+
+      if (elementoFecha) {
+        elementoFecha.textContent = '--/--/----';
+      }
+    }
+  }
+
+  actualizarRelojSidebar();
+
+  setInterval(
+    actualizarRelojSidebar,
+    20 * 1000
+  );
+</script>
 <script>
   // ── Configuración del bot (reemplaza con tus IDs reales) ──
   const BP_CLIENT_ID = '914d1f9e-4e70-4651-ad44-e7785e27253c';   // ← de Botpress Dashboard
@@ -197,6 +276,41 @@
 </script>
 
 <style>
+  .sidebar-clock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    margin: 4px 12px 8px;
+    background: rgba(37, 99, 235, 0.08);
+    border-radius: 10px;
+    color: #2563eb;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'Satoshi', 'Inter', system-ui, sans-serif;
+  }
+
+  .sidebar-clock i {
+    font-size: 0.9rem;
+  }
+
+  #sidebarClockTime {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.3px;
+  }
+
+  #sidebarClockDate {
+    margin-left: auto;
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-weight: 400;
+  }
+
+  /* Si el sidebar está colapsado */
+  #sidebar.collapsed #sidebarClockTime,
+  #sidebar.collapsed #sidebarClockDate {
+    display: none;
+  }
   /* ── FAB (botón flotante de Botpress) — estilo TurnoApp ── */
   .bpFab {
     background: #2563eb !important;

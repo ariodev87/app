@@ -6,11 +6,12 @@ from io import BytesIO
 from calendar import monthrange
 import calendar as cal_module
 import os
+import requests
 from werkzeug.utils import secure_filename
 
 from flask import (
     Blueprint, render_template, request,
-    redirect, url_for, session, flash
+    redirect, url_for, session, flash,jsonify,current_app
 )
 from app import mysql, bcrypt
 from app.models import (
@@ -114,6 +115,74 @@ def index():
     
     return redirect(url_for('main.login'))
 
+@main.route('/hora-api', methods=['GET'])
+def hora_api():
+    try:
+        respuesta = requests.get(
+            'https://timeapi.io/api/Time/current/zone',
+            params={
+                'timeZone': 'Europe/Madrid'
+            },
+            timeout=5
+        )
+
+        respuesta.raise_for_status()
+        datos = respuesta.json()
+
+        current_app.logger.info(
+            'Respuesta recibida de TimeAPI: %s',
+            datos
+        )
+
+        fecha_hora = datos.get('dateTime', '')
+        hora = datos.get('time', '')
+
+        if not fecha_hora or not hora:
+            return jsonify({
+                'error': 'La API no devolvió una fecha o una hora válida'
+            }), 502
+
+        # TimeAPI puede devolver HH:MM; aseguramos HH:MM:SS.
+        if hora.count(':') == 1:
+            hora = f'{hora}:00'
+
+        return jsonify({
+            'hora': hora,
+            'fecha': fecha_hora[:10],
+            'zona_horaria': datos.get(
+                'timeZone',
+                'Europe/Madrid'
+            )
+        })
+
+    except requests.Timeout:
+        current_app.logger.error(
+            'TimeAPI agotó el tiempo de espera'
+        )
+
+        return jsonify({
+            'error': 'La API de hora tardó demasiado en responder'
+        }), 504
+
+    except requests.RequestException as error:
+        current_app.logger.error(
+            'Error consultando TimeAPI: %s',
+            error
+        )
+
+        return jsonify({
+            'error': 'No se pudo consultar la API de hora'
+        }), 503
+
+    except (ValueError, TypeError, KeyError) as error:
+        current_app.logger.error(
+            'Respuesta no válida de TimeAPI: %s',
+            error
+        )
+
+        return jsonify({
+            'error': 'La respuesta de TimeAPI no tiene el formato esperado'
+        }), 502
 @main.route('/login', methods=['GET', 'POST'])
 def login():
     error = None

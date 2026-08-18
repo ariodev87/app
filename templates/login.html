@@ -127,7 +127,7 @@
       animation:fadeIn 0.6s ease 0.5s both;
     }
     .clock-time{font-size:2rem;font-weight:700;line-height:1;letter-spacing:0.04em;color:#fff;}
-    .clock-seconds{font-size:1.1rem;font-weight:400;color:rgba(255,255,255,0.48);}
+    
     .clock-date{font-size:0.72rem;color:rgba(255,255,255,0.58);margin-top:5px;letter-spacing:0.03em;text-transform:capitalize;font-weight:500;}
 
     /* ── Widget tiempo ── */
@@ -213,9 +213,9 @@
   <!-- Reloj -->
   <div class="clock-widget">
     <div class="clock-time">
-      <span id="clockH">--</span>:<span id="clockM">--</span><span class="clock-seconds">:<span id="clockS">--</span></span>
+      <span id="clockH">--</span>:<span id="clockM">--</span></span>
     </div>
-    <div id="clockDate" class="clock-date">cargando...</div>
+    
   </div>
 
   <!-- Tiempo -->
@@ -302,7 +302,7 @@
 
     async function actualizarReloj() {
   try {
-    const respuesta = await fetch('/hora-servidor');
+    const respuesta = await fetch('/hora-api');
     const datos = await respuesta.json();
 
     const partesHora = datos.hora.split(':');
@@ -330,7 +330,7 @@
 }
 
 actualizarReloj();
-setInterval(actualizarReloj, 1000);
+setInterval(actualizarReloj,10 * 1000);
 
     const contenedorLluvia=document.getElementById("lluvia");
     const flashEl=document.getElementById("flashOverlay");

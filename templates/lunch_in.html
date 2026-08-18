@@ -136,7 +136,11 @@
     </div>
 
     <div class="hora-actual" id="horaActual">
-      <span id="hh">--</span><span class="hora-sep">:</span><span id="hm">--</span><span class="hora-sep">:</span><span id="hs">--</span>
+      <div class="hora-actual" id="horaActual">
+  <span id="hh">--</span>
+  <span class="hora-sep">:</span>
+  <span id="hm">--</span>
+</div>
     </div>
 
     <h2>Vuelta de Comer</h2>
@@ -177,15 +181,71 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    function actualizarHora() {
-      const now = new Date();
-      document.getElementById('hh').textContent = String(now.getHours()).padStart(2, '0');
-      document.getElementById('hm').textContent = String(now.getMinutes()).padStart(2, '0');
-      document.getElementById('hs').textContent = String(now.getSeconds()).padStart(2, '0');
+ <script>
+  async function updateClock() {
+    try {
+      const response = await fetch(
+        window.TURNOAPP.horaApiUrl,
+        {
+          cache: 'no-store'
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      const [hours, minutes] = data.hora.split(':');
+
+      const hoursElement =
+        document.getElementById('hh');
+
+      const minutesElement =
+        document.getElementById('hm');
+
+      if (hoursElement) {
+        hoursElement.textContent =
+          hours.padStart(2, '0');
+      }
+
+      if (minutesElement) {
+        minutesElement.textContent =
+          minutes.padStart(2, '0');
+      }
+
+    } catch (error) {
+      console.error(
+        'No se pudo obtener la hora desde TimeAPI:',
+        error
+      );
+
+      const hoursElement =
+        document.getElementById('hh');
+
+      const minutesElement =
+        document.getElementById('hm');
+
+      if (hoursElement) {
+        hoursElement.textContent = '--';
+      }
+
+      if (minutesElement) {
+        minutesElement.textContent = '--';
+      }
     }
-    actualizarHora();
-    setInterval(actualizarHora, 1000);
-  </script>
+  }
+
+  // Consulta inicial
+  updateClock();
+
+  // Actualiza cada 20 segundos
+  setInterval(updateClock, 20 * 1000);
+</script>
 </body>
 </html>
