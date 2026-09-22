@@ -2,29 +2,13 @@
 import requests
 def obtener_hora_timeapi():
     respuesta = requests.get(
-        'https://timeapi.io/api/Time/current/zone',
-        params={
-            'timeZone': 'Europe/Madrid'
-        },
-        timeout=5
+        "https://time.now/developer/api/timezone/Europe/Madrid",
+        timeout=(3, 5)
     )
-
     respuesta.raise_for_status()
 
     datos = respuesta.json()
-    fecha_hora = datos.get('dateTime')
-
-    if not fecha_hora:
-        raise RuntimeError(
-            'TimeAPI no devolvió dateTime'
-        )
-
-    # Ejemplo recibido:
-    # 2026-08-18T11:42:35.123
-    #
-    # Resultado:
-    # 2026-08-18 11:42:35
-    return fecha_hora[:19].replace('T', ' ')
+    return datos["datetime"]
 
 def get_user_by_username(cursor, username):
     """
