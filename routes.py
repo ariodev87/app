@@ -1,5 +1,7 @@
 # turno/app/routes.py
 from datetime import date
+from zoneinfo import ZoneInfo
+
 from flask import make_response, jsonify
 from xhtml2pdf import pisa
 from io import BytesIO
@@ -119,69 +121,34 @@ def index():
 @main.route('/hora-api', methods=['GET'])
 def hora_api():
     try:
-        respuesta = requests.get(
-            'https://time.now/developer/api/timezone/Europe/Madrid',
-            timeout=(3, 5)
+        ahora = datetime.now(
+            ZoneInfo("Europe/Madrid")
         )
 
-        respuesta.raise_for_status()
-        datos = respuesta.json()
+        fecha = ahora.strftime("%Y-%m-%d")
+        hora = ahora.strftime("%H:%M:%S")
 
         current_app.logger.info(
-            'Respuesta recibida de time.now: %s',
-            datos
+            "Hora del servidor: %s %s",
+            fecha,
+            hora
         )
-
-        fecha_hora = datos.get('datetime', '')
-        zona_horaria = datos.get(
-            'timezone',
-            'Europe/Madrid'
-        )
-
-        if not fecha_hora:
-            return jsonify({
-                'error': 'La API no devolvió una fecha y hora válida'
-            }), 502
-
-        # Ejemplo:
-        # 2026-09-22T16:10:00+02:00
-        fecha = fecha_hora[:10]
-        hora = fecha_hora[11:19]
 
         return jsonify({
-            'hora': hora,
-            'fecha': fecha,
-            'zona_horaria': zona_horaria
+            "hora": hora,
+            "fecha": fecha,
+            "zona_horaria": "Europe/Madrid"
         })
 
-    except requests.Timeout:
+    except (ValueError, TypeError) as error:
         current_app.logger.error(
-            'time.now agotó el tiempo de espera'
-        )
-
-        return jsonify({
-            'error': 'La API de hora tardó demasiado en responder'
-        }), 504
-
-    except requests.RequestException as error:
-        current_app.logger.error(
-            'Error consultando time.now: %s',
+            "Error obteniendo la hora del servidor: %s",
             error
         )
 
         return jsonify({
-            'error': 'No se pudo consultar la API de hora'
-        }), 503
-
-    except (ValueError, TypeError, KeyError) as error:
-        current_app.logger.error(
-            'Respuesta no válida de time.now: %s',
-            error
-        )
-
-        return jsonify({
-            'error': 'La respuesta de la API no tiene el formato esperado'
-        }), 502
+            "error": "No se pudo obtener la hora del servidor"
+        }), 500
 @main.route('/login', methods=['GET', 'POST'])
 def login():
     error = None

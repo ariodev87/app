@@ -1,18 +1,15 @@
 # turno/app/models.py
 import requests
 from datetime import datetime
+from zoneinfo import ZoneInfo
+
 
 def obtener_hora_timeapi():
-    respuesta = requests.get(
-        "https://time.now/developer/api/timezone/Europe/Madrid",
-        timeout=(3, 5)
+    ahora = datetime.now(
+        ZoneInfo("Europe/Madrid")
     )
 
-    respuesta.raise_for_status()
-
-    datos = respuesta.json()
-
-    return datos["datetime"].replace("T", " ")[:19]
+    return ahora.strftime("%Y-%m-%d %H:%M:%S")
 
 def get_user_by_username(cursor, username):
     """
