@@ -9,109 +9,276 @@
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
   <style>
-    :root {
-      --font:       'Satoshi', 'Inter', system-ui, sans-serif;
-      --bg:         #f5f5f7;
-      --surface:    #ffffff;
-      --border:     rgba(0,0,0,0.07);
-      --text:       #1d1d1f;
-      --text-2:     rgba(0,0,0,0.50);
-      --text-3:     rgba(0,0,0,0.28);
-      --transition: 150ms cubic-bezier(0.25,0.46,0.45,0.94);
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    * { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+  :root {
+    --font: 'Satoshi', 'Inter', system-ui, sans-serif;
 
-    body {
-      background: var(--bg); min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
-    }
+    /* Base clara original */
+    --bg: #f7f6fa;
+    --surface: #ffffff;
+    --border: rgba(76, 29, 149, 0.09);
 
-    /* Card */
+    --text: #1d1d1f;
+    --text-2: rgba(29, 29, 31, 0.50);
+    --text-3: rgba(29, 29, 31, 0.28);
+
+    /* Acentos Halloween sutiles */
+    --accent: #7c3aed;
+    --accent-soft: rgba(124, 58, 237, 0.08);
+    --orange: #ea580c;
+    --orange-soft: rgba(234, 88, 12, 0.08);
+
+    --transition: 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  * {
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 96% 0%, rgba(124, 58, 237, 0.055) 0%, transparent 24%),
+      radial-gradient(circle at 4% 100%, rgba(234, 88, 12, 0.04) 0%, transparent 22%),
+      var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Card ── */
+  .card-confirm {
+    position: relative;
+    overflow: hidden;
+    background: var(--surface);
+    border-radius: 28px;
+    border: 1px solid var(--border);
+    box-shadow:
+      0 2px 2px rgba(0, 0, 0, 0.03),
+      0 8px 32px rgba(76, 29, 149, 0.09);
+    padding: 36px 32px 28px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Línea decorativa mínima, igual que las demás pantallas */
+  .card-confirm::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 32px;
+    right: 32px;
+    height: 3px;
+    border-radius: 0 0 999px 999px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(124, 58, 237, 0.70),
+      rgba(234, 88, 12, 0.52),
+      transparent
+    );
+  }
+
+  /* ── Icono ── */
+  .icon-wrap {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+  }
+
+  .icon-wrap i {
+    font-size: 1.35rem;
+  }
+
+  .icon-wrap.activo {
+    background: rgba(16, 185, 129, 0.09);
+  }
+
+  .icon-wrap.activo i {
+    color: #10b981;
+  }
+
+  .icon-wrap.bloqueado {
+    background: var(--orange-soft);
+  }
+
+  .icon-wrap.bloqueado i {
+    color: var(--orange);
+  }
+
+  /* ── Reloj ── */
+  .hora-actual {
+    font-size: 2.8rem;
+    font-weight: 300;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 14px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text);
+  }
+
+  .hora-sep {
+    color: rgba(124, 58, 237, 0.42);
+    font-weight: 200;
+  }
+
+  /* ── Textos ── */
+  h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+  }
+
+  h2::after {
+    content: " ✦";
+    color: var(--orange);
+    font-size: 0.70em;
+    vertical-align: 2px;
+    opacity: 0.72;
+  }
+
+  .subtitle {
+    font-size: 0.82rem;
+    color: var(--text-2);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  /* ── Alerta inline ── */
+  .alerta-inline {
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 0.8rem;
+    text-align: left;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .alerta-warn {
+    background: var(--orange-soft);
+    color: #92400e;
+    border: 1px solid rgba(234, 88, 12, 0.15);
+  }
+
+  /* ── Botón principal ── */
+  .btn-action {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 13px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    font-family: var(--font);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: filter var(--transition), transform var(--transition), box-shadow var(--transition);
+  }
+
+  .btn-action.activo {
+    background: #10b981;
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.25);
+  }
+
+  .btn-action.activo:hover:not(:disabled) {
+    filter: brightness(1.07);
+    box-shadow: 0 4px 18px rgba(16, 185, 129, 0.30);
+    transform: translateY(-1px);
+  }
+
+  .btn-action:disabled {
+    background: rgba(0, 0, 0, 0.05);
+    color: rgba(0, 0, 0, 0.25);
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ── Volver ── */
+  .btn-volver {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-3);
+    font-size: 0.82rem;
+    font-weight: 500;
+    font-family: var(--font);
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 10px;
+    text-decoration: none;
+    width: 100%;
+    transition: color var(--transition), background var(--transition);
+  }
+
+  .btn-volver:hover {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  /* ── Flash ── */
+  .flash-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 999;
+    min-width: 280px;
+  }
+
+  .alert {
+    border-radius: 14px;
+    font-size: 0.875rem;
+    border: 1px solid var(--border);
+  }
+
+  @media (max-width: 480px) {
     .card-confirm {
-      background: var(--surface);
-      border-radius: 28px;
-      border: 1px solid var(--border);
-      box-shadow: 0 2px 2px rgba(0,0,0,0.03), 0 8px 32px rgba(0,0,0,0.08);
-      padding: 36px 32px 28px;
-      max-width: 400px; width: 100%; text-align: center;
+      margin: 16px;
+      padding: 32px 22px 24px;
     }
 
-    /* Icono */
-    .icon-wrap {
-      width: 52px; height: 52px; border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 16px;
+    .flash-container {
+      left: 16px;
+      right: 16px;
+      min-width: 0;
     }
-    .icon-wrap i { font-size: 1.35rem; }
-    .icon-wrap.activo    { background: rgba(16,185,129,0.09); }
-    .icon-wrap.activo i  { color: #10b981; }
-    .icon-wrap.bloqueado { background: rgba(217,119,6,0.09); }
-    .icon-wrap.bloqueado i { color: #d97706; }
+  }
 
-    /* Reloj */
-    .hora-actual {
-      font-size: 2.8rem; font-weight: 300; letter-spacing: -1px;
-      line-height: 1; margin-bottom: 14px;
-      font-variant-numeric: tabular-nums; color: var(--text);
-    }
-    .hora-sep { color: var(--text-3); font-weight: 200; }
-
-    /* Textos */
-    h2 {
-      font-size: 1.05rem; font-weight: 700; color: var(--text);
-      margin-bottom: 4px; letter-spacing: -0.02em;
-    }
-    .subtitle {
-      font-size: 0.82rem; color: var(--text-2); margin-bottom: 20px; line-height: 1.5;
-    }
-
-    /* Alerta inline */
-    .alerta-inline {
-      border-radius: 12px; padding: 10px 14px; margin-bottom: 14px;
-      font-size: 0.8rem; text-align: left;
-      display: flex; align-items: flex-start; gap: 8px;
-    }
-    .alerta-warn { background: rgba(217,119,6,0.07); color: #92400e; border: 1px solid rgba(217,119,6,0.14); }
-
-    /* Botón principal */
-    .btn-action {
-      width: 100%; border: none; border-radius: 14px;
-      padding: 13px; font-size: 0.9rem; font-weight: 600;
-      font-family: var(--font); cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      transition: filter var(--transition), transform var(--transition), box-shadow var(--transition);
-    }
-    .btn-action.activo {
-      background: #10b981; color: #fff;
-      box-shadow: 0 2px 10px rgba(16,185,129,0.25);
-    }
-    .btn-action.activo:hover:not(:disabled) {
-      filter: brightness(1.07);
-      box-shadow: 0 4px 18px rgba(16,185,129,0.30);
-      transform: translateY(-1px);
-    }
-    .btn-action:disabled {
-      background: rgba(0,0,0,0.05);
-      color: rgba(0,0,0,0.25);
-      box-shadow: none; cursor: not-allowed; transform: none;
-    }
-
-    /* Volver */
+  @media (prefers-reduced-motion: reduce) {
+    .btn-action,
     .btn-volver {
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      margin-top: 10px; background: transparent; border: none;
-      color: var(--text-3); font-size: 0.82rem; font-weight: 500;
-      font-family: var(--font); cursor: pointer; padding: 10px;
-      border-radius: 10px; text-decoration: none; width: 100%;
-      transition: color var(--transition), background var(--transition);
+      transition: none !important;
     }
-    .btn-volver:hover { color: var(--text-2); background: rgba(0,0,0,0.04); }
 
-    /* Flash */
-    .flash-container { position: fixed; top: 20px; right: 20px; z-index: 999; min-width: 280px; }
-    .alert { border-radius: 14px; font-size: 0.875rem; border: 1px solid var(--border); }
-  </style>
+    .btn-action:hover:not(:disabled) {
+      transform: none;
+    }
+  }
+</style>
 </head>
 <body>
 {% include '_sidebar.html' %}

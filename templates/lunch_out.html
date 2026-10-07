@@ -9,52 +9,209 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
   <style>
-    * { font-family: 'Inter', sans-serif; }
-    body { background: #f1f5f9; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  :root {
+    --purple: #7c3aed;
+    --purple-soft: rgba(124, 58, 237, 0.07);
+    --orange: #ea580c;
+    --orange-soft: rgba(234, 88, 12, 0.07);
+    --transition: 0.2s ease;
+  }
+
+  * {
+    font-family: 'Inter', sans-serif;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 96% 0%, rgba(124, 58, 237, 0.055) 0%, transparent 24%),
+      radial-gradient(circle at 4% 100%, rgba(234, 88, 12, 0.04) 0%, transparent 22%),
+      #f1f5f9;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .card-confirm {
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid rgba(124, 58, 237, 0.14);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.07),
+      0 8px 28px rgba(124, 58, 237, 0.06);
+    padding: 48px 40px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Línea superior decorativa muy sutil */
+  .card-confirm::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 34px;
+    right: 34px;
+    height: 3px;
+    border-radius: 0 0 999px 999px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(124, 58, 237, 0.72),
+      rgba(234, 88, 12, 0.52),
+      transparent
+    );
+  }
+
+  .icon-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+  }
+
+  /* Se conserva amarillo: estado/comida */
+  .icon-circle.activo {
+    background: #fffbeb;
+    border: 2px solid #fcd34d;
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.06);
+  }
+
+  .icon-circle.activo i {
+    font-size: 2.2rem;
+    color: #f59e0b;
+  }
+
+  .icon-circle.bloqueado {
+    background: #fef9c3;
+    border: 2px solid #fde047;
+    box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.05);
+  }
+
+  .icon-circle.bloqueado i {
+    font-size: 2.2rem;
+    color: #ca8a04;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+
+  /* Detalle visual de Halloween discreto */
+  h2::after {
+    content: " ✦";
+    color: var(--orange);
+    font-size: 0.58em;
+    vertical-align: 3px;
+    opacity: 0.72;
+  }
+
+  p {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 24px;
+  }
+
+  .alerta-bloqueado {
+    background: #fefce8;
+    border: 1px solid #fde047;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 0.85rem;
+    color: #854d0e;
+    text-align: left;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .btn-confirm {
+    color: #fff;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    width: 100%;
+    transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  }
+
+  .btn-confirm.activo {
+    background: #f59e0b;
+    box-shadow: 0 3px 10px rgba(245, 158, 11, 0.23);
+  }
+
+  .btn-confirm.activo:hover {
+    background: #d97706;
+    box-shadow: 0 5px 16px rgba(245, 158, 11, 0.30);
+    transform: translateY(-1px);
+  }
+
+  .btn-confirm:disabled {
+    background: #d1d5db;
+    color: #9ca3af;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  .btn-back {
+    display: block;
+    margin-top: 14px;
+    color: #64748b;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: color var(--transition), background var(--transition);
+    border-radius: 8px;
+    padding: 5px;
+  }
+
+  .btn-back:hover {
+    color: var(--purple);
+    background: var(--purple-soft);
+  }
+
+  .hora-actual {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .hora-actual.activo {
+    color: #f59e0b;
+  }
+
+  .hora-actual.bloqueado {
+    color: #ca8a04;
+  }
+
+  @media (max-width: 480px) {
     .card-confirm {
-      background: #fff; border-radius: 20px; border: 1px solid #e5e7eb;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.07);
-      padding: 48px 40px; max-width: 420px; width: 100%; text-align: center;
+      margin: 16px;
+      padding: 38px 24px;
     }
-    .icon-circle {
-      width: 80px; height: 80px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 24px;
-    }
-    .icon-circle.activo   { background: #fffbeb; border: 2px solid #fcd34d; }
-    .icon-circle.activo i { font-size: 2.2rem; color: #f59e0b; }
-    .icon-circle.bloqueado   { background: #fef9c3; border: 2px solid #fde047; }
-    .icon-circle.bloqueado i { font-size: 2.2rem; color: #ca8a04; }
+  }
 
-    h2 { font-size: 1.4rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
-    p  { color: #64748b; font-size: 0.9rem; margin-bottom: 24px; }
-
-    .alerta-bloqueado {
-      background: #fefce8; border: 1px solid #fde047;
-      border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;
-      font-size: 0.85rem; color: #854d0e; text-align: left;
-      display: flex; align-items: flex-start; gap: 8px;
-    }
-
-    .btn-confirm {
-      color: #fff; border: none;
-      padding: 12px 32px; border-radius: 10px;
-      font-size: 0.95rem; font-weight: 600; width: 100%;
-      transition: background 0.2s;
-    }
-    .btn-confirm.activo   { background: #f59e0b; }
-    .btn-confirm.activo:hover { background: #d97706; }
-    .btn-confirm:disabled { background: #d1d5db; color: #9ca3af; cursor: not-allowed; }
-
+  @media (prefers-reduced-motion: reduce) {
+    .btn-confirm,
     .btn-back {
-      display: block; margin-top: 14px;
-      color: #64748b; font-size: 0.85rem; text-decoration: none;
+      transition: none !important;
     }
-    .btn-back:hover { color: #374151; }
-    .hora-actual { font-size: 2rem; font-weight: 700; margin-bottom: 4px; }
-    .hora-actual.activo   { color: #f59e0b; }
-    .hora-actual.bloqueado { color: #ca8a04; }
-  </style>
+
+    .btn-confirm.activo:hover {
+      transform: none;
+    }
+  }
+</style>
 </head>
 <body>
 {% include '_sidebar.html' %}

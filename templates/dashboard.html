@@ -11,187 +11,597 @@
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
 
-  <style>
-    :root {
-      --font:         'Satoshi', 'Inter', system-ui, sans-serif;
-      --bg:           #f5f5f7;
-      --surface:      #ffffff;
-      --border:       rgba(0,0,0,0.07);
-      --border-row:   rgba(0,0,0,0.04);
-      --text:         #1d1d1f;
-      --text-2:       rgba(0,0,0,0.50);
-      --text-3:       rgba(0,0,0,0.30);
-      --accent:       #2563eb;
-      --radius-card:  20px;
-      --radius-panel: 16px;
-      --radius-sm:    8px;
-      --shadow-card:  0 1px 1px rgba(0,0,0,0.03), 0 4px 18px rgba(0,0,0,0.06);
-      --transition:   150ms cubic-bezier(0.25,0.46,0.45,0.94);
-    }
+ <style>
+  :root {
+    --font: 'Satoshi', 'Inter', system-ui, sans-serif;
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    * { font-family: var(--font); -webkit-font-smoothing: antialiased; }
-    body { background: var(--bg); min-height: 100vh; display: flex; }
+    /* Base original */
+    --bg: #f7f6fa;
+    --surface: #ffffff;
+    --border: rgba(76, 29, 149, 0.09);
+    --border-row: rgba(76, 29, 149, 0.045);
 
-    /* ── Topbar ── */
+    --text: #1d1d1f;
+    --text-2: rgba(29, 29, 31, 0.50);
+    --text-3: rgba(29, 29, 31, 0.30);
+
+    /* Acentos Halloween muy sutiles */
+    --accent: #7c3aed;
+    --accent-hover: #6d28d9;
+    --accent-soft: rgba(124, 58, 237, 0.08);
+    --orange: #ea580c;
+    --orange-soft: rgba(234, 88, 12, 0.08);
+
+    --radius-card: 20px;
+    --radius-panel: 16px;
+    --radius-sm: 8px;
+
+    --shadow-card:
+      0 1px 1px rgba(0, 0, 0, 0.03),
+      0 4px 18px rgba(76, 29, 149, 0.07);
+
+    --transition: 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  * {
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 96% 0%, rgba(124, 58, 237, 0.055) 0%, transparent 24%),
+      radial-gradient(circle at 4% 100%, rgba(234, 88, 12, 0.04) 0%, transparent 22%),
+      var(--bg);
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    background: rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+  }
+
+  .topbar .page-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.01em;
+  }
+
+  .topbar .page-title i {
+    color: var(--accent);
+  }
+
+  .topbar .fecha {
+    font-size: 0.8rem;
+    color: var(--text-2);
+    font-weight: 500;
+  }
+
+  .topbar .badge-role {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .btn-salir {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-2);
+    text-decoration: none;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition), color var(--transition);
+  }
+
+  .btn-salir:hover {
+    background: rgba(239, 68, 68, 0.08);
+    color: #dc2626;
+  }
+
+  /* ── Widget clima ── */
+  .weather-widget {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(124, 58, 237, 0.08);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-2);
+    cursor: default;
+    transition: background var(--transition), border-color var(--transition);
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .weather-widget:hover {
+    background: var(--orange-soft);
+    border-color: rgba(234, 88, 12, 0.14);
+  }
+
+  .weather-widget .weather-icon {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .weather-widget .weather-temp {
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .weather-widget .weather-desc {
+    color: var(--text-2);
+    font-weight: 500;
+  }
+
+  /* ── Contenido ── */
+  .content-area {
+    flex: 1;
+    padding: 28px 32px;
+  }
+
+  /* ── Saludo ── */
+  .saludo h4 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+  }
+
+  .saludo p {
+    font-size: 0.875rem;
+    color: var(--text-2);
+    margin: 0;
+  }
+
+  /* ── Card base ── */
+  .card-apple {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    height: 100%;
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+
+  /* Línea superior discreta: referencia Halloween sin invadir */
+  .card-apple::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 22px;
+    right: 22px;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(124, 58, 237, 0.55),
+      rgba(234, 88, 12, 0.45),
+      transparent
+    );
+    opacity: 0.65;
+    pointer-events: none;
+  }
+
+  .card-apple:hover {
+    border-color: rgba(124, 58, 237, 0.18);
+    box-shadow:
+      0 1px 1px rgba(0, 0, 0, 0.03),
+      0 6px 22px rgba(76, 29, 149, 0.10);
+  }
+
+  /* ── Perfil ── */
+  .profile-banner {
+    height: 72px;
+    background: linear-gradient(135deg, #7c3aed, #9333ea 58%, #c2410c 145%);
+  }
+
+  .profile-body {
+    padding: 0 22px 22px;
+  }
+
+  .profile-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--surface);
+    box-shadow:
+      0 2px 10px rgba(0, 0, 0, 0.12),
+      0 0 0 3px rgba(124, 58, 237, 0.10);
+    margin-top: -36px;
+    display: block;
+  }
+
+  .profile-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 10px 0 2px;
+    letter-spacing: -0.015em;
+  }
+
+  .profile-role-text {
+    font-size: 0.78rem;
+    color: var(--text-2);
+    margin: 0 0 14px;
+  }
+
+  .profile-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 20px;
+    padding: 3px 11px;
+    font-size: 0.73rem;
+    font-weight: 600;
+    border: 1px solid;
+  }
+
+  /* ── Card header ── */
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 17px 20px 13px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .card-head-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    flex-shrink: 0;
+  }
+
+  .card-head h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .card-body-p {
+    padding: 4px 20px 18px;
+  }
+
+  /* ── Vacaciones ── */
+  .vac-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border-row);
+    font-size: 0.82rem;
+  }
+
+  .vac-item:last-child {
+    border-bottom: none;
+  }
+
+  .vac-dates {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .vac-dates i {
+    font-size: 0.78rem;
+    color: var(--orange);
+  }
+
+  .vac-dias {
+    background: rgba(217, 119, 6, 0.08);
+    color: #92400e;
+    border-radius: 20px;
+    padding: 2px 9px;
+    font-size: 0.71rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .vac-empty {
+    text-align: center;
+    padding: 24px 0 12px;
+    color: var(--text-3);
+    font-size: 0.85rem;
+  }
+
+  .vac-empty i {
+    font-size: 1.75rem;
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.35;
+  }
+
+  .card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.78rem;
+    color: var(--orange);
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 10px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background var(--transition), color var(--transition);
+  }
+
+  .card-link:hover {
+    background: var(--orange-soft);
+    color: #c2410c;
+  }
+
+  /* ── Noticias ── */
+  .noticia-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-row);
+  }
+
+  .noticia-item:last-child {
+    border-bottom: none;
+  }
+
+  .noticia-titulo {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 3px;
+  }
+
+  .noticia-titulo .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.10);
+  }
+
+  .noticia-titulo span {
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .noticia-texto {
+    font-size: 0.78rem;
+    color: var(--text-2);
+    margin: 0 0 4px 13px;
+    line-height: 1.5;
+  }
+
+  .noticia-meta {
+    font-size: 0.7rem;
+    color: var(--text-3);
+    margin-left: 13px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* ── Panels tabla ── */
+  .table-panel {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  .table-panel::before {
+    content: "";
+    display: block;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      rgba(124, 58, 237, 0.72),
+      rgba(234, 88, 12, 0.58)
+    );
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-head-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.88rem;
+    flex-shrink: 0;
+  }
+
+  .panel-head h5 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+
+  .table {
+    color: var(--text);
+    font-size: 0.835rem;
+    margin: 0;
+  }
+
+  .table thead th {
+    background: rgba(124, 58, 237, 0.018);
+    color: var(--text-2);
+    font-size: 0.71rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border-bottom: 1px solid var(--border);
+    padding: 10px 22px;
+  }
+
+  .table tbody td {
+    padding: 11px 22px;
+    border-bottom: 1px solid var(--border-row);
+    vertical-align: middle;
+  }
+
+  .table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .table-hover tbody tr:hover td {
+    background: rgba(124, 58, 237, 0.035);
+  }
+
+  .table-empty {
+    padding: 16px 22px;
+    color: var(--text-3);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  /* ── Chips ── */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.76rem;
+    font-weight: 600;
+  }
+
+  .chip-cyan {
+    background: rgba(8, 145, 178, 0.10);
+    color: #900e7f;
+  }
+
+  .chip-green {
+    background: rgba(22, 163, 74, 0.10);
+    color: #15803d;
+  }
+
+  .chip-amber {
+    background: rgba(217, 119, 6, 0.10);
+    color: #92400e;
+  }
+
+  .chip-teal {
+    background: rgba(16, 185, 129, 0.10);
+    color: #065f46;
+  }
+
+  .chip-slate {
+    background: var(--accent-soft);
+    color: #6d28d9;
+  }
+
+  .alert {
+    border-radius: var(--radius-panel);
+    font-size: 0.875rem;
+    border: 1px solid var(--border);
+  }
+
+  footer {
+    background: transparent;
+    border-top: 1px solid var(--border);
+    padding: 14px 32px;
+    text-align: center;
+  }
+
+  footer p {
+    color: var(--text-3);
+    font-size: 0.76rem;
+    margin: 0;
+    font-weight: 500;
+  }
+
+  footer strong {
+    color: var(--text-2);
+  }
+
+  @media (max-width: 768px) {
     .topbar {
-      background: rgba(255,255,255,0.82);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 28px;
-      height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 99;
+      padding: 0 16px;
     }
 
-    .topbar .page-title {
-      font-size: 0.95rem; font-weight: 600; color: var(--text);
-      margin: 0; display: flex; align-items: center; gap: 8px;
-      letter-spacing: -0.01em;
-    }
-    .topbar .page-title i { color: var(--accent); }
-
-    .topbar .fecha { font-size: 0.8rem; color: var(--text-2); font-weight: 500; }
-
-    .topbar .badge-role {
-      font-size: 0.72rem; font-weight: 600;
-      padding: 3px 10px; border-radius: 20px; border: 1px solid;
-      display: inline-flex; align-items: center; gap: 5px;
+    .topbar .fecha,
+    .weather-widget .weather-desc {
+      display: none;
     }
 
+    .content-area {
+      padding: 20px 16px;
+    }
+
+    footer {
+      padding: 14px 16px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-apple,
+    .weather-widget,
     .btn-salir {
-      display: flex; align-items: center; gap: 5px;
-      font-size: 0.8rem; font-weight: 500; color: var(--text-2);
-      text-decoration: none; padding: 5px 12px; border-radius: var(--radius-sm);
-      transition: background var(--transition), color var(--transition);
+      transition: none !important;
     }
-    .btn-salir:hover { background: rgba(239,68,68,0.08); color: #dc2626; }
-
-    /* ── Widget clima ── */
-    .weather-widget {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 11px;
-      border-radius: 999px;
-      background: rgba(0,0,0,0.04);
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text-2);
-      cursor: default;
-      transition: background var(--transition);
-      user-select: none;
-      white-space: nowrap;
-    }
-    .weather-widget:hover { background: rgba(0,0,0,0.07); }
-    .weather-widget .weather-icon { font-size: 1rem; line-height: 1; }
-    .weather-widget .weather-temp { font-weight: 700; color: var(--text); }
-    .weather-widget .weather-desc { color: var(--text-2); font-weight: 500; }
-
-    /* ── Contenido ── */
-    .content-area { flex: 1; padding: 28px 32px; }
-
-    /* ── Saludo ── */
-    .saludo h4 { font-size: 1.3rem; font-weight: 700; color: var(--text); margin: 0 0 4px; letter-spacing: -0.02em; }
-    .saludo p  { font-size: 0.875rem; color: var(--text-2); margin: 0; }
-
-    /* ── Card base ── */
-    .card-apple {
-      background: var(--surface); border-radius: var(--radius-card);
-      border: 1px solid var(--border); box-shadow: var(--shadow-card);
-      overflow: hidden; height: 100%;
-    }
-
-    /* ── Perfil ── */
-    .profile-banner { height: 72px; }
-    .profile-body   { padding: 0 22px 22px; }
-    .profile-avatar {
-      width: 72px; height: 72px; border-radius: 50%; object-fit: cover;
-      border: 3px solid var(--surface); box-shadow: 0 2px 10px rgba(0,0,0,0.12);
-      margin-top: -36px; display: block;
-    }
-    .profile-name { font-size: 1rem; font-weight: 700; color: var(--text); margin: 10px 0 2px; letter-spacing: -0.015em; }
-    .profile-role-text { font-size: 0.78rem; color: var(--text-2); margin: 0 0 14px; }
-    .profile-badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      border-radius: 20px; padding: 3px 11px; font-size: 0.73rem; font-weight: 600; border: 1px solid;
-    }
-
-    /* ── Card header ── */
-    .card-head {
-      display: flex; align-items: center; gap: 9px;
-      padding: 17px 20px 13px; border-bottom: 1px solid var(--border);
-    }
-    .card-head-icon {
-      width: 28px; height: 28px; border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.82rem; flex-shrink: 0;
-    }
-    .card-head h5 { font-size: 0.875rem; font-weight: 600; color: var(--text); margin: 0; letter-spacing: -0.01em; }
-    .card-body-p { padding: 4px 20px 18px; }
-
-    /* ── Vacaciones ── */
-    .vac-item {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 9px 0; border-bottom: 1px solid var(--border-row); font-size: 0.82rem;
-    }
-    .vac-item:last-child { border-bottom: none; }
-    .vac-dates { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 500; }
-    .vac-dates i { font-size: 0.78rem; color: #d97706; }
-    .vac-dias {
-      background: rgba(217,119,6,0.08); color: #92400e; border-radius: 20px;
-      padding: 2px 9px; font-size: 0.71rem; font-weight: 600; white-space: nowrap; flex-shrink: 0;
-    }
-    .vac-empty { text-align: center; padding: 24px 0 12px; color: var(--text-3); font-size: 0.85rem; }
-    .vac-empty i { font-size: 1.75rem; display: block; margin-bottom: 8px; opacity: 0.35; }
-    .card-link {
-      display: inline-flex; align-items: center; gap: 5px;
-      font-size: 0.78rem; color: #d97706; text-decoration: none; font-weight: 600;
-      margin-top: 10px; padding: 4px 8px; border-radius: 6px;
-      transition: background var(--transition);
-    }
-    .card-link:hover { background: rgba(217,119,6,0.07); }
-
-    /* ── Noticias ── */
-    .noticia-item { padding: 10px 0; border-bottom: 1px solid var(--border-row); }
-    .noticia-item:last-child { border-bottom: none; }
-    .noticia-titulo { display: flex; align-items: center; gap: 7px; margin-bottom: 3px; }
-    .noticia-titulo .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-    .noticia-titulo span { font-size: 0.83rem; font-weight: 600; color: var(--text); }
-    .noticia-texto { font-size: 0.78rem; color: var(--text-2); margin: 0 0 4px 13px; line-height: 1.5; }
-    .noticia-meta { font-size: 0.7rem; color: var(--text-3); margin-left: 13px; display: flex; align-items: center; gap: 4px; }
-
-    /* ── Panels tabla ── */
-    .table-panel { background: var(--surface); border-radius: var(--radius-card); border: 1px solid var(--border); box-shadow: var(--shadow-card); overflow: hidden; }
-    .panel-head { display: flex; align-items: center; gap: 10px; padding: 15px 22px; border-bottom: 1px solid var(--border); }
-    .panel-head-icon { width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 0.88rem; flex-shrink: 0; }
-    .panel-head h5 { font-size: 0.875rem; font-weight: 600; color: var(--text); margin: 0; letter-spacing: -0.01em; }
-    .table { color: var(--text); font-size: 0.835rem; margin: 0; }
-    .table thead th { background: transparent; color: var(--text-2); font-size: 0.71rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; border-bottom: 1px solid var(--border); padding: 10px 22px; }
-    .table tbody td { padding: 11px 22px; border-bottom: 1px solid var(--border-row); vertical-align: middle; }
-    .table tbody tr:last-child td { border-bottom: none; }
-    .table-hover tbody tr:hover td { background: rgba(0,0,0,0.015); }
-    .table-empty { padding: 16px 22px; color: var(--text-3); font-size: 0.85rem; display: flex; align-items: center; gap: 7px; }
-
-    /* ── Chips ── */
-    .chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 0.76rem; font-weight: 600; }
-    .chip-cyan  { background: rgba(8,145,178,0.10);  color: #0e7490; }
-    .chip-green { background: rgba(22,163,74,0.10);  color: #15803d; }
-    .chip-amber { background: rgba(217,119,6,0.10);  color: #92400e; }
-    .chip-teal  { background: rgba(16,185,129,0.10); color: #065f46; }
-    .chip-slate { background: rgba(0,0,0,0.05);      color: var(--text-2); }
-
-    .alert { border-radius: var(--radius-panel); font-size: 0.875rem; border: 1px solid var(--border); }
-
-    footer { background: transparent; border-top: 1px solid var(--border); padding: 14px 32px; text-align: center; }
-    footer p { color: var(--text-3); font-size: 0.76rem; margin: 0; font-weight: 500; }
-    footer strong { color: var(--text-2); }
-  </style>
+  }
+</style>
 </head>
 <body>
 
