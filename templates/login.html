@@ -11,16 +11,39 @@
   <style>
     :root {
       --font-body: 'Satoshi', 'Inter', system-ui, sans-serif;
-      --space-1:0.25rem; --space-2:0.5rem; --space-3:0.75rem;
-      --space-4:1rem; --space-5:1.25rem; --space-6:1.5rem;
-      --space-8:2rem; --space-10:2.5rem;
-      --radius-sm:0.375rem; --radius-md:0.5rem; --radius-lg:0.75rem;
-      --radius-xl:1rem; --radius-2xl:1.25rem;
-      --transition:180ms cubic-bezier(0.16,1,0.3,1);
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-2xl: 1.25rem;
+      --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
+
+      /* Halloween */
+      --halloween-orange: #f97316;
+      --halloween-orange-dark: #c2410c;
+      --halloween-purple: #581c87;
+      --halloween-yellow: #fbbf24;
+      --halloween-dark: #10061f;
     }
 
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    html{height:100%;-webkit-font-smoothing:antialiased;}
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      height: 100%;
+      -webkit-font-smoothing: antialiased;
+    }
 
     body {
       font-family: var(--font-body);
@@ -36,186 +59,767 @@
       overflow: hidden;
     }
 
+    /* Capa oscura temática */
     body::before {
       content: "";
-      position: fixed; inset: 0;
-      background: linear-gradient(135deg, rgba(15,23,42,0.75) 0%, rgba(37,99,235,0.45) 100%);
-      z-index: 0; pointer-events: none;
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(circle at 78% 15%, rgba(255, 174, 66, 0.13) 0%, transparent 20%),
+        linear-gradient(
+          135deg,
+          rgba(10, 6, 25, 0.88) 0%,
+          rgba(43, 13, 69, 0.72) 50%,
+          rgba(92, 35, 10, 0.45) 100%
+        );
+      z-index: 0;
+      pointer-events: none;
     }
-        /* ── Estilos para Typed.js ── */
+
+    /* ── Luna de Halloween ── */
+    .luna-halloween {
+      position: fixed;
+      top: 8%;
+      left: 8%;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 36% 32%, #fff7cc 0%, #ffd56a 42%, #f59e0b 100%);
+      box-shadow:
+        0 0 30px rgba(251, 191, 36, 0.75),
+        0 0 80px rgba(251, 191, 36, 0.30),
+        0 0 160px rgba(249, 115, 22, 0.17);
+      z-index: 1;
+      opacity: 0.78;
+      pointer-events: none;
+      animation: brilloLuna 4s ease-in-out infinite alternate;
+    }
+
+    .luna-halloween::before,
+    .luna-halloween::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(173, 104, 18, 0.16);
+    }
+
+    .luna-halloween::before {
+      width: 23px;
+      height: 23px;
+      top: 26px;
+      left: 33px;
+    }
+
+    .luna-halloween::after {
+      width: 16px;
+      height: 16px;
+      bottom: 28px;
+      right: 30px;
+    }
+
+    @keyframes brilloLuna {
+      from {
+        transform: scale(0.98);
+        filter: brightness(0.95);
+      }
+      to {
+        transform: scale(1.03);
+        filter: brightness(1.12);
+      }
+    }
+
+    /* ── Telarañas CSS ── */
+    .telarana {
+      position: fixed;
+      width: 210px;
+      height: 210px;
+      z-index: 4;
+      pointer-events: none;
+      opacity: 0.40;
+      background:
+        radial-gradient(circle at 0 0, transparent 0 26px, rgba(238, 230, 255, 0.46) 27px 28px, transparent 29px 55px, rgba(238, 230, 255, 0.32) 56px 57px, transparent 58px 87px, rgba(238, 230, 255, 0.25) 88px 89px, transparent 90px),
+        repeating-conic-gradient(
+          from 0deg at 0 0,
+          rgba(238, 230, 255, 0.40) 0deg 1deg,
+          transparent 1deg 22.5deg
+        );
+      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.10));
+    }
+
+    .telarana-izquierda {
+      top: 0;
+      left: 0;
+    }
+
+    .telarana-derecha {
+      top: 0;
+      right: 0;
+      transform: scaleX(-1);
+    }
+
+    /* ── Murciélagos ── */
+    .murcielagos {
+      position: fixed;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .murcielagos span {
+      position: absolute;
+      left: -10vw;
+      color: rgba(10, 3, 20, 0.92);
+      text-shadow: 0 0 8px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      animation: volarMurcielago 19s linear infinite;
+    }
+
+    .murcielagos span:nth-child(1) {
+      top: 17%;
+      font-size: 1.7rem;
+      animation-delay: 1s;
+    }
+
+    .murcielagos span:nth-child(2) {
+      top: 28%;
+      font-size: 1.15rem;
+      animation-delay: 6s;
+    }
+
+    .murcielagos span:nth-child(3) {
+      top: 11%;
+      font-size: 2rem;
+      animation-delay: 11s;
+    }
+
+    .murcielagos span:nth-child(4) {
+      top: 43%;
+      font-size: 1.3rem;
+      animation-delay: 15s;
+    }
+
+    @keyframes volarMurcielago {
+      0% {
+        transform: translateX(-10vw) translateY(0) rotate(-8deg);
+        opacity: 0;
+      }
+
+      7% {
+        opacity: 0.72;
+      }
+
+      32% {
+        transform: translateX(34vw) translateY(-32px) rotate(7deg);
+      }
+
+      57% {
+        transform: translateX(65vw) translateY(20px) rotate(-5deg);
+        opacity: 0.65;
+      }
+
+      91% {
+        opacity: 0.18;
+      }
+
+      100% {
+        transform: translateX(115vw) translateY(-15px) rotate(8deg);
+        opacity: 0;
+      }
+    }
+
+    /* ── Estilos Typed.js ── */
     .terminal-container {
       margin-bottom: 24px;
       text-align: center;
       font-family: 'Courier New', Courier, monospace;
-      color: rgba(255, 255, 255, 0.85); /* Texto blanco/gris claro */
+      color: rgba(255, 244, 225, 0.90);
       font-size: 0.85rem;
-      min-height: 40px; 
-      background: rgba(0, 0, 0, 0.3); /* Fondo oscuro translúcido para que destaque */
+      min-height: 40px;
+      background: rgba(20, 7, 33, 0.48);
       padding: 10px 15px;
       border-radius: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.30);
+      box-shadow: inset 0 0 20px rgba(249, 115, 22, 0.07);
     }
-    
+
     .terminal-container a {
-      color: #93c5fd; /* Color azul claro para el enlace */
+      color: #fed7aa;
       text-decoration: none;
       transition: color 180ms ease;
       font-weight: bold;
     }
-    
+
     .terminal-container a:hover {
-      color: #bfdbfe;
+      color: #fbbf24;
       text-decoration: underline;
     }
-    
-    /* Cursor verde estilo terminal */
+
     .typed-cursor {
-      color: #00ff00; 
+      color: var(--halloween-orange);
       font-weight: bold;
       animation: blink 1s infinite;
     }
-    
+
     @keyframes blink {
       0%, 100% { opacity: 1; }
       50% { opacity: 0; }
     }
+
     /* ── Lluvia / Nieve / Flash / Niebla ── */
-    #lluvia{position:fixed;inset:0;z-index:2;pointer-events:none;overflow:hidden;}
+    #lluvia {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      overflow: hidden;
+    }
 
     @keyframes caerGota {
-      0%  {transform:translateY(-20px) skewX(-8deg);opacity:1;}
-      100%{transform:translateY(110vh) skewX(-8deg);opacity:0.15;}
+      0% {
+        transform: translateY(-20px) skewX(-8deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(110vh) skewX(-8deg);
+        opacity: 0.15;
+      }
     }
+
     .gota {
-      position:absolute;top:0;width:1.5px;border-radius:2px;
-      background:linear-gradient(to bottom,transparent,rgba(180,220,255,0.55));
-      animation:caerGota linear infinite;
+      position: absolute;
+      top: 0;
+      width: 1.5px;
+      border-radius: 2px;
+      background: linear-gradient(to bottom, transparent, rgba(214, 177, 255, 0.62));
+      animation: caerGota linear infinite;
     }
 
     @keyframes flashTormenta {
-      0%,88%,100%{opacity:0;} 90%,95%{opacity:0.07;}
+      0%, 88%, 100% { opacity: 0; }
+      90%, 95% { opacity: 0.07; }
     }
-    #flashOverlay{position:fixed;inset:0;z-index:3;background:#e8f0ff;pointer-events:none;opacity:0;display:none;}
-    #flashOverlay.activo{display:block;animation:flashTormenta 5s ease infinite;}
+
+    #flashOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 3;
+      background: #f3e8ff;
+      pointer-events: none;
+      opacity: 0;
+      display: none;
+    }
+
+    #flashOverlay.activo {
+      display: block;
+      animation: flashTormenta 5s ease infinite;
+    }
 
     @keyframes caerNieve {
-      0%  {transform:translateY(-10px) translateX(0);opacity:0.9;}
-      40% {transform:translateY(40vh) translateX(10px);}
-      70% {transform:translateY(75vh) translateX(-6px);}
-      100%{transform:translateY(110vh) translateX(4px);opacity:0.2;}
+      0% {
+        transform: translateY(-10px) translateX(0);
+        opacity: 0.9;
+      }
+      40% {
+        transform: translateY(40vh) translateX(10px);
+      }
+      70% {
+        transform: translateY(75vh) translateX(-6px);
+      }
+      100% {
+        transform: translateY(110vh) translateX(4px);
+        opacity: 0.2;
+      }
     }
-    .copo{position:absolute;top:0;border-radius:50%;background:rgba(220,240,255,0.80);animation:caerNieve linear infinite;}
+
+    .copo {
+      position: absolute;
+      top: 0;
+      border-radius: 50%;
+      background: rgba(235, 220, 255, 0.80);
+      animation: caerNieve linear infinite;
+    }
 
     @keyframes niebla {
-      0%  {transform:translateX(-10%) scale(1);opacity:0;}
-      20% {opacity:0.06;} 80%{opacity:0.06;}
-      100%{transform:translateX(110%) scale(1.1);opacity:0;}
+      0% {
+        transform: translateX(-10%) scale(1);
+        opacity: 0;
+      }
+      20%, 80% {
+        opacity: 0.07;
+      }
+      100% {
+        transform: translateX(110%) scale(1.1);
+        opacity: 0;
+      }
     }
-    .nube-niebla{position:absolute;height:80px;background:rgba(200,220,230,0.12);border-radius:50%;filter:blur(20px);animation:niebla linear infinite;}
 
-    @keyframes fadeSlideUp{from{opacity:0;transform:translateY(28px);}to{opacity:1;transform:translateY(0);}}
-    @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-    @keyframes spin{to{transform:rotate(360deg);}}
+    .nube-niebla {
+      position: absolute;
+      height: 80px;
+      background: rgba(218, 196, 241, 0.15);
+      border-radius: 50%;
+      filter: blur(20px);
+      animation: niebla linear infinite;
+    }
+
+    @keyframes fadeSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(28px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
 
     /* ── Reloj ── */
-    .clock-widget{
-      position:fixed;top:22px;right:22px;z-index:10;
-      border-radius:var(--radius-2xl);border:1px solid rgba(255,255,255,0.20);
-      background:rgba(255,255,255,0.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-      box-shadow:0 12px 30px rgba(0,0,0,0.18);
-      padding:14px 20px;color:#fff;text-align:center;min-width:165px;
-      animation:fadeIn 0.6s ease 0.5s both;
+    .clock-widget {
+      position: fixed;
+      top: 22px;
+      right: 22px;
+      z-index: 10;
+      border-radius: var(--radius-2xl);
+      border: 1px solid rgba(249, 115, 22, 0.35);
+      background: rgba(24, 8, 38, 0.44);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 22px rgba(249, 115, 22, 0.10);
+      padding: 14px 20px;
+      color: #fff;
+      text-align: center;
+      min-width: 165px;
+      animation: fadeIn 0.6s ease 0.5s both;
     }
-    .clock-time{font-size:2rem;font-weight:700;line-height:1;letter-spacing:0.04em;color:#fff;}
-    
-    .clock-date{font-size:0.72rem;color:rgba(255,255,255,0.58);margin-top:5px;letter-spacing:0.03em;text-transform:capitalize;font-weight:500;}
+
+    .clock-time {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.04em;
+      color: #fff;
+      text-shadow: 0 0 12px rgba(249, 115, 22, 0.55);
+    }
 
     /* ── Widget tiempo ── */
-    .weather-widget{
-      position:fixed;top: 120px;px;right:22px;z-index:10;width:290px;
-      border-radius:var(--radius-2xl);border:1px solid rgba(255,255,255,0.20);
-      background:rgba(255,255,255,0.09);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-      box-shadow:0 12px 30px rgba(0,0,0,0.18);
-      padding:14px 16px;display:flex;align-items:center;gap:14px;color:#fff;
-      animation:fadeIn 0.6s ease 0.5s both;transition:opacity 0.3s ease;
-    }
-    .weather-widget.actualizando{opacity:0.6;}
-    .weather-icon-box{width:52px;height:52px;border-radius:var(--radius-lg);background:rgba(255,255,255,0.13);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.75rem;color:#fff;transition:background var(--transition);}
-    .weather-data{flex:1;min-width:0;}
-    .weather-data .label{font-size:0.68rem;color:rgba(255,255,255,0.55);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:2px;font-weight:600;}
-    .weather-data .temp-row{display:flex;align-items:baseline;gap:8px;}
-    .weather-data .temp{font-size:1.9rem;font-weight:700;line-height:1;color:#fff;}
-    .weather-data .feels{font-size:0.75rem;color:rgba(255,255,255,0.55);font-weight:500;}
-    .weather-data .desc{font-size:0.84rem;color:rgba(255,255,255,0.85);margin-top:3px;font-weight:500;}
-    .weather-data .meta{font-size:0.7rem;color:rgba(255,255,255,0.50);margin-top:2px;font-weight:500;}
-    .weather-spin{display:inline-block;animation:spin 1s linear infinite;}
-
-    /* ── Login card ── */
-    .login-box{position:relative;z-index:5;width:100%;max-width:430px;padding:0 16px;animation:fadeSlideUp 0.6s cubic-bezier(0.22,1,0.36,1) 0.1s both;}
-    .login-card{
-      background:rgba(255,255,255,0.11);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);
-      border:1px solid rgba(255,255,255,0.22);border-radius:var(--radius-2xl);padding:44px 40px;
-      box-shadow:0 2px 4px rgba(0,0,0,0.12),0 16px 40px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.18);
+    .weather-widget {
+      position: fixed;
+      top: 120px;
+      right: 22px;
+      z-index: 10;
+      width: 290px;
+      border-radius: var(--radius-2xl);
+      border: 1px solid rgba(249, 115, 22, 0.30);
+      background: rgba(24, 8, 38, 0.44);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: #fff;
+      animation: fadeIn 0.6s ease 0.5s both;
+      transition: opacity 0.3s ease;
     }
 
-    .login-brand{text-align:center;margin-bottom:var(--space-8);}
-    .brand-icon{width:64px;height:64px;background:rgba(37,99,235,0.88);border-radius:var(--radius-xl);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 4px 18px rgba(37,99,235,0.55);}
-    .brand-icon i{font-size:1.8rem;color:#fff;}
-    .login-brand h1{font-size:1.55rem;font-weight:700;color:#fff;margin:0 0 5px;letter-spacing:-0.02em;}
-    .login-brand p{font-size:0.875rem;color:rgba(255,255,255,0.60);font-weight:500;}
+    .weather-widget.actualizando {
+      opacity: 0.6;
+    }
 
-    .field-group{margin-bottom:18px;}
-    .field-group label{display:block;font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.80);margin-bottom:7px;letter-spacing:0.04em;text-transform:uppercase;}
-    .input-wrap{position:relative;}
-    .input-wrap .input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.38);font-size:1rem;pointer-events:none;transition:color var(--transition);}
-    .input-wrap input{width:100%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);border-radius:var(--radius-lg);padding:13px 14px 13px 44px;color:#fff;font-size:0.92rem;font-family:var(--font-body);font-weight:500;outline:none;transition:border-color var(--transition),background var(--transition),box-shadow var(--transition);}
-    .input-wrap input::placeholder{color:rgba(255,255,255,0.28);font-weight:400;}
-    .input-wrap:focus-within .input-icon{color:rgba(255,255,255,0.85);}
-    .input-wrap input:focus{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.50);box-shadow:0 0 0 3px rgba(37,99,235,0.30),inset 0 1px 0 rgba(255,255,255,0.10);}
+    .weather-icon-box {
+      width: 52px;
+      height: 52px;
+      border-radius: var(--radius-lg);
+      background: rgba(249, 115, 22, 0.16);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 1.75rem;
+      color: #fff7ed;
+      transition: background var(--transition);
+    }
 
-    .field-extras{display:flex;justify-content:flex-end;margin-top:-10px;margin-bottom:18px;}
-    .link-forgot{font-size:0.76rem;color:rgba(255,255,255,0.50);text-decoration:none;font-weight:500;transition:color var(--transition);}
-    .link-forgot:hover{color:rgba(255,255,255,0.90);}
+    .weather-data {
+      flex: 1;
+      min-width: 0;
+    }
 
-    .btn-login{width:100%;background:#2563eb;color:#fff;border:none;border-radius:var(--radius-lg);padding:13px;font-size:0.94rem;font-weight:600;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(37,99,235,0.50);transition:background var(--transition),transform 0.10s,box-shadow var(--transition);position:relative;overflow:hidden;letter-spacing:0.01em;}
-    .btn-login::after{content:"";position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.20),transparent);transform:skewX(-20deg);transition:left 0.55s ease;}
-    .btn-login:hover::after{left:160%;}
-    .btn-login:hover{background:#1d4ed8;transform:translateY(-1px);box-shadow:0 6px 22px rgba(37,99,235,0.65);}
-    .btn-login:active{transform:translateY(0);box-shadow:0 2px 8px rgba(37,99,235,0.40);}
+    .weather-data .label {
+      font-size: 0.68rem;
+      color: rgba(255, 255, 255, 0.58);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+      font-weight: 600;
+    }
 
-    .error-box{background:rgba(220,38,38,0.18);border:1px solid rgba(220,38,38,0.40);border-radius:var(--radius-lg);padding:11px 14px;margin-bottom:20px;display:flex;align-items:center;gap:8px;font-size:0.84rem;color:#fca5a5;font-weight:500;}
+    .weather-data .temp-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
 
-    .divider{display:flex;align-items:center;gap:var(--space-3);margin:var(--space-6) 0 var(--space-5);}
-    .divider::before,.divider::after{content:"";flex:1;height:1px;background:rgba(255,255,255,0.12);}
-    .divider span{font-size:0.72rem;color:rgba(255,255,255,0.35);font-weight:600;letter-spacing:0.06em;text-transform:uppercase;}
+    .weather-data .temp {
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1;
+      color: #fff;
+    }
 
-    .login-footer{text-align:center;margin-top:var(--space-6);font-size:0.74rem;color:rgba(255,255,255,0.35);font-weight:500;}
-    .login-footer strong{color:rgba(255,255,255,0.50);}
+    .weather-data .feels {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.55);
+      font-weight: 500;
+    }
 
-    .deco{position:fixed;border-radius:50%;pointer-events:none;z-index:1;filter:blur(1px);}
-    .deco-1{width:320px;height:320px;top:-90px;right:-90px;background:rgba(37,99,235,0.12);}
-    .deco-2{width:220px;height:220px;bottom:-70px;left:-70px;background:rgba(37,99,235,0.08);}
+    .weather-data .desc {
+      font-size: 0.84rem;
+      color: rgba(255, 255, 255, 0.85);
+      margin-top: 3px;
+      font-weight: 500;
+    }
 
-    @media(max-width:600px){
-      .weather-widget{top:auto;bottom:16px;right:12px;left:12px;width:auto;}
-      .clock-widget{top:12px;left:50%;transform:translateX(-50%);min-width:150px;}
-      .login-card{padding:32px 22px;}
+    .weather-data .meta {
+      font-size: 0.7rem;
+      color: rgba(255, 255, 255, 0.50);
+      margin-top: 2px;
+      font-weight: 500;
+    }
+
+    .weather-spin {
+      display: inline-block;
+      animation: spin 1s linear infinite;
+    }
+
+    /* ── Login ── */
+    .login-box {
+      position: relative;
+      z-index: 5;
+      width: 100%;
+      max-width: 430px;
+      padding: 0 16px;
+      animation: fadeSlideUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+    }
+
+    .login-card {
+      position: relative;
+      overflow: hidden;
+      background: rgba(29, 12, 42, 0.34);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border: 1px solid rgba(255, 190, 115, 0.28);
+      border-radius: var(--radius-2xl);
+      padding: 44px 40px;
+      box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.14),
+        0 16px 40px rgba(0, 0, 0, 0.34),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .login-card::before {
+      content: "🎃";
+      position: absolute;
+      right: -22px;
+      bottom: -34px;
+      font-size: 8rem;
+      opacity: 0.12;
+      transform: rotate(-12deg);
+      pointer-events: none;
+    }
+
+    .login-brand {
+      text-align: center;
+      margin-bottom: var(--space-8);
+    }
+
+    .brand-icon {
+      width: 64px;
+      height: 64px;
+      background: linear-gradient(135deg, var(--halloween-orange), var(--halloween-orange-dark));
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 14px;
+      box-shadow: 0 4px 18px rgba(249, 115, 22, 0.60);
+    }
+
+    .brand-icon i {
+      font-size: 1.8rem;
+      color: #fff;
+    }
+
+    .login-brand h1 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 0 0 5px;
+      letter-spacing: -0.02em;
+    }
+
+    .login-brand p {
+      font-size: 0.875rem;
+      color: rgba(255, 255, 255, 0.64);
+      font-weight: 500;
+    }
+
+    .field-group {
+      margin-bottom: 18px;
+    }
+
+    .field-group label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: rgba(255, 244, 230, 0.84);
+      margin-bottom: 7px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+
+    .input-wrap .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255, 255, 255, 0.40);
+      font-size: 1rem;
+      pointer-events: none;
+      transition: color var(--transition);
+    }
+
+    .input-wrap input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 211, 167, 0.18);
+      border-radius: var(--radius-lg);
+      padding: 13px 14px 13px 44px;
+      color: #fff;
+      font-size: 0.92rem;
+      font-family: var(--font-body);
+      font-weight: 500;
+      outline: none;
+      transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
+    }
+
+    .input-wrap input::placeholder {
+      color: rgba(255, 255, 255, 0.30);
+      font-weight: 400;
+    }
+
+    .input-wrap:focus-within .input-icon {
+      color: #fed7aa;
+    }
+
+    .input-wrap input:focus {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(249, 115, 22, 0.74);
+      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+    }
+
+    .btn-login {
+      width: 100%;
+      background: linear-gradient(135deg, var(--halloween-orange), #ea580c);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-lg);
+      padding: 13px;
+      font-size: 0.94rem;
+      font-weight: 600;
+      font-family: var(--font-body);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(249, 115, 22, 0.50);
+      transition: background var(--transition), transform 0.10s, box-shadow var(--transition);
+      position: relative;
+      overflow: hidden;
+      letter-spacing: 0.01em;
+    }
+
+    .btn-login::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 60%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.24), transparent);
+      transform: skewX(-20deg);
+      transition: left 0.55s ease;
+    }
+
+    .btn-login:hover::after {
+      left: 160%;
+    }
+
+    .btn-login:hover {
+      background: linear-gradient(135deg, #ea580c, #c2410c);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(249, 115, 22, 0.72);
+    }
+
+    .btn-login:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 8px rgba(249, 115, 22, 0.40);
+    }
+
+    .error-box {
+      background: rgba(220, 38, 38, 0.18);
+      border: 1px solid rgba(220, 38, 38, 0.40);
+      border-radius: var(--radius-lg);
+      padding: 11px 14px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.84rem;
+      color: #fca5a5;
+      font-weight: 500;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin: var(--space-6) 0 var(--space-5);
+    }
+
+    .divider::before,
+    .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(249, 115, 22, 0.20);
+    }
+
+    .divider span {
+      font-size: 0.72rem;
+      color: rgba(255, 225, 190, 0.48);
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .login-footer {
+      text-align: center;
+      margin-top: var(--space-6);
+      font-size: 0.74rem;
+      color: rgba(255, 255, 255, 0.40);
+      font-weight: 500;
+    }
+
+    .login-footer strong {
+      color: rgba(255, 223, 183, 0.70);
+    }
+
+    .deco {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1;
+      filter: blur(1px);
+    }
+
+    .deco-1 {
+      width: 320px;
+      height: 320px;
+      top: -90px;
+      right: -90px;
+      background: rgba(249, 115, 22, 0.14);
+    }
+
+    .deco-2 {
+      width: 220px;
+      height: 220px;
+      bottom: -70px;
+      left: -70px;
+      background: rgba(126, 34, 206, 0.20);
+    }
+
+    @media (max-width: 600px) {
+      .weather-widget {
+        top: auto;
+        bottom: 16px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+      }
+
+      .clock-widget {
+        top: 12px;
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        min-width: 150px;
+      }
+
+      .login-card {
+        padding: 32px 22px;
+      }
+
+      .luna-halloween {
+        width: 84px;
+        height: 84px;
+        top: 10%;
+        left: 6%;
+      }
+
+      .telarana {
+        width: 130px;
+        height: 130px;
+      }
+
+      .murcielagos span {
+        font-size: 1rem !important;
+      }
     }
   </style>
 </head>
+
 <body>
 
+  <!-- Decoración Halloween -->
   <div class="deco deco-1"></div>
   <div class="deco deco-2"></div>
+  <div class="luna-halloween" aria-hidden="true"></div>
+
+  <div class="telarana telarana-izquierda" aria-hidden="true"></div>
+  <div class="telarana telarana-derecha" aria-hidden="true"></div>
+
+  <div class="murcielagos" aria-hidden="true">
+    <span>🦇</span>
+    <span>🦇</span>
+    <span>🦇</span>
+    <span>🦇</span>
+  </div>
+
   <div id="lluvia"></div>
   <div id="flashOverlay"></div>
 
-  <!-- Reloj -->
+  <!-- Reloj del servidor -->
   <div class="clock-widget">
     <div class="clock-time">
-      <span id="clockH">--</span>:<span id="clockM">--</span></span>
+      <span id="clockH">--</span>:<span id="clockM">--</span>
     </div>
-    
   </div>
 
   <!-- Tiempo -->
@@ -224,10 +828,10 @@
       <i id="wIcon" class="bi bi-arrow-repeat weather-spin"></i>
     </div>
     <div class="weather-data">
-      <div class="label">Madrid &mdash; Ahora</div>
+      <div class="label">Madrid — Ahora</div>
       <div class="temp-row">
-        <span id="wTemp" class="temp">--&deg;</span>
-        <span id="wFeels" class="feels">Sensación --&deg;</span>
+        <span id="wTemp" class="temp">--°</span>
+        <span id="wFeels" class="feels">Sensación --°</span>
       </div>
       <div id="wDesc" class="desc">Cargando...</div>
       <div id="wMeta" class="meta">Actualizando</div>
@@ -239,13 +843,16 @@
     <div class="login-card">
 
       <div class="login-brand">
-        <div class="brand-icon"><i class="bi bi-clock-history"></i></div>
+        <div class="brand-icon">
+          <i class="bi bi-moon-stars-fill"></i>
+        </div>
+
         <h1>TurnoApp</h1>
         <p>Control de asistencia y turnos</p>
+
         <div class="terminal-container">
-  <!-- El span donde Typed.js inyectará el texto -->
-  <span class="typewriter-text" id="typed-output"></span>
-</div>
+          <span class="typewriter-text" id="typed-output"></span>
+        </div>
       </div>
 
       {% if error %}
@@ -276,190 +883,237 @@
           </div>
         </div>
 
-        
-
         <button type="submit" class="btn-login">
           <i class="bi bi-box-arrow-in-right"></i>
           Iniciar Sesión
         </button>
       </form>
 
-      <div class="divider"><span>TurnoApp v2.0</span></div>
+      <div class="divider">
+        <span>TurnoApp v2.0 · Especial Halloween</span>
+      </div>
 
       <div class="login-footer">
-        &copy; {{ current_year }} TurnoApp &mdash; Desarrollado por <strong>Ariel Castro</strong>
+        &copy; {{ current_year }} TurnoApp — Desarrollado por <strong>Ariel Castro</strong>
       </div>
 
     </div>
   </div>
 
   <script>
-    const DIAS    = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-    const MESES_R = ["enero","febrero","marzo","abril","mayo","junio","julio",
-                     "agosto","septiembre","octubre","noviembre","diciembre"];
-
-    function pad(n){return String(n).padStart(2,"0");}
-
     async function actualizarReloj() {
-  try {
-    const respuesta = await fetch('/hora-api');
-    const datos = await respuesta.json();
+      try {
+        const respuesta = await fetch('/hora-api', { cache: 'no-store' });
 
-    const partesHora = datos.hora.split(':');
-    const partesFecha = datos.fecha.split('-');
+        if (!respuesta.ok) {
+          throw new Error('La respuesta de la ruta /hora-api no es válida');
+        }
 
-    document.getElementById('clockH').textContent = partesHora[0];
-    document.getElementById('clockM').textContent = partesHora[1];
-    document.getElementById('clockS').textContent = partesHora[2];
+        const datos = await respuesta.json();
+        const partesHora = String(datos.hora || '').split(':');
 
-    const fechaServidor = new Date(
-      Number(partesFecha[0]),
-      Number(partesFecha[1]) - 1,
-      Number(partesFecha[2])
-    );
+        if (partesHora.length < 2) {
+          throw new Error('Formato de hora recibido no válido');
+        }
 
-    document.getElementById('clockDate').textContent =
-      DIAS[fechaServidor.getDay()] + ', ' +
-      fechaServidor.getDate() + ' de ' +
-      MESES_R[fechaServidor.getMonth()] + ' ' +
-      fechaServidor.getFullYear();
+        document.getElementById('clockH').textContent = partesHora[0];
+        document.getElementById('clockM').textContent = partesHora[1];
 
-  } catch (error) {
-    console.error('No se pudo obtener la hora del servidor:', error);
-  }
-}
-
-actualizarReloj();
-setInterval(actualizarReloj,10 * 1000);
-
-    const contenedorLluvia=document.getElementById("lluvia");
-    const flashEl=document.getElementById("flashOverlay");
-
-    function limpiarEfectos(){contenedorLluvia.innerHTML="";flashEl.classList.remove("activo");}
-
-    function crearLluvia(cantidad,intensa){
-      limpiarEfectos();
-      for(let i=0;i<cantidad;i++){
-        const g=document.createElement("div"); g.classList.add("gota");
-        g.style.left=(Math.random()*100)+"vw";
-        g.style.animationDuration=(0.28+Math.random()*0.55)+"s";
-        g.style.animationDelay=(Math.random()*2.5)+"s";
-        g.style.height=(intensa?22+Math.random()*14:10+Math.random()*10)+"px";
-        g.style.opacity=intensa?(0.55+Math.random()*0.35):(0.20+Math.random()*0.25);
-        contenedorLluvia.appendChild(g);
+      } catch (error) {
+        console.error('No se pudo obtener la hora del servidor:', error);
       }
     }
 
-    function crearNieve(cantidad){
+    actualizarReloj();
+    setInterval(actualizarReloj, 10 * 1000);
+
+    const contenedorLluvia = document.getElementById("lluvia");
+    const flashEl = document.getElementById("flashOverlay");
+
+    function limpiarEfectos() {
+      contenedorLluvia.innerHTML = "";
+      flashEl.classList.remove("activo");
+    }
+
+    function crearLluvia(cantidad, intensa) {
       limpiarEfectos();
-      for(let i=0;i<cantidad;i++){
-        const c=document.createElement("div"); c.classList.add("copo");
-        const s=3+Math.random()*6;
-        c.style.width=s+"px"; c.style.height=s+"px";
-        c.style.left=(Math.random()*100)+"vw";
-        c.style.animationDuration=(5+Math.random()*7)+"s";
-        c.style.animationDelay=(Math.random()*6)+"s";
-        c.style.opacity=0.45+Math.random()*0.45;
-        contenedorLluvia.appendChild(c);
+
+      for (let i = 0; i < cantidad; i++) {
+        const gota = document.createElement("div");
+        gota.classList.add("gota");
+        gota.style.left = (Math.random() * 100) + "vw";
+        gota.style.animationDuration = (0.28 + Math.random() * 0.55) + "s";
+        gota.style.animationDelay = (Math.random() * 2.5) + "s";
+        gota.style.height = (intensa ? 22 + Math.random() * 14 : 10 + Math.random() * 10) + "px";
+        gota.style.opacity = intensa ? (0.55 + Math.random() * 0.35) : (0.20 + Math.random() * 0.25);
+        contenedorLluvia.appendChild(gota);
       }
     }
 
-    function crearNiebla(){
+    function crearNieve(cantidad) {
       limpiarEfectos();
-      for(let i=0;i<6;i++){
-        const n=document.createElement("div"); n.classList.add("nube-niebla");
-        n.style.top=(10+Math.random()*80)+"vh";
-        n.style.width=(200+Math.random()*300)+"px";
-        n.style.animationDuration=(18+Math.random()*20)+"s";
-        n.style.animationDelay=(Math.random()*12)+"s";
-        contenedorLluvia.appendChild(n);
+
+      for (let i = 0; i < cantidad; i++) {
+        const copo = document.createElement("div");
+        copo.classList.add("copo");
+
+        const tamaño = 3 + Math.random() * 6;
+        copo.style.width = tamaño + "px";
+        copo.style.height = tamaño + "px";
+        copo.style.left = (Math.random() * 100) + "vw";
+        copo.style.animationDuration = (5 + Math.random() * 7) + "s";
+        copo.style.animationDelay = (Math.random() * 6) + "s";
+        copo.style.opacity = 0.45 + Math.random() * 0.45;
+
+        contenedorLluvia.appendChild(copo);
       }
     }
 
-    function activarEfecto(code){
-      if      (code===95)                        {crearLluvia(150,true); flashEl.classList.add("activo");}
-      else if ([55,63,65,81,82].includes(code))  {crearLluvia(120,true);}
-      else if ([61,80].includes(code))            {crearLluvia(70,false);}
-      else if ([51,53].includes(code))            {crearLluvia(40,false);}
-      else if ([71,73,75].includes(code))         {crearNieve(80);}
-      else if ([45,48].includes(code))            {crearNiebla();}
-      else                                        {limpiarEfectos();}
+    function crearNiebla() {
+      limpiarEfectos();
+
+      for (let i = 0; i < 6; i++) {
+        const nube = document.createElement("div");
+        nube.classList.add("nube-niebla");
+        nube.style.top = (10 + Math.random() * 80) + "vh";
+        nube.style.width = (200 + Math.random() * 300) + "px";
+        nube.style.animationDuration = (18 + Math.random() * 20) + "s";
+        nube.style.animationDelay = (Math.random() * 12) + "s";
+        contenedorLluvia.appendChild(nube);
+      }
     }
 
-    const WEATHER_CODES={
-      0:"Despejado",1:"Poco nuboso",2:"Parcialmente nuboso",3:"Cubierto",
-      45:"Niebla",48:"Niebla helada",
-      51:"Llovizna ligera",53:"Llovizna",55:"Llovizna intensa",
-      61:"Lluvia ligera",63:"Lluvia moderada",65:"Lluvia fuerte",
-      71:"Nieve ligera",73:"Nieve",75:"Nieve intensa",
-      80:"Chubascos ligeros",81:"Chubascos",82:"Chubascos fuertes",
-      95:"Tormenta"
+    function activarEfecto(code) {
+      if (code === 95) {
+        crearLluvia(150, true);
+        flashEl.classList.add("activo");
+      } else if ([55, 63, 65, 81, 82].includes(code)) {
+        crearLluvia(120, true);
+      } else if ([61, 80].includes(code)) {
+        crearLluvia(70, false);
+      } else if ([51, 53].includes(code)) {
+        crearLluvia(40, false);
+      } else if ([71, 73, 75].includes(code)) {
+        crearNieve(80);
+      } else if ([45, 48].includes(code)) {
+        crearNiebla();
+      } else {
+        limpiarEfectos();
+      }
+    }
+
+    const WEATHER_CODES = {
+      0: "Despejado",
+      1: "Poco nuboso",
+      2: "Parcialmente nuboso",
+      3: "Cubierto",
+      45: "Niebla",
+      48: "Niebla helada",
+      51: "Llovizna ligera",
+      53: "Llovizna",
+      55: "Llovizna intensa",
+      61: "Lluvia ligera",
+      63: "Lluvia moderada",
+      65: "Lluvia fuerte",
+      71: "Nieve ligera",
+      73: "Nieve",
+      75: "Nieve intensa",
+      80: "Chubascos ligeros",
+      81: "Chubascos",
+      82: "Chubascos fuertes",
+      95: "Tormenta"
     };
 
-    const WEATHER_ICONS={
-      0:"bi-brightness-high-fill",
-      1:"bi-cloud-sun-fill",2:"bi-cloud-sun-fill",3:"bi-cloud-fill",
-      45:"bi-cloud-fog2-fill",48:"bi-cloud-fog2-fill",
-      51:"bi-cloud-drizzle-fill",53:"bi-cloud-drizzle-fill",55:"bi-cloud-drizzle-fill",
-      61:"bi-cloud-rain-fill",63:"bi-cloud-rain-fill",65:"bi-cloud-rain-heavy-fill",
-      71:"bi-cloud-snow-fill",73:"bi-cloud-snow-fill",75:"bi-cloud-snow-fill",
-      80:"bi-cloud-rain-fill",81:"bi-cloud-rain-fill",82:"bi-cloud-rain-heavy-fill",
-      95:"bi-cloud-lightning-rain-fill"
+    const WEATHER_ICONS = {
+      0: "bi-brightness-high-fill",
+      1: "bi-cloud-sun-fill",
+      2: "bi-cloud-sun-fill",
+      3: "bi-cloud-fill",
+      45: "bi-cloud-fog2-fill",
+      48: "bi-cloud-fog2-fill",
+      51: "bi-cloud-drizzle-fill",
+      53: "bi-cloud-drizzle-fill",
+      55: "bi-cloud-drizzle-fill",
+      61: "bi-cloud-rain-fill",
+      63: "bi-cloud-rain-fill",
+      65: "bi-cloud-rain-heavy-fill",
+      71: "bi-cloud-snow-fill",
+      73: "bi-cloud-snow-fill",
+      75: "bi-cloud-snow-fill",
+      80: "bi-cloud-rain-fill",
+      81: "bi-cloud-rain-fill",
+      82: "bi-cloud-rain-heavy-fill",
+      95: "bi-cloud-lightning-rain-fill"
     };
 
-    const widget=document.getElementById("weatherWidget");
+    const widget = document.getElementById("weatherWidget");
 
-    async function cargarTiempo(){
+    async function cargarTiempo() {
       widget.classList.add("actualizando");
-      document.getElementById("wIcon").className="bi bi-arrow-repeat weather-spin";
-      try{
-        const r=await fetch(
-          "https://api.open-meteo.com/v1/forecast?latitude=40.4168&longitude=-3.7038"+
+      document.getElementById("wIcon").className = "bi bi-arrow-repeat weather-spin";
+
+      try {
+        const respuesta = await fetch(
+          "https://api.open-meteo.com/v1/forecast?latitude=40.4168&longitude=-3.7038" +
           "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m&timezone=auto"
         );
-        const d=await r.json(); const c=d.current;
-        const temp=Math.round(c.temperature_2m);
-        const feels=Math.round(c.apparent_temperature);
-        const code=c.weather_code;
-        const viento=Math.round(c.wind_speed_10m);
-        const hum=c.relative_humidity_2m;
-        setTimeout(()=>{
-          document.getElementById("wTemp").textContent=temp+"°C";
-          document.getElementById("wFeels").textContent="Sensación "+feels+"°";
-          document.getElementById("wDesc").textContent=WEATHER_CODES[code]??"Variable";
-          document.getElementById("wMeta").textContent="Viento "+viento+" km/h · Humedad "+hum+"%";
-          document.getElementById("wIcon").className="bi "+(WEATHER_ICONS[code]??"bi-cloud-fill");
+
+        if (!respuesta.ok) {
+          throw new Error("No se pudo obtener el tiempo");
+        }
+
+        const datos = await respuesta.json();
+        const actual = datos.current;
+
+        const temperatura = Math.round(actual.temperature_2m);
+        const sensacion = Math.round(actual.apparent_temperature);
+        const codigo = actual.weather_code;
+        const viento = Math.round(actual.wind_speed_10m);
+        const humedad = actual.relative_humidity_2m;
+
+        setTimeout(() => {
+          document.getElementById("wTemp").textContent = temperatura + "°C";
+          document.getElementById("wFeels").textContent = "Sensación " + sensacion + "°";
+          document.getElementById("wDesc").textContent = WEATHER_CODES[codigo] ?? "Variable";
+          document.getElementById("wMeta").textContent = "Viento " + viento + " km/h · Humedad " + humedad + "%";
+          document.getElementById("wIcon").className = "bi " + (WEATHER_ICONS[codigo] ?? "bi-cloud-fill");
+
           widget.classList.remove("actualizando");
-        },300);
-        activarEfecto(code);
-      }catch(e){
-        document.getElementById("wDesc").textContent="Sin datos";
-        document.getElementById("wMeta").textContent="";
-        document.getElementById("wIcon").className="bi bi-cloud-slash-fill";
+        }, 300);
+
+        activarEfecto(codigo);
+
+      } catch (error) {
+        document.getElementById("wDesc").textContent = "Sin datos";
+        document.getElementById("wMeta").textContent = "";
+        document.getElementById("wIcon").className = "bi bi-cloud-slash-fill";
         widget.classList.remove("actualizando");
+        limpiarEfectos();
       }
     }
 
     cargarTiempo();
-    setInterval(cargarTiempo,10*60*1000);
+    setInterval(cargarTiempo, 10 * 60 * 1000);
   </script>
-<script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
-<script>
-  var typed = new Typed('#typed-output', {
-    // Strings simula comandos de terminal y luego el enlace real
-    strings: [
-      "Alerta Nueva Información ...",
-      
-      "TURNO APP se encuentra alojado en <br><a href='http://turnoapp.ra.es:8080/' target='_blank' style='color:#93c5fd; text-decoration:none;'>http://turnoapp.ra.es:8080/</a>"
-    ],
-    typeSpeed: 40, // Velocidad de escritura
-    backSpeed: 20, // Velocidad de borrado al cambiar de frase
-    backDelay: 1000, // Pausa antes de borrar
-    startDelay: 500, // Pausa inicial
-    loop: false, // false para que se quede fijo en el enlace final
-    showCursor: true,
-    cursorChar: '█' // Un cursor tipo bloque muy usado en Linux
-  });
-</script>
+
+  <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
+  <script>
+    new Typed('#typed-output', {
+      strings: [
+        "La noche comienza...",
+        "TurnoApp te está esperando...",
+        "Control de asistencia... incluso después de medianoche.",
+        "Acceso seguro al sistema de turnos."
+      ],
+      typeSpeed: 38,
+      backSpeed: 18,
+      backDelay: 1600,
+      startDelay: 500,
+      loop: true,
+      showCursor: true,
+      cursorChar: '█'
+    });
+  </script>
+
 </body>
 </html>
