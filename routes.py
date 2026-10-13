@@ -13,9 +13,10 @@ from werkzeug.utils import secure_filename
 
 from flask import (
     Blueprint, render_template, request,
-    redirect, url_for, session, flash,jsonify,current_app
+    redirect, url_for, session, flash, jsonify, current_app
 )
-from app import mysql, bcrypt
+from flask_mail import Message
+from app import mysql, bcrypt, mail
 from app.models import (
     obtener_hora_timeapi,
     get_user_by_username,
@@ -117,6 +118,50 @@ def login_required(f):
 def index():
     
     return redirect(url_for('main.login'))
+
+
+
+
+
+
+#Test mail-------------------------------------------------------------------------
+@main.route('/test-email')
+@login_required
+def test_email():
+    destinatario = request.args.get('email')
+
+    if not destinatario:
+        return jsonify({
+            'success': False,
+            'error': 'Debes indicar un email de destino en la URL. Ejemplo: /test-email?email=tu_correo@ejemplo.com'
+        }), 400
+
+    try:
+        msg = Message(
+            subject="Prueba de configuración - TurnoApp",
+            recipients=[destinatario],
+            body="¡Hola!\n\nEste es un correo de prueba enviado desde TurnoApp."
+        )
+        mail.send(msg)
+        return jsonify({
+            'success': True,
+            'msg': f'Correo enviado correctamente a {destinatario}'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'server_detectado': current_app.config.get('MAIL_SERVER'),
+            'puerto_detectado': current_app.config.get('MAIL_PORT'),
+            'usuario_detectado': current_app.config.get('MAIL_USERNAME'),
+            'error': f'Error al enviar el correo: {str(e)}'
+        }), 500
+#Fin test mail
+
+
+
+
+
 
 @main.route('/hora-api', methods=['GET'])
 def hora_api():
