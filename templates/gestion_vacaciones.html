@@ -1,0 +1,521 @@
+<!-- turno/app/templates/gestion_vacaciones.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gestión de Vacaciones — Panel de Supervisión</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+  <style>
+    :root {
+      --font:          'Satoshi', 'Inter', system-ui, sans-serif;
+      --bg:            #f5f5f7;
+      --surface:       #ffffff;
+      --border:        rgba(0,0,0,0.07);
+      --border-row:    rgba(0,0,0,0.04);
+      --text:          #1d1d1f;
+      --text-2:        rgba(0,0,0,0.50);
+      --text-3:        rgba(0,0,0,0.28);
+      --amber:         #d97706;
+      --amber-bg:      rgba(217,119,6,0.12);
+      --green:         #059669;
+      --green-bg:      rgba(5,150,105,0.12);
+      --accent:        #2563eb;
+      --radius-card:   20px;
+      --shadow-card:   0 1px 1px rgba(0,0,0,0.03), 0 4px 18px rgba(0,0,0,0.06);
+      --transition:    150ms cubic-bezier(0.25,0.46,0.45,0.94);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { font-family: var(--font); -webkit-font-smoothing: antialiased; }
+    body { background: var(--bg); min-height: 100vh; display: flex; }
+
+    /* Layout */
+    #main-content {
+      margin-left: 220px; flex: 1;
+      display: flex; flex-direction: column;
+      min-height: 100vh; transition: margin-left 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+    #main-content.expanded { margin-left: 64px; }
+
+    /* Topbar */
+    .topbar {
+      background: rgba(255,255,255,0.82);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 99;
+    }
+    .topbar .page-title {
+      font-size: 0.95rem; font-weight: 600; color: var(--text);
+      margin: 0; display: flex; align-items: center; gap: 8px;
+    }
+    .topbar .page-title i { color: var(--accent); }
+
+    .content-area { flex: 1; padding: 24px 28px; }
+
+    /* Nav Tabs */
+    .nav-tabs-custom {
+      display: flex; gap: 8px; border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .nav-tabs-custom .tab-btn {
+      background: none; border: none; padding: 10px 18px;
+      font-size: 0.85rem; font-weight: 600; color: var(--text-2);
+      border-bottom: 2px solid transparent; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      transition: all var(--transition);
+    }
+    .nav-tabs-custom .tab-btn:hover { color: var(--text); }
+    .nav-tabs-custom .tab-btn.active {
+      color: var(--accent); border-bottom-color: var(--accent);
+    }
+    .nav-tabs-custom .badge-count {
+      background: rgba(217,119,6,0.15); color: #b45309;
+      font-size: 0.72rem; padding: 2px 7px; border-radius: 12px;
+    }
+
+    /* Panels */
+    .panel {
+      background: var(--surface);
+      border-radius: var(--radius-card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-card);
+      padding: 20px 22px; margin-bottom: 24px;
+    }
+
+    .panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 14px; margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel-head-title {
+      display: flex; align-items: center; gap: 9px;
+    }
+    .panel-head h5 {
+      font-size: 0.875rem; font-weight: 600; color: var(--text); margin: 0;
+    }
+
+    /* Selector de Mes */
+    .mes-selector {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(0,0,0,0.03); padding: 5px 12px; border-radius: 12px;
+    }
+    .mes-selector button {
+      background: none; border: none; color: var(--text-2); cursor: pointer;
+      font-size: 0.9rem; transition: color var(--transition);
+    }
+    .mes-selector button:hover { color: var(--text); }
+    .mes-selector span {
+      font-size: 0.84rem; font-weight: 600; text-transform: capitalize; color: var(--text);
+    }
+
+    /* Matriz Calendario Table */
+    .matriz-container {
+      overflow-x: auto; max-width: 100%; border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+    .matriz-tbl {
+      width: 100%; border-collapse: collapse; font-size: 0.78rem; white-space: nowrap;
+    }
+    .matriz-tbl th, .matriz-tbl td {
+      border: 1px solid var(--border-row); text-align: center; vertical-align: middle;
+      padding: 6px 4px; min-width: 34px;
+    }
+    .matriz-tbl th.col-emp, .matriz-tbl td.col-emp {
+      position: sticky; left: 0; background: var(--surface); z-index: 2;
+      text-align: left; padding: 10px 14px; min-width: 210px;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.03);
+    }
+    .matriz-tbl th {
+      background: #fafafa; color: var(--text-2); font-weight: 600;
+      font-size: 0.70rem; text-transform: uppercase;
+    }
+    .matriz-tbl th.fin-semana, .matriz-tbl td.fin-semana {
+      background: rgba(0,0,0,0.02); color: var(--text-3);
+    }
+
+    /* MEJORAS VISUALES DE FILAS */
+    .matriz-tbl tbody tr {
+      border-bottom: 2px solid #e2e8f0 !important;
+    }
+    .matriz-tbl tbody tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .matriz-tbl tbody tr:nth-child(even) td.col-emp {
+      background-color: #f8fafc;
+    }
+    .matriz-tbl tbody tr:hover td {
+      background-color: #e2e8f0 !important;
+    }
+    .matriz-tbl tbody tr:hover td.col-emp {
+      background-color: #e2e8f0 !important;
+    }
+
+    /* Avatar con Iniciales */
+    .avatar-emp {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #2563eb; color: #ffffff;
+      font-weight: 700; font-size: 0.72rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; letter-spacing: 0.5px;
+      .avatar-emp-img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      object-fit: cover;
+     flex-shrink: 0;
+     border: 1px solid var(--border);
+}
+    }
+
+    /* Bloques de Estado en Celdas */
+    .bloque-vac {
+      border-radius: 6px; padding: 4px 2px; font-size: 0.68rem; font-weight: 700;
+      cursor: pointer; display: block; margin: 1px 0;
+      transition: transform var(--transition), filter var(--transition);
+    }
+    .bloque-vac:hover { transform: scale(1.08); filter: brightness(0.95); }
+    .bloque-vac.pendiente {
+      background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(217,119,6,0.3);
+    }
+    .bloque-vac.aprobado {
+      background: var(--green-bg); color: var(--green); border: 1px solid rgba(5,150,105,0.3);
+    }
+
+    /* Leyenda */
+    .leyenda {
+      display: flex; gap: 16px; margin-top: 14px; font-size: 0.76rem; color: var(--text-2);
+    }
+    .leyenda-item { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+    .leyenda-box { width: 12px; height: 12px; border-radius: 3px; }
+
+    /* Tarjetas de Acción Rápida (Bandeja) */
+    .card-pendiente {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px; margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      transition: border-color var(--transition);
+    }
+    .card-pendiente:hover { border-color: rgba(37,99,235,0.3); }
+
+    footer { background: transparent; border-top: 1px solid var(--border); padding: 14px 32px; text-align: center; }
+    footer p { color: var(--text-3); font-size: 0.76rem; margin: 0; font-weight: 500; }
+
+    @media (max-width: 768px) { #main-content { margin-left: 64px; } }
+  </style>
+</head>
+<body>
+{% include '_sidebar.html' %}
+
+  <div id="main-content">
+
+    <div class="topbar">
+      <div class="d-flex align-items-center gap-2">
+        <h1 class="page-title">
+          <i class="bi bi-shield-check"></i>
+          Gestión y Cobertura de Vacaciones
+        </h1>
+        {% if es_solo_lectura %}
+          <span class="badge bg-secondary text-white fw-semibold px-3 py-1 rounded-pill" style="font-size: 0.72rem;">
+            <i class="bi bi-eye-fill"></i> Modo Consulta (Solo Lectura)
+          </span>
+        {% endif %}
+      </div>
+      <a href="{{ url_for('main.vacaciones') }}" class="btn btn-sm btn-outline-primary rounded-pill fw-semibold">
+        <i class="bi bi-calendar-plus"></i> Mis Vacaciones
+      </a>
+    </div>
+
+    <div class="content-area">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show mb-4">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Pestañas Superiores -->
+      <div class="nav-tabs-custom">
+        <button class="tab-btn active" id="btn-tab-matriz" onclick="cambiarTab('matriz')">
+          <i class="bi bi-grid-3x3-gap"></i> Cobertura Mensual
+        </button>
+        <button class="tab-btn" id="btn-tab-pendientes" onclick="cambiarTab('pendientes')">
+          <i class="bi bi-inbox-fill"></i> Bandeja de Pendientes
+          {% if pendientes|length > 0 %}
+            <span class="badge-count">{{ pendientes|length }}</span>
+          {% endif %}
+        </button>
+      </div>
+
+      <!-- VISTA 1: MATRIZ / CALENDARIO MENSUAL DE COBERTURA -->
+      <div id="tab-matriz" class="panel">
+        <div class="panel-head">
+          <div class="panel-head-title">
+            <h5>Calendario de Cobertura por Empleado</h5>
+          </div>
+
+          <!-- Selector de Mes -->
+          <div class="mes-selector">
+            {% set mes_prev = 12 if mes_actual == 1 else mes_actual - 1 %}
+            {% set anio_prev = anio_actual - 1 if mes_actual == 1 else anio_actual %}
+            {% set mes_next = 1 if mes_actual == 12 else mes_actual + 1 %}
+            {% set anio_next = anio_actual + 1 if mes_actual == 12 else anio_actual %}
+
+            <a href="{{ url_for('main.gestion_vacaciones', mes=mes_prev, anio=anio_prev) }}" class="text-decoration-none text-muted">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+            <span id="labelMesAnio"></span>
+            <a href="{{ url_for('main.gestion_vacaciones', mes=mes_next, anio=anio_next) }}" class="text-decoration-none text-muted">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="matriz-container">
+          <table class="matriz-tbl">
+            <thead>
+              <tr>
+                <th class="col-emp">Empleado</th>
+                {% for dia in dias_mes %}
+                  {% set es_fin_semana = dia.weekday() >= 5 %}
+                  <th class="{% if es_fin_semana %}fin-semana{% endif %}">
+                    <div>{{ dia.strftime('%d') }}</div>
+                    <div style="font-size:0.62rem; opacity:0.7;">
+                      {% set dias_es = ['L','M','X','J','V','S','D'] %}
+                      {{ dias_es[dia.weekday()] }}
+                    </div>
+                  </th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for emp in empleados %}
+                {% set emp_id = emp[0] %}
+                <tr>
+                  <td class="col-emp">
+                    <div class="d-flex align-items-center gap-2">
+                      <div class="avatar-emp">
+                        {{ emp[1][0] if emp[1] else '' }}{{ emp[2][0] if emp[2] else '' }}
+                      </div>
+                      <div>
+                        <div class="fw-bold text-dark" style="line-height: 1.2;">{{ emp[1] }} {{ emp[2] }}</div>
+                        <div style="font-size:0.68rem;" class="text-muted">{{ emp[3] or 'Sin Depto' }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  {% for dia in dias_mes %}
+                    {% set dia_num = dia.day %}
+                    {% set es_fin_semana = dia.weekday() >= 5 %}
+                    <td class="{% if es_fin_semana %}fin-semana{% endif %}">
+  {% if emp_id in matriz_eventos and dia_num in matriz_eventos[emp_id] %}
+    {% for ev in matriz_eventos[emp_id][dia_num] %}
+      <div class="bloque-vac {{ 'pendiente' if ev.estado == 'Pendiente' else 'aprobado' }}"
+           onclick="abrirModalProcesar('{{ ev.idvac }}', '{{ ev.nombre_completo }}', '{{ ev.vac_in_fmt }}', '{{ ev.vac_out_fmt }}', '{{ ev.observacion }}', '{{ ev.estado }}')">
+        {{ ev.texto_bloque }}
+      </div>
+    {% endfor %}
+  {% endif %}
+</td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Leyenda de colores -->
+        <div class="leyenda">
+          <div class="leyenda-item">
+            <div class="leyenda-box" style="background:var(--amber-bg); border:1px solid var(--amber);"></div>
+            <span>Pendiente de Aprobación</span>
+          </div>
+          <div class="leyenda-item">
+            <div class="leyenda-box" style="background:var(--green-bg); border:1px solid var(--green);"></div>
+            <span>Aprobado</span>
+          </div>
+          <div class="leyenda-item">
+            <div class="leyenda-box" style="background:rgba(0,0,0,0.04); border:1px solid var(--border);"></div>
+            <span>Fin de Semana</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA 2: BANDEJA DE ACCIÓN RÁPIDA (PENDIENTES) -->
+      <div id="tab-pendientes" class="panel" style="display:none;">
+        <div class="panel-head">
+          <div class="panel-head-title">
+            <h5>Solicitudes Pendientes de Revisión</h5>
+          </div>
+        </div>
+
+        {% if pendientes %}
+          {% for p in pendientes %}
+            <div class="card-pendiente">
+              <div>
+                <div class="fw-bold text-dark fs-6">{{ p[2] }} {{ p[3] }}</div>
+                <div class="text-muted small mb-2"><i class="bi bi-building"></i> {{ p[4] or 'Sin Depto' }}</div>
+                <div class="d-flex align-items-center gap-3">
+                  <span class="badge bg-light text-dark border">
+                    <i class="bi bi-clock"></i> Desde: {{ p[5].strftime('%d/%m/%Y %H:%M') }}
+                  </span>
+                  <span class="badge bg-light text-dark border">
+                    <i class="bi bi-clock-history"></i> Hasta: {{ p[6].strftime('%d/%m/%Y %H:%M') }}
+                  </span>
+                </div>
+                {% if p[7] %}
+                  <div class="text-secondary small mt-2">
+                    <em>"{{ p[7] }}"</em>
+                  </div>
+                {% endif %}
+              </div>
+              <div>
+                {% if es_solo_lectura %}
+                  <button class="btn btn-sm btn-outline-secondary fw-semibold me-2" 
+                          onclick="abrirModalProcesar('{{ p[0] }}', '{{ p[2] }} {{ p[3] }}', '{{ p[5].strftime('%d/%m/%Y %H:%M') }}', '{{ p[6].strftime('%d/%m/%Y %H:%M') }}', '{{ p[7] or '' }}', 'Pendiente')">
+                    <i class="bi bi-eye-fill"></i> Ver Detalle
+                  </button>
+                {% else %}
+                  <button class="btn btn-sm btn-success fw-semibold me-2" 
+                          onclick="abrirModalProcesar('{{ p[0] }}', '{{ p[2] }} {{ p[3] }}', '{{ p[5].strftime('%d/%m/%Y %H:%M') }}', '{{ p[6].strftime('%d/%m/%Y %H:%M') }}', '{{ p[7] or '' }}', 'Pendiente')">
+                    <i class="bi bi-check-lg"></i> Revisar
+                  </button>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-check-circle fs-1 d-block mb-2 text-success opacity-50"></i>
+            No hay solicitudes pendientes por revisar.
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <footer>
+      <p>&copy; {{ current_year }} Todos los derechos reservados — Desarrollado por <strong>Ariel Castro</strong></p>
+    </footer>
+
+  </div>
+
+  <!-- MODAL DE PROCESAMIENTO (APROBAR / RECHAZAR / VER DETALLE) -->
+  <div class="modal fade" id="modalProcesar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg" style="border-radius:18px;">
+        <div class="modal-header border-bottom-0 pb-0">
+          <h5 class="modal-title fw-bold" id="modalEmpNombre">Detalle de la Solicitud</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="p-3 bg-light rounded-3 mb-3">
+            <div class="small text-muted mb-1">Período Solicitado:</div>
+            <div class="fw-semibold text-dark" id="modalFechas"></div>
+            <div class="small text-secondary mt-2" id="modalObsContainer" style="display:none;">
+              <strong>Nota del empleado:</strong> <span id="modalObsText"></span>
+            </div>
+          </div>
+
+          {% if es_solo_lectura %}
+            <div class="alert alert-info small mb-0 d-flex align-items-center gap-2">
+              <i class="bi bi-info-circle-fill fs-5"></i>
+              <div>Estás en <strong>Modo Consulta (Solo Lectura)</strong>. No dispones de permisos para aprobar o rechazar solicitudes.</div>
+            </div>
+          {% else %}
+            <form id="formProcesarVacacion" method="POST">
+              <div class="mb-3">
+                <label for="motivo_rechazo" class="form-label small fw-bold text-muted">Motivo de Rechazo (Solo si se rechaza):</label>
+                <textarea name="motivo_rechazo" id="motivo_rechazo" class="form-control form-control-sm" rows="2" placeholder="Explica la causa del rechazo..."></textarea>
+              </div>
+              <div class="d-flex gap-2 pt-2">
+                <button type="button" class="btn btn-success flex-fill fw-bold" onclick="enviarAccion('Aprobado')">
+                  <i class="bi bi-check-circle-fill"></i> Aprobar
+                </button>
+                <button type="button" class="btn btn-outline-danger flex-fill fw-bold" onclick="enviarAccion('Rechazado')">
+                  <i class="bi bi-x-circle-fill"></i> Rechazar
+                </button>
+              </div>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Configurar mes actual en la cabecera
+    const fechaMes = new Date({{ anio_actual }}, {{ mes_actual }} - 1, 1);
+    document.getElementById('labelMesAnio').textContent = fechaMes.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+
+    // Cambio de Pestañas
+    function cambiarTab(tab) {
+      document.getElementById('tab-matriz').style.display = tab === 'matriz' ? 'block' : 'none';
+      document.getElementById('tab-pendientes').style.display = tab === 'pendientes' ? 'block' : 'none';
+      
+      document.getElementById('btn-tab-matriz').classList.toggle('active', tab === 'matriz');
+      document.getElementById('btn-tab-pendientes').classList.toggle('active', tab === 'pendientes');
+    }
+
+    // Modal de Procesamiento
+    let modalBs = null;
+    let vacacionIdActual = null;
+
+    function abrirModalProcesar(idvac, nombre, vacIn, vacOut, obs, estado) {
+      vacacionIdActual = idvac;
+      document.getElementById('modalEmpNombre').textContent = nombre;
+      document.getElementById('modalFechas').textContent = vacIn + '  ➔  ' + vacOut;
+      
+      const obsContainer = document.getElementById('modalObsContainer');
+      if (obs && obs.trim() !== '') {
+        document.getElementById('modalObsText').textContent = obs;
+        obsContainer.style.display = 'block';
+      } else {
+        obsContainer.style.display = 'none';
+      }
+
+      const motivoArea = document.getElementById('motivo_rechazo');
+      if (motivoArea) motivoArea.value = '';
+
+      modalBs = new bootstrap.Modal(document.getElementById('modalProcesar'));
+      modalBs.show();
+    }
+
+    function enviarAccion(accion) {
+      if (!vacacionIdActual) return;
+      const form = document.getElementById('formProcesarVacacion');
+      if (form) {
+        form.action = "/procesar-vacacion/" + vacacionIdActual + "/" + accion;
+        form.submit();
+      }
+    }
+
+    // Sidebar collapse state
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('main-content');
+    const toggleBtn = document.getElementById('toggleSidebar');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('expanded');
+        localStorage.setItem('sidebar_collapsed', sidebar.classList.contains('collapsed') ? '1' : '0');
+      });
+    }
+    if (localStorage.getItem('sidebar_collapsed') === '1') {
+      sidebar.classList.add('collapsed');
+      mainContent.classList.add('expanded');
+    }
+  </script>
+</body>
+</html>

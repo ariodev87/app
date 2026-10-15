@@ -176,6 +176,30 @@
       white-space: nowrap;
     }
 
+    /* Badges de Estado */
+    .badge-status {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px;
+      font-size: 0.75rem; font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-status.pending {
+      background: rgba(217, 119, 6, 0.1); color: #b45309;
+      border: 1px solid rgba(217, 119, 6, 0.25);
+    }
+    .badge-status.approved {
+      background: rgba(16, 185, 129, 0.1); color: #047857;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+    .badge-status.rejected {
+      background: rgba(239, 68, 68, 0.1); color: #b91c1c;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+    .badge-status.canceled {
+      background: rgba(107, 114, 128, 0.1); color: #374151;
+      border: 1px solid rgba(107, 114, 128, 0.25);
+    }
+
     /* Acciones tabla */
     .acciones-td { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
 
@@ -275,10 +299,15 @@
                 <input type="datetime-local" class="form-control" id="vacacionesout"
                        name="vacacionesout" required>
               </div>
+              <div class="mb-3">
+                <label for="observacion" class="form-label">Observación / Motivo (Opcional)</label>
+                <textarea class="form-control" id="observacion" name="observacion" rows="2" 
+                          placeholder="Ej. Permiso particular por la mañana / Vacaciones de verano"></textarea>
+              </div>
 
               <button type="submit" class="btn-action btn-amber" id="btn-submit">
-                <i class="bi bi-save-fill"></i>
-                <span id="btn-submit-texto">Registrar Vacaciones</span>
+                <i class="bi bi-send-fill"></i>
+                <span id="btn-submit-texto">Enviar Propuesta</span>
               </button>
 
               <button type="button" class="btn-cancelar-edicion" id="btn-cancelar"
@@ -289,14 +318,14 @@
           </div>
         </div>
 
-        <!-- TABLA -->
+        <!-- TABLA DE HISTORIAL / SOLICITUDES DEL EMPLEADO -->
         <div class="col-12 col-lg-8">
           <div class="panel">
             <div class="panel-head">
               <div class="panel-head-icon" style="background:rgba(217,119,6,0.09);color:var(--amber);">
                 <i class="bi bi-card-list"></i>
               </div>
-              <h5>Mis Vacaciones Programadas</h5>
+              <h5>Mis Solicitudes y Vacaciones</h5>
             </div>
 
             {% if vacaciones %}
@@ -307,7 +336,9 @@
                       <th>Inicio</th>
                       <th>Fin</th>
                       <th>Días / Horas</th>
-                      <th></th>
+                      <th>Estado</th>
+                      <th>Observación</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -344,27 +375,57 @@
                           {% endif %}
                         </td>
                         <td>
+                          {% set estado_vac = vac[3] if vac[3] else 'Pendiente' %}
+                          {% if estado_vac == 'Pendiente' %}
+                            <span class="badge-status pending">
+                              <i class="bi bi-clock-history"></i> Pendiente
+                            </span>
+                          {% elif estado_vac == 'Aprobado' %}
+                            <span class="badge-status approved">
+                              <i class="bi bi-check-circle-fill"></i> Aprobado
+                            </span>
+                          {% elif estado_vac == 'Rechazado' %}
+                            <span class="badge-status rejected">
+                              <i class="bi bi-x-circle-fill"></i> Rechazado
+                            </span>
+                          {% else %}
+                            <span class="badge-status canceled">
+                              <i class="bi bi-slash-circle"></i> {{ estado_vac }}
+                            </span>
+                          {% endif %}
+                        </td>
+                        <td style="font-size:0.8rem; color:var(--text-2);">
+                          {{ vac[4] if vac[4] else '-' }}
+                        </td>
+                        <td>
                           <div class="acciones-td">
-                            <button type="button"
-                                    class="btn-tbl edit"
-                                    id="btn-edit-{{ loop.index }}"
-                                    onclick="activarEdicion(
-                                      '{{ vac[2] }}',
-                                      '{{ vac[0].strftime('%Y-%m-%dT%H:%M') if vac[0] else '' }}',
-                                      '{{ vac[1].strftime('%Y-%m-%dT%H:%M') if vac[1] else '' }}',
-                                      {{ loop.index }}
-                                    )">
-                              <i class="bi bi-pencil"></i> Editar
-                            </button>
-                            <form method="post" action="{{ url_for('main.delete_vacacion') }}" style="margin:0;">
-                              <input type="hidden" name="vacacion_id" value="{{ vac[2] }}">
-                              <input type="hidden" name="uid"
-                                     value="{{ target_user if target_user != session.get('user_id') else '' }}">
-                              <button type="submit" class="btn-tbl delete"
-                                      onclick="return confirm('¿Eliminar esta vacación?')">
-                                <i class="bi bi-trash"></i> Eliminar
+                            {% if vac[3] == 'Pendiente' or session.get('role')|int == 0 %}
+                              <button type="button"
+                                      class="btn-tbl edit"
+                                      id="btn-edit-{{ loop.index }}"
+                                      onclick="activarEdicion(
+                                        '{{ vac[2] }}',
+                                        '{{ vac[0].strftime('%Y-%m-%dT%H:%M') if vac[0] else '' }}',
+                                        '{{ vac[1].strftime('%Y-%m-%dT%H:%M') if vac[1] else '' }}',
+                                        '{{ vac[4] if vac[4] else '' }}',
+                                        {{ loop.index }}
+                                      )">
+                                <i class="bi bi-pencil"></i> Editar
                               </button>
-                            </form>
+                              <form method="post" action="{{ url_for('main.delete_vacacion') }}" style="margin:0;">
+                                <input type="hidden" name="vacacion_id" value="{{ vac[2] }}">
+                                <input type="hidden" name="uid"
+                                       value="{{ target_user if target_user != session.get('user_id') else '' }}">
+                                <button type="submit" class="btn-tbl delete"
+                                        onclick="return confirm('¿Eliminar esta propuesta?')">
+                                  <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                              </form>
+                            {% else %}
+                              <span class="text-muted" style="font-size: 0.76rem; font-weight: 500;">
+                                <i class="bi bi-lock-fill"></i> Procesado
+                              </span>
+                            {% endif %}
                           </div>
                         </td>
                       </tr>
@@ -375,7 +436,7 @@
             {% else %}
               <div class="empty-state">
                 <i class="bi bi-calendar-x"></i>
-                No tienes vacaciones programadas
+                No tienes solicitudes de vacaciones o permisos registrados.
               </div>
             {% endif %}
           </div>
@@ -400,12 +461,14 @@
     const sidebar     = document.getElementById('sidebar');
     const mainContent = document.getElementById('main-content');
     const toggleBtn   = document.getElementById('toggleSidebar');
-    toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('collapsed');
-      mainContent.classList.toggle('expanded');
-      localStorage.setItem('sidebar_collapsed',
-        sidebar.classList.contains('collapsed') ? '1' : '0');
-    });
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('expanded');
+        localStorage.setItem('sidebar_collapsed',
+          sidebar.classList.contains('collapsed') ? '1' : '0');
+      });
+    }
     if (localStorage.getItem('sidebar_collapsed') === '1') {
       sidebar.classList.add('collapsed');
       mainContent.classList.add('expanded');
@@ -413,7 +476,7 @@
 
     let filaActiva = null;
 
-    function activarEdicion(vacacionId, fechaIn, fechaOut, indice) {
+    function activarEdicion(vacacionId, fechaIn, fechaOut, observacion, indice) {
       if (filaActiva) {
         document.getElementById('fila-vac-' + filaActiva)?.classList.remove('fila-editando');
         document.getElementById('btn-edit-' + filaActiva)?.classList.remove('activo');
@@ -424,9 +487,10 @@
       document.getElementById('vacacion_id').value   = vacacionId;
       document.getElementById('vacacionesin').value  = fechaIn;
       document.getElementById('vacacionesout').value = fechaOut;
+      document.getElementById('observacion').value   = observacion;
       document.getElementById('form-vacaciones').action = "{{ url_for('main.editar_vacacion') }}";
 
-      document.getElementById('form-titulo').textContent       = 'Editar Vacación';
+      document.getElementById('form-titulo').textContent       = 'Editar Propuesta';
       document.getElementById('btn-submit-texto').textContent  = 'Guardar Cambios';
       document.getElementById('modo-edicion-banner').classList.add('visible');
       document.getElementById('btn-cancelar').classList.add('visible');
@@ -445,10 +509,11 @@
       document.getElementById('vacacion_id').value   = '';
       document.getElementById('vacacionesin').value  = '';
       document.getElementById('vacacionesout').value = '';
+      document.getElementById('observacion').value   = '';
       document.getElementById('form-vacaciones').action = "{{ url_for('main.vacaciones') }}";
 
       document.getElementById('form-titulo').textContent       = 'Solicitar Vacaciones';
-      document.getElementById('btn-submit-texto').textContent  = 'Registrar Vacaciones';
+      document.getElementById('btn-submit-texto').textContent  = 'Enviar Propuesta';
       document.getElementById('modo-edicion-banner').classList.remove('visible');
       document.getElementById('btn-cancelar').classList.remove('visible');
     }

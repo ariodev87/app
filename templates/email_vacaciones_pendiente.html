@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Nueva Solicitud de Vacaciones</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f9; font-family: 'Segoe UI', Arial, sans-serif; color: #333333;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f6f9; padding: 30px 0;">
+    <tr>
+      <td align="center">
+        <table border="0" cellpadding="0" cellspacing="0" width="600" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+          
+          <!-- Encabezado -->
+          <tr>
+            <td style="background-color: #0d6efd; padding: 25px 30px; color: #ffffff;">
+              <h2 style="margin: 0; font-size: 22px;">Solicitud de Vacaciones / Permiso</h2>
+              <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Pendiente de Aprobación</p>
+            </td>
+          </tr>
+
+          <!-- Contenido -->
+          <tr>
+            <td style="padding: 30px;">
+              <p style="font-size: 15px; margin-top: 0;">Estimada/o <strong>{{ nombre_supervisora }}</strong>,</p>
+              <p style="font-size: 15px; color: #555555; line-height: 1.5;">
+                El empleado <strong>{{ nombre_empleado }}</strong> del departamento <strong>{{ departamento }}</strong> ha ingresado una nueva propuesta de vacaciones o permiso por horas.
+              </p>
+
+              <!-- Detalles de la solicitud -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8f9fa; border-radius: 6px; padding: 20px; margin: 20px 0; border-left: 4px solid #ffc107;">
+                <tr>
+                  <td style="padding: 6px 0; font-size: 14px; color: #6c757d; width: 140px;"><strong>Desde:</strong></td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #212529;"><strong>{{ fecha_inicio }}</strong></td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-size: 14px; color: #6c757d;"><strong>Hasta:</strong></td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #212529;"><strong>{{ fecha_fin }}</strong></td>
+                </tr>
+                {% if observacion %}
+                <tr>
+                  <td style="padding: 6px 0; font-size: 14px; color: #6c757d;"><strong>Observación:</strong></td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #212529;"><em>{{ observacion }}</em></td>
+                </tr>
+                {% endif %}
+              </table>
+
+              <p style="font-size: 14px; color: #6c757d;">
+                Por favor, ingresa a la plataforma para revisar y aprobar o rechazar esta solicitud.
+              </p>
+
+              <!-- Botón de Acción -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center" style="padding: 15px 0;">
+                    <a href="{{ url_revision }}" target="_blank" style="background-color: #0d6efd; color: #ffffff; text-decoration: none; padding: 12px 26px; border-radius: 5px; font-weight: bold; font-size: 14px; display: inline-block;">Revisar en el Sistema</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Pie de página -->
+          <tr>
+            <td align="center" style="background-color: #f1f3f5; padding: 15px; font-size: 12px; color: #6c757d; border-top: 1px solid #e9ecef;">
+              Sistema Interno de Gestión de Personal
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

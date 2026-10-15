@@ -1,5 +1,6 @@
 # turno/app/routes.py
 from datetime import date
+from calendar import monthrange
 from zoneinfo import ZoneInfo
 
 from flask import make_response, jsonify
@@ -158,7 +159,35 @@ def test_email():
         }), 500
 #Fin test mail
 
+@main.route('/enviar-confirmacion')
+def enviar_confirmacion():
+    # Datos de ejemplo o provenientes de la BD
+    datos_turno = {
+        'nombre': 'Juan Pérez',
+        'servicio': 'Consulta General',
+        'fecha': '15/10/2026',
+        'hora': '10:30 AM',
+        'codigo': 'TRN-8492',
+    }
 
+    msg = Message(
+        subject=f"Confirmación de Turno - {datos_turno['codigo']}",
+        recipients=['ariel-c@resorts-advantage.com'],
+    )
+
+    # Renderizamos la plantilla pasando los datos al contexto Jinja2
+    msg.html = render_template(
+        'email_turno.html',
+        nombre=datos_turno['nombre'],
+        servicio=datos_turno['servicio'],
+        fecha=datos_turno['fecha'],
+        hora=datos_turno['hora'],
+        codigo_turno=datos_turno['codigo'],
+        url_app='http://192.168.242.7/mis-turnos',
+    )
+
+    mail.send(msg)
+    return 'Correo enviado con éxito'
 
 
 
@@ -196,25 +225,36 @@ def hora_api():
         }), 500
 @main.route('/login', methods=['GET', 'POST'])
 def login():
-    error = None
-    if request.method == 'POST':
-        username = request.form['user']
-        password = request.form['password']
+  error = None
+  if request.method == 'POST':
+    username = request.form['user']
+    password = request.form['password']
 
-        cur = mysql.connection.cursor()
-        user = get_user_by_username(cur, username)
-        cur.close()
+    cur = mysql.connection.cursor()
+    user = get_user_by_username(cur, username)
 
-        if user and bcrypt.check_password_hash(user[2], password):
-            session.clear()
-            session['user_id']  = user[0]
-            session['username'] = user[1]
-            session['role']     = int(user[3])
-            return redirect(url_for('main.dashboard'))
-        else:
-            error = 'Usuario o contraseña incorrectos.'
+    if user and bcrypt.check_password_hash(user[2], password):
+      session.clear()
+      session['user_id'] = user[0]
+      session['username'] = user[1]
+      session['role'] = int(user[3])
 
-    return render_template('login.html', error=error, titulo='Iniciar Sesión')
+      # Consultar si el usuario está asignado en la tabla Supervisoras
+      cur.execute(
+          'SELECT COUNT(*) FROM Supervisoras WHERE UserID = %s', (user[0],)
+      )
+      tiene_asignacion = cur.fetchone()[0] > 0
+      cur.close()
+
+      # Permite ver la gestión si es rol 0 O si está asignado en Supervisoras
+      session['puede_ver_gestion'] = (int(user[3]) == 0) or tiene_asignacion
+
+      return redirect(url_for('main.dashboard'))
+    else:
+      cur.close()
+      error = 'Usuario o contraseña incorrectos.'
+
+  return render_template('login.html', error=error, titulo='Iniciar Sesión')
 
 
 @main.route('/dashboard')
@@ -702,87 +742,540 @@ def create_user():
 
 
 @main.route('/vacaciones', methods=['GET', 'POST'])
-@main.route('/vacaciones/<int:uid>', methods=['GET', 'POST'])  # ← ruta extra con uid
+@main.route('/vacaciones/<int:uid>', methods=['GET', 'POST'])
 @login_required
 def vacaciones(uid=None):
-    if session.get('role') not in (0, 1):
-        flash('No tienes permisos para esta sección.', 'warning')
-        return redirect(url_for('main.dashboard'))
+  if session.get('role') not in (0, 1):
+    flash('No tienes permisos para esta sección.', 'warning')
+    return redirect(url_for('main.dashboard'))
 
-    # Si uid viene en la URL y quien lo pide es admin/supervisor → usa ese uid
-    # Si no → usa el usuario logueado
-    target_user = uid if (uid and session.get('role') in (0, 1)) else session['user_id']
+  # Determina el usuario objetivo (si es supervisor/admin viendo a otro o si es el usuario logueado)
+  target_user = (
+      uid if (uid and session.get('role') in (0, 1)) else session['user_id']
+  )
 
-    cur = mysql.connection.cursor()
+  cur = mysql.connection.cursor()
 
-    if request.method == 'POST':
-        vac_in  = request.form.get('vacacionesin')
-        vac_out = request.form.get('vacacionesout')
-        insert_vacaciones(cur, target_user, vac_in, vac_out)
-        mysql.connection.commit()
-        flash('Vacaciones registradas correctamente.', 'success')
-        return redirect(url_for('main.vacaciones', uid=uid) if uid else url_for('main.vacaciones'))
+  if request.method == 'POST':
+    vac_in = request.form.get('vacacionesin')  # Recibe 'YYYY-MM-DDTHH:MM'
+    vac_out = request.form.get('vacacionesout')  # Recibe 'YYYY-MM-DDTHH:MM'
+    observacion = request.form.get('observacion', '').strip()
 
-    nombre, apellido = get_persona(cur, target_user)
+    # 1. Validar presencia de datos
+    if not vac_in or not vac_out:
+      flash(
+          'Debes seleccionar la fecha y hora de inicio y finalización.',
+          'danger',
+      )
+      return redirect(
+          url_for('main.vacaciones', uid=uid)
+          if uid
+          else url_for('main.vacaciones')
+      )
 
-    cur.execute("""
-        SELECT vacacionesin, vacacionesout, idvac
+    # 2. Parsear cadenas a objetos datetime
+    try:
+      dt_in = datetime.strptime(
+          vac_in.replace('T', ' '),
+          '%Y-%m-%d %H:%M:%S'
+          if len(vac_in) > 16
+          else '%Y-%m-%d %H:%M',
+      )
+      dt_out = datetime.strptime(
+          vac_out.replace('T', ' '),
+          '%Y-%m-%d %H:%M:%S'
+          if len(vac_out) > 16
+          else '%Y-%m-%d %H:%M',
+      )
+    except ValueError:
+      flash('El formato de fecha u hora introducido no es válido.', 'danger')
+      return redirect(
+          url_for('main.vacaciones', uid=uid)
+          if uid
+          else url_for('main.vacaciones')
+      )
+
+    # 3. Validar coherencia cronológica
+    if dt_in >= dt_out:
+      flash(
+          'La fecha/hora de inicio debe ser anterior a la de finalización.',
+          'danger',
+      )
+      return redirect(
+          url_for('main.vacaciones', uid=uid)
+          if uid
+          else url_for('main.vacaciones')
+      )
+
+    # 4. Validar solapamiento con solicitudes previas del usuario
+    cur.execute(
+        """
+            SELECT idvac FROM vacaciones 
+            WHERE iduser = %s 
+              AND estado IN ('Pendiente', 'Aprobado')
+              AND %s < vacacionesout 
+              AND %s > vacacionesin
+        """,
+        (target_user, dt_in, dt_out),
+    )
+    if cur.fetchone():
+      flash(
+          'Ya existe una solicitud pendiente o aprobada que coincide con este'
+          ' rango de fechas/horas.',
+          'warning',
+      )
+      return redirect(
+          url_for('main.vacaciones', uid=uid)
+          if uid
+          else url_for('main.vacaciones')
+      )
+
+    # 5. Inserción en la base de datos en estado 'Pendiente'
+    cur.execute(
+        """
+            INSERT INTO vacaciones (iduser, vacacionesin, vacacionesout, estado, observacion)
+            VALUES (%s, %s, %s, 'Pendiente', %s)
+        """,
+        (target_user, dt_in, dt_out, observacion),
+    )
+    mysql.connection.commit()
+
+    # 6. Buscar datos del solicitante y correo de la supervisora asignada
+    cur.execute(
+        """
+            SELECT 
+                p_emp.nombre AS emp_nombre,
+                p_emp.apellido AS emp_apellido,
+                p_emp.correo AS emp_correo,
+                p_emp.departamento AS emp_dpto,
+                p_sup.correo AS sup_correo,
+                p_sup.nombre AS sup_nombre
+            FROM personas p_emp
+            LEFT JOIN Supervisoras s ON p_emp.departamento = s.departamento
+            LEFT JOIN personas p_sup ON s.UserID = p_sup.iduser
+            WHERE p_emp.iduser = %s
+        """,
+        (target_user,),
+    )
+    datos_rel = cur.fetchone()
+
+    if datos_rel:
+      emp_nombre = datos_rel[0] or 'Empleado'
+      emp_apellido = datos_rel[1] or ''
+      emp_correo = datos_rel[2]
+      emp_dpto = datos_rel[3] or 'N/A'
+      sup_correo = datos_rel[4]
+      sup_nombre = datos_rel[5] or 'Supervisora'
+
+      # Si no se encuentra supervisora (o es una jefa pidiendo para sí misma), se envía a su propio correo
+      correo_destino = sup_correo if sup_correo else emp_correo
+
+      # 7. Envío del correo de notificación
+      if correo_destino:
+        try:
+          msg = Message(
+              subject=f'Nueva Propuesta de Vacaciones/Permiso - {emp_nombre} {emp_apellido}',
+              recipients=[correo_destino],
+          )
+          msg.html = render_template(
+              'email_vacaciones_pendiente.html',
+              nombre_supervisora=sup_nombre if sup_correo else emp_nombre,
+              nombre_empleado=f'{emp_nombre} {emp_apellido}',
+              departamento=emp_dpto,
+              fecha_inicio=dt_in.strftime('%d/%m/%Y %H:%M'),
+              fecha_fin=dt_out.strftime('%d/%m/%Y %H:%M'),
+              observacion=observacion,
+              url_revision=url_for('main.gestion_vacaciones', _external=True),
+          )
+          mail.send(msg)
+          flash(
+              'Propuesta de vacaciones registrada correctamente. Se ha'
+              ' notificado por correo a la supervisora.',
+              'success',
+          )
+        except Exception as e:
+          print(f'--> ERROR EXACTO EN WINDOWS: {type(e).__name__} - {e}')
+          flash(f'Error al enviar correo: {e}', 'warning')
+        else:
+          
+          flash(
+              'Propuesta registrada correctamente en estado Pendiente. (No se'
+              ' pudo enviar la notificación por correo por un problema de'
+              ' conexión SMTP).',
+              'info',
+          )
+      else:
+        flash(
+            'Propuesta registrada correctamente en estado Pendiente.', 'success'
+        )
+
+    return redirect(
+        url_for('main.vacaciones', uid=uid) if uid else url_for('main.vacaciones')
+    )
+
+  # GET: Obtener información del usuario y listado con su estado
+  nombre, apellido = get_persona(cur, target_user)
+
+  cur.execute(
+      """
+        SELECT vacacionesin, vacacionesout, idvac, estado, observacion
         FROM vacaciones
         WHERE iduser = %s
         ORDER BY vacacionesin DESC
-    """, (target_user,))
-    lista_vacs = cur.fetchall()
-    cur.close()
+    """,
+      (target_user,),
+  )
+  lista_vacs = cur.fetchall()
+  cur.close()
 
-    return render_template(
-        'register_vacaciones.html',
-        nombre=nombre,
-        apellido=apellido,
-        vacaciones=lista_vacs,
-        current_year=date.today().year,
-        target_user=target_user  # ← para que editar/eliminar sepa a quién apunta
-    )
+  return render_template(
+      'register_vacaciones.html',
+      nombre=nombre,
+      apellido=apellido,
+      vacaciones=lista_vacs,
+      current_year=date.today().year,
+      target_user=target_user,
+  )
 
 @main.route('/editar-vacacion', methods=['POST'])
 @login_required
 def editar_vacacion():
-    vacacion_id = request.form.get('vacacion_id')
-    fecha_in    = request.form.get('vacacionesin')
-    fecha_out   = request.form.get('vacacionesout')
+  if session.get('role') not in (0, 1):
+    flash('No tienes permisos para esta sección.', 'warning')
+    return redirect(url_for('main.dashboard'))
 
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        UPDATE vacaciones
-        SET vacacionesin = %s, vacacionesout = %s
-        WHERE idvac = %s 
-    """, (fecha_in, fecha_out, vacacion_id,))
-    mysql.connection.commit()
+  vacacion_id = request.form.get('vacacion_id')
+  fecha_in = request.form.get('vacacionesin')
+  fecha_out = request.form.get('vacacionesout')
+  observacion = request.form.get('observacion', '').strip()
+
+  cur = mysql.connection.cursor()
+
+  # Verificar si existe y revisar el estado actual
+  cur.execute(
+      'SELECT iduser, estado FROM vacaciones WHERE idvac = %s', (vacacion_id,)
+  )
+  vac = cur.fetchone()
+
+  if not vac:
     cur.close()
-
-    flash('Vacación actualizada correctamente.', 'success')
+    flash('La solicitud de vacación no existe.', 'danger')
     return redirect(url_for('main.vacaciones'))
+
+  id_propietario, estado_actual = vac[0], vac[1]
+
+  # Si el usuario es un empleado (rol 1) y la solicitud ya fue aprobada/rechazada, bloquear la edición
+  if session.get('role') == 1 and estado_actual != 'Pendiente':
+    cur.close()
+    flash(
+        f'No puedes editar una solicitud que ya ha sido procesada ({estado_actual}).',
+        'danger',
+    )
+    return redirect(url_for('main.vacaciones'))
+
+  # Actualizar fechas y mantener/reiniciar el estado a 'Pendiente'
+  cur.execute(
+      """
+        UPDATE vacaciones
+        SET vacacionesin = %s, vacacionesout = %s, observacion = %s, estado = 'Pendiente'
+        WHERE idvac = %s 
+    """,
+      (fecha_in, fecha_out, observacion, vacacion_id),
+  )
+  mysql.connection.commit()
+  cur.close()
+
+  flash('Solicitud actualizada correctamente (en espera de revisión).', 'success')
+  return redirect(url_for('main.vacaciones'))
 
 
 @main.route('/vacaciones/delete', methods=['POST'])
 @login_required
 def delete_vacacion():
-    if session.get('role') not in (0, 1):
-        flash('No tienes permisos para esta sección.', 'warning')
-        return redirect(url_for('main.dashboard'))
+  if session.get('role') not in (0, 1):
+    flash('No tienes permisos para esta sección.', 'warning')
+    return redirect(url_for('main.dashboard'))
 
-    vacacion_id = request.form.get('vacacion_id')
+  vacacion_id = request.form.get('vacacion_id')
 
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        DELETE FROM vacaciones
-        WHERE idvac = %s 
-    """, (vacacion_id,))
-    mysql.connection.commit()
+  cur = mysql.connection.cursor()
+
+  # Consultar estado antes de borrar
+  cur.execute(
+      'SELECT iduser, estado FROM vacaciones WHERE idvac = %s', (vacacion_id,)
+  )
+  vac = cur.fetchone()
+
+  if not vac:
     cur.close()
-
-    flash('Vacación eliminada.', 'info')
+    flash('La solicitud no existe o ya fue eliminada.', 'danger')
     return redirect(url_for('main.vacaciones'))
 
+  estado_actual = vac[1]
+
+  # Bloquear borrado a empleados si ya no está en 'Pendiente'
+  if session.get('role') == 1 and estado_actual != 'Pendiente':
+    cur.close()
+    flash(
+        f'No puedes eliminar una solicitud que ya fue procesada ({estado_actual}).',
+        'danger',
+    )
+    return redirect(url_for('main.vacaciones'))
+
+  cur.execute(
+      """
+        DELETE FROM vacaciones
+        WHERE idvac = %s 
+    """,
+      (vacacion_id,),
+  )
+  mysql.connection.commit()
+  cur.close()
+
+  flash('Solicitud de vacaciones eliminada.', 'info')
+  return redirect(url_for('main.vacaciones'))
+
+#--------------------------------------------------------
+@main.route('/gestion-vacaciones')
+@login_required
+def gestion_vacaciones():
+  user_id = session['user_id']
+  user_role = session.get('role')
+  cur = mysql.connection.cursor()
+
+  # 1. Comprobar si el usuario está registrado en Supervisoras
+  cur.execute(
+      'SELECT departamento FROM Supervisoras WHERE UserID = %s', (user_id,)
+  )
+  deptos_registrados = [row[0] for row in cur.fetchall()]
+
+  # Si no es Rol 0 ni está en Supervisoras, denegar acceso
+  if user_role != 0 and not deptos_registrados:
+    cur.close()
+    flash('No tienes permisos para acceder a esta sección.', 'danger')
+    return redirect(url_for('main.dashboard'))
+
+  es_solo_lectura = user_role != 0
+
+  # 2. Fechas del mes a visualizar
+  hoy = date.today()
+  anio = request.args.get('anio', hoy.year, type=int)
+  mes = request.args.get('mes', hoy.month, type=int)
+  num_dias_mes = monthrange(anio, mes)[1]
+  dias_mes = [date(anio, mes, d) for d in range(1, num_dias_mes + 1)]
+
+  # 3. Consultar Empleados
+  if 'TODOS' in deptos_registrados or user_role == 0:
+    cur.execute("""
+            SELECT DISTINCT p.iduser, p.nombre, p.apellido, p.departamento, u.foto
+            FROM personas p
+            LEFT JOIN user u ON p.iduser = u.iduser
+            ORDER BY p.apellido, p.nombre
+        """)
+  else:
+    cur.execute(
+        """
+            SELECT DISTINCT p.iduser, p.nombre, p.apellido, p.departamento, u.foto
+            FROM personas p
+            JOIN Supervisoras s ON p.departamento = s.departamento
+            LEFT JOIN user u ON p.iduser = u.iduser
+            WHERE s.UserID = %s
+            ORDER BY p.apellido, p.nombre
+        """,
+        (user_id,),
+    )
+
+  empleados = cur.fetchall()
+
+  # 4. Solicitudes Pendientes (Bandeja rápida)
+  if 'TODOS' in deptos_registrados or user_role == 0:
+    cur.execute("""
+            SELECT DISTINCT v.idvac, p.iduser, p.nombre, p.apellido, p.departamento, v.vacacionesin, v.vacacionesout, v.observacion, v.fecha_solicitud
+            FROM vacaciones v
+            JOIN personas p ON v.iduser = p.iduser
+            WHERE v.estado = 'Pendiente'
+            ORDER BY v.vacacionesin ASC
+        """)
+  else:
+    cur.execute(
+        """
+            SELECT DISTINCT v.idvac, p.iduser, p.nombre, p.apellido, p.departamento, v.vacacionesin, v.vacacionesout, v.observacion, v.fecha_solicitud
+            FROM vacaciones v
+            JOIN personas p ON v.iduser = p.iduser
+            JOIN Supervisoras s ON p.departamento = s.departamento
+            WHERE s.UserID = %s AND v.estado = 'Pendiente'
+            ORDER BY v.vacacionesin ASC
+        """,
+        (user_id,),
+    )
+
+  pendientes = cur.fetchall()
+
+  # 5. Obtener vacaciones para la matriz del mes con DISTINCT
+  inicio_mes = f'{anio}-{mes:02d}-01 00:00:00'
+  fin_mes = f'{anio}-{mes:02d}-{num_dias_mes:02d} 23:59:59'
+
+  if 'TODOS' in deptos_registrados or user_role == 0:
+    cur.execute(
+        """
+            SELECT DISTINCT v.idvac, v.iduser, v.vacacionesin, v.vacacionesout, v.estado, v.observacion, p.nombre, p.apellido
+            FROM vacaciones v
+            JOIN personas p ON v.iduser = p.iduser
+            WHERE v.estado IN ('Pendiente', 'Aprobado')
+              AND v.vacacionesin <= %s AND v.vacacionesout >= %s
+        """,
+        (fin_mes, inicio_mes),
+    )
+  else:
+    cur.execute(
+        """
+            SELECT DISTINCT v.idvac, v.iduser, v.vacacionesin, v.vacacionesout, v.estado, v.observacion, p.nombre, p.apellido
+            FROM vacaciones v
+            JOIN personas p ON v.iduser = p.iduser
+            JOIN Supervisoras s ON p.departamento = s.departamento
+            WHERE s.UserID = %s 
+              AND v.estado IN ('Pendiente', 'Aprobado')
+              AND v.vacacionesin <= %s AND v.vacacionesout >= %s
+        """,
+        (user_id, fin_mes, inicio_mes),
+    )
+
+  vacaciones_mes = cur.fetchall()
+  cur.close()
+
+  # 6. Mapear la matriz procesando el texto del bloque (VAC o Rango de Horas)
+  matriz_eventos = {emp[0]: {} for emp in empleados}
+  for vac in vacaciones_mes:
+    idvac, iduser, vac_in, vac_out, estado, obs, nom, ape = vac
+    if iduser in matriz_eventos:
+      es_multidia = (vac_out.date() - vac_in.date()).days >= 1
+      duracion_horas = (vac_out - vac_in).total_seconds() / 3600.0
+
+      # Si abarca varios días o dura 7 horas o más, se trata como día completo (VAC)
+      if es_multidia or duracion_horas >= 7:
+        texto_bloque = 'VAC'
+      else:
+        texto_bloque = (
+            f"{vac_in.strftime('%H:%M')}-{vac_out.strftime('%H:%M')}"
+        )
+
+      for dia in dias_mes:
+        if vac_in.date() <= dia <= vac_out.date():
+          dia_num = dia.day
+          if dia_num not in matriz_eventos[iduser]:
+            matriz_eventos[iduser][dia_num] = []
+
+          # Evitar inserción duplicada en la misma celda
+          if not any(
+              e['idvac'] == idvac for e in matriz_eventos[iduser][dia_num]
+          ):
+            matriz_eventos[iduser][dia_num].append({
+                'idvac': idvac,
+                'estado': estado,
+                'texto_bloque': texto_bloque,
+                'vac_in_fmt': vac_in.strftime('%d/%m/%Y %H:%M'),
+                'vac_out_fmt': vac_out.strftime('%d/%m/%Y %H:%M'),
+                'observacion': obs or '',
+                'nombre_completo': f'{nom} {ape}',
+            })
+
+  return render_template(
+      'gestion_vacaciones.html',
+      empleados=empleados,
+      pendientes=pendientes,
+      matriz_eventos=matriz_eventos,
+      dias_mes=dias_mes,
+      mes_actual=mes,
+      anio_actual=anio,
+      es_solo_lectura=es_solo_lectura,
+      current_year=date.today().year,
+  )
+
+@main.route('/procesar-vacacion/<int:idvac>/<string:accion>', methods=['POST'])
+@login_required
+def procesar_vacacion(idvac, accion):
+  # Bloqueo total si no es Rol 0 (los usuarios de lectura no pueden ejecutar esto)
+  if session.get('role') != 0:
+    flash(
+        'No tienes permisos para aprobar o rechazar solicitudes (Modo'
+        ' Lectura).',
+        'danger',
+    )
+    return redirect(url_for('main.gestion_vacaciones'))
+
+  
+
+  sup_iduser = session['user_id']
+  motivo_rechazo = request.form.get('motivo_rechazo', '').strip()
+
+  cur = mysql.connection.cursor()
+
+  cur.execute(
+      """
+        SELECT 
+            v.iduser,
+            p_emp.nombre,
+            p_emp.apellido,
+            p_emp.correo,
+            v.vacacionesin,
+            v.vacacionesout
+        FROM vacaciones v
+        JOIN personas p_emp ON v.iduser = p_emp.iduser
+        WHERE v.idvac = %s
+    """,
+      (idvac,),
+  )
+  solicitud = cur.fetchone()
+
+  if not solicitud:
+    cur.close()
+    flash('La solicitud no existe.', 'danger')
+    return redirect(url_for('main.gestion_vacaciones'))
+
+  emp_id, emp_nombre, emp_apellido, emp_correo, vac_in, vac_out = solicitud
+
+  cur.execute(
+      """
+        UPDATE vacaciones
+        SET estado = %s, aprobado_por = %s
+        WHERE idvac = %s
+    """,
+      (accion, sup_iduser, idvac),
+  )
+  mysql.connection.commit()
+  cur.close()
+
+  if emp_correo:
+    try:
+      msg = Message(
+          subject=(
+              f'Respuesta a tu Solicitud de Vacaciones/Permiso - {accion}'
+          ),
+          recipients=[emp_correo],
+      )
+      msg.html = render_template(
+          'email_vacaciones_respuesta.html',
+          nombre_empleado=f'{emp_nombre} {emp_apellido}',
+          estado=accion,
+          fecha_inicio=vac_in.strftime('%d/%m/%Y %H:%M'),
+          fecha_fin=vac_out.strftime('%d/%m/%Y %H:%M'),
+          motivo_rechazo=motivo_rechazo if accion == 'Rechazado' else None,
+          url_mis_vacaciones=url_for('main.vacaciones', _external=True),
+      )
+      mail.send(msg)
+      flash(f'Solicitud {accion.lower()} y empleado notificado.', 'success')
+    except Exception as e:
+      flash(
+          f'Solicitud {accion.lower()} en base de datos. (Error mail: {e})',
+          'warning',
+      )
+  else:
+    flash(
+        f'Solicitud {accion.lower()} correctamente en la base de datos.',
+        'success',
+    )
+
+  return redirect(url_for('main.gestion_vacaciones'))
 
 # ══════════════════════════════════════════════════════
 #  PANEL DE EMPLEADOS

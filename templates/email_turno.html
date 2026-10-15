@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirmación de Turno</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f9; font-family: 'Segoe UI', Helvetica, Arial, sans-serif; color: #333333;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #f4f6f9;">
+    <tr>
+      <td align="center" style="padding: 40px 10px;">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+          
+          <!-- CABECERA -->
+          <tr>
+            <td align="center" style="background-color: #0d6efd; padding: 30px 20px; color: #ffffff;">
+              <h1 style="margin: 0; font-size: 26px; font-weight: 600; letter-spacing: 0.5px;">TurnoApp</h1>
+              <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">Confirmación de Turno / Cita</p>
+            </td>
+          </tr>
+
+          <!-- CUERPO PRINCIPAL -->
+          <tr>
+            <td style="padding: 30px 30px 20px 30px;">
+              <h2 style="margin-top: 0; color: #2c3e50; font-size: 20px;">¡Hola, {{ nombre }}! 👋</h2>
+              <p style="font-size: 15px; line-height: 1.6; color: #555555; margin-bottom: 25px;">
+                Tu turno ha sido programado exitosamente. A continuación te compartimos el resumen de tu cita:
+              </p>
+
+              <!-- TARJETA DE DETALLES -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8f9fa; border-radius: 6px; padding: 20px; border-left: 4px solid #0d6efd;">
+                <tr>
+                  <td style="padding: 6px 0; font-size: 14px; color: #6c757d; width: 130px;"><strong>Servicio / Motivo:</strong></td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #212529; font-weight: 600;">{{ servicio }}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-size: 14px; color: #6c757d;"><strong>Fecha:</strong></td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #212529;">{{ fecha }}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 6px 0; font-size: 14px; color: #6c757d;"><strong>Hora:</strong></td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #212529;">{{ hora }}</td>
+                </tr>
+                {% if codigo_turno %}
+                <tr>
+                  <td style="padding: 6px 0; font-size: 14px; color: #6c757d;"><strong>Código de Turno:</strong></td>
+                  <td style="padding: 6px 0; font-size: 14px; color: #0d6efd; font-weight: bold;">{{ codigo_turno }}</td>
+                </tr>
+                {% endif %}
+              </table>
+
+              <!-- AVISO / RECOMENDACIÓN -->
+              <p style="font-size: 13px; line-height: 1.5; color: #6c757d; margin-top: 25px; margin-bottom: 25px;">
+                📌 <em>Por favor, preséntate 10 minutos antes del horario asignado. Si necesitas cancelar o modificar tu cita, hazlo desde la aplicación.</em>
+              </p>
+
+              <!-- BOTÓN CTA -->
+              {% if url_app %}
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center" style="padding: 10px 0 20px 0;">
+                    <a href="{{ url_app }}" target="_blank" style="background-color: #0d6efd; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 5px; font-weight: bold; font-size: 14px; display: inline-block;">Gestión de Mis Turnos</a>
+                  </td>
+                </tr>
+              </table>
+              {% endif %}
+            </td>
+          </tr>
+
+          <!-- PIE DE PÁGINA -->
+          <tr>
+            <td align="center" style="background-color: #f1f3f5; padding: 20px; font-size: 12px; color: #6c757d; border-top: 1px solid #e9ecef;">
+              <p style="margin: 0 0 5px 0;">Este es un mensaje automático generado por <strong>TurnoApp</strong>.</p>
+              <p style="margin: 0;">Por favor no respondas a este correo electrónico.</p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
