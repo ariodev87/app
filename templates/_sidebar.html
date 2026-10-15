@@ -30,6 +30,12 @@
 
     <div class="nav-section-label">Principal</div>
 
+    <a href="{{ url_for('main.perfil') }}"
+       class="nav-item-link {% if request.endpoint == 'main.perfil' %}active{% endif %}">
+      <i class="bi bi-person-circle"></i>
+      <span class="link-text">Mi Perfil</span>
+    </a>
+
     <a href="{{ url_for('main.dashboard') }}"
        class="nav-item-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}">
       <i class="bi bi-house-door-fill"></i>
@@ -40,38 +46,6 @@
       <i class="bi bi-book-fill"></i>
       <span class="link-text">Documentación</span>
     </a>
-
-    {% if dep == 'it' or session.get('user_id') == 1 %}
-    <a href="{{ url_for('main.crear_usuarios_lote') }}"
-       class="nav-item-link {% if request.endpoint == 'main.crear_usuarios_lote' %}active{% endif %}">
-      <i class="bi bi-person-lines-fill"></i>
-      <span class="link-text">Usuarios en Lote</span>
-    </a>
-    {% endif %}
-
-    {% if dep == 'it' or session.get('user_id') == 1 %}
-    <a href="{{ url_for('main.admin_usuarios_gestion') }}"
-       class="nav-item-link {% if request.endpoint == 'main.admin_usuarios_gestion' %}active{% endif %}">
-      <i class="bi bi-sliders"></i>
-      <span class="link-text">Gestión de Usuarios</span>
-    </a>
-    {% endif %}
-
-    {% if role|int == 0 and dep in ['it', 'administración', 'administracion', 'melia', 'financiero'] %}
-    <a href="{{ url_for('main.dashboardit') }}"
-       class="nav-item-link {% if request.endpoint == 'main.dashboardit' %}active{% endif %}">
-      <i class="bi bi-pc-display"></i>
-      <span class="link-text">Dashboard IT</span>
-    </a>
-    {% endif %}
-
-
-    <a href="{{ url_for('main.perfil') }}"
-       class="nav-item-link {% if request.endpoint == 'main.perfil' %}active{% endif %}">
-      <i class="bi bi-person-circle"></i>
-      <span class="link-text">Mi Perfil</span>
-    </a>
-
     <a href="{{ url_for('main.directorio') }}"
        class="nav-item-link {% if request.endpoint == 'main.directorio' %}active{% endif %}">
       <i class="bi bi-telephone-fill"></i>
@@ -95,7 +69,51 @@
       <i class="bi bi-cup-straw"></i>
       <span class="link-text">Vuelta de Comer</span>
     </a>
-    {% if session.get('puede_ver_gestion') %}
+     <a href="{{ url_for('main.vacaciones') }}"
+       class="nav-item-link {% if request.endpoint == 'main.vacaciones' %}active{% endif %}">
+      <i class="bi bi-airplane-fill"></i>
+      <span class="link-text">Vacaciones</span>
+    </a>
+
+
+  
+
+
+    
+    <div class="nav-section-label">Administración</div>
+      {% if dep == 'it' or session.get('user_id') == 1 %}
+    <a href="{{ url_for('main.crear_usuarios_lote') }}"
+       class="nav-item-link {% if request.endpoint == 'main.crear_usuarios_lote' %}active{% endif %}">
+      <i class="bi bi-person-lines-fill"></i>
+      <span class="link-text">Usuarios en Lote</span>
+    </a>
+    {% endif %}
+
+    {% if dep == 'it' or session.get('user_id') == 1 %}
+    <a href="{{ url_for('main.admin_usuarios_gestion') }}"
+       class="nav-item-link {% if request.endpoint == 'main.admin_usuarios_gestion' %}active{% endif %}">
+      <i class="bi bi-sliders"></i>
+      <span class="link-text">Gestión de Usuarios</span>
+    </a>
+    {% endif %}
+
+    {% if role|int == 0 and dep in ['it', 'administración', 'administracion', 'melia', 'financiero'] %}
+    <a href="{{ url_for('main.dashboardit') }}"
+       class="nav-item-link {% if request.endpoint == 'main.dashboardit' %}active{% endif %}">
+      <i class="bi bi-pc-display"></i>
+      <span class="link-text">Dashboard IT</span>
+    </a>
+    {% endif %}
+    <a href="{{ url_for('main.admin_empleados') }}"
+       class="nav-item-link {% if request.endpoint == 'main.admin_empleados' %}active{% endif %}">
+      <i class="bi bi-people-fill"></i>
+      <span class="link-text">Ver Empleados</span>
+    </a>
+
+    
+
+    
+    {% if session.get('puede_ver_gestion') or dep == 'it' %}
 <a href="{{ url_for('main.gestion_vacaciones') }}"
    class="nav-item-link {% if request.endpoint == 'main.gestion_vacaciones' %}active{% endif %}">
   <i class="bi bi-shield-check"></i>
@@ -103,12 +121,7 @@
 </a>
 {% endif %}
 
-    <a href="{{ url_for('main.vacaciones') }}"
-       class="nav-item-link {% if request.endpoint == 'main.vacaciones' %}active{% endif %}">
-      <i class="bi bi-airplane-fill"></i>
-      <span class="link-text">Vacaciones</span>
-    </a>
-
+   
     {% if role|int == 0 %}
     <div class="nav-divider"></div>
     <div class="nav-section-label">Visitantes</div>
@@ -131,11 +144,7 @@
 
    
 
-    <a href="{{ url_for('main.admin_empleados') }}"
-       class="nav-item-link {% if request.endpoint == 'main.admin_empleados' %}active{% endif %}">
-      <i class="bi bi-people-fill"></i>
-      <span class="link-text">Ver Empleados</span>
-    </a>
+    
 
   </div>
 
