@@ -2,6 +2,7 @@
 from datetime import date
 from calendar import monthrange
 from zoneinfo import ZoneInfo
+from flask import current_app
 
 from flask import make_response, jsonify
 from xhtml2pdf import pisa
@@ -766,6 +767,7 @@ def vacaciones(uid=None):
 
     # 1. Validar presencia de datos
     if not vac_in or not vac_out:
+      cur.close()
       flash(
           'Debes seleccionar la fecha y hora de inicio y finalización.',
           'danger',
@@ -791,6 +793,7 @@ def vacaciones(uid=None):
           else '%Y-%m-%d %H:%M',
       )
     except ValueError:
+      cur.close()
       flash('El formato de fecha u hora introducido no es válido.', 'danger')
       return redirect(
           url_for('main.vacaciones', uid=uid)
@@ -800,6 +803,7 @@ def vacaciones(uid=None):
 
     # 3. Validar coherencia cronológica
     if dt_in >= dt_out:
+      cur.close()
       flash(
           'La fecha/hora de inicio debe ser anterior a la de finalización.',
           'danger',
@@ -822,6 +826,7 @@ def vacaciones(uid=None):
         (target_user, dt_in, dt_out),
     )
     if cur.fetchone():
+      cur.close()
       flash(
           'Ya existe una solicitud pendiente o aprobada que coincide con este'
           ' rango de fechas/horas.',
@@ -843,46 +848,58 @@ def vacaciones(uid=None):
     )
     mysql.connection.commit()
 
-    # 6. Buscar datos del solicitante y correo de la supervisora asignada
+    # 6. Buscar datos del solicitante y departamento
     cur.execute(
         """
-            SELECT 
-                p_emp.nombre AS emp_nombre,
-                p_emp.apellido AS emp_apellido,
-                p_emp.correo AS emp_correo,
-                p_emp.departamento AS emp_dpto,
-                p_sup.correo AS sup_correo,
-                p_sup.nombre AS sup_nombre
-            FROM personas p_emp
-            LEFT JOIN Supervisoras s ON p_emp.departamento = s.departamento
-            LEFT JOIN personas p_sup ON s.UserID = p_sup.iduser
-            WHERE p_emp.iduser = %s
+            SELECT nombre, apellido, departamento 
+            FROM personas 
+            WHERE iduser = %s
         """,
         (target_user,),
     )
-    datos_rel = cur.fetchone()
+    emp_data = cur.fetchone()
 
-    if datos_rel:
-      emp_nombre = datos_rel[0] or 'Empleado'
-      emp_apellido = datos_rel[1] or ''
-      emp_correo = datos_rel[2]
-      emp_dpto = datos_rel[3] or 'N/A'
-      sup_correo = datos_rel[4]
-      sup_nombre = datos_rel[5] or 'Supervisora'
+    if emp_data:
+      emp_nombre = emp_data[0] or 'Empleado'
+      emp_apellido = emp_data[1] or ''
+      emp_dpto = (emp_data[2] or '').strip()
 
-      # Si no se encuentra supervisora (o es una jefa pidiendo para sí misma), se envía a su propio correo
-      correo_destino = sup_correo if sup_correo else emp_correo
+      # Consultar los correos de TODAS las supervisoras asignadas (usando TRIM/LOWER para evitar fallos por espacios)
+      supervisora_correos = []
+      if emp_dpto:
+        cur.execute(
+            """
+                SELECT DISTINCT TRIM(p.correo)
+                FROM Supervisoras s
+                JOIN personas p ON s.UserID = p.iduser
+                WHERE LOWER(TRIM(s.departamento)) = LOWER(TRIM(%s))
+                  AND p.correo IS NOT NULL 
+                  AND TRIM(p.correo) != ''
+            """,
+            (emp_dpto,),
+        )
+        sup_rows = cur.fetchall()
+        supervisora_correos = [row[0] for row in sup_rows if row[0]]
 
-      # 7. Envío del correo de notificación
-      if correo_destino:
+      print(
+          f"[DEBUG VACACIONES] Empleado: {emp_nombre} {emp_apellido} | Depto:"
+          f" '{emp_dpto}' | Correos encontrados: {supervisora_correos}"
+      )
+
+      # 7. Envío del correo a la(s) supervisora(s)
+      if supervisora_correos:
         try:
           msg = Message(
-              subject=f'Nueva Propuesta de Vacaciones/Permiso - {emp_nombre} {emp_apellido}',
-              recipients=[correo_destino],
+              subject=(
+                  'Nueva Propuesta de Vacaciones/Permiso -'
+                  f' {emp_nombre} {emp_apellido}'
+              ),
+              
+              recipients=supervisora_correos,
           )
           msg.html = render_template(
               'email_vacaciones_pendiente.html',
-              nombre_supervisora=sup_nombre if sup_correo else emp_nombre,
+              nombre_supervisora='Supervisora',
               nombre_empleado=f'{emp_nombre} {emp_apellido}',
               departamento=emp_dpto,
               fecha_inicio=dt_in.strftime('%d/%m/%Y %H:%M'),
@@ -892,21 +909,29 @@ def vacaciones(uid=None):
           )
           mail.send(msg)
           flash(
-              'Propuesta de vacaciones registrada correctamente. Se ha'
-              ' notificado por correo a la supervisora.',
+              'Propuesta registrada correctamente. Se ha notificado por correo'
+              ' a la supervisora.',
               'success',
           )
         except Exception as e:
-          print(f'--> ERROR EXACTO EN WINDOWS: {type(e).__name__} - {e}')
-          flash(f'Error al enviar correo: {e}', 'warning')
-        
-        else:
-         flash(
-            'Propuesta registrada correctamente en estado Pendiente.', 'success'
+          print(f'[ERROR SMTP AL ENVIAR CORREO]: {e}')
+          flash(
+              'Propuesta registrada en estado Pendiente. (Aviso de correo:'
+              f' {e})',
+              'warning',
+          )
+      else:
+        flash(
+            'Propuesta registrada en estado Pendiente. (Aviso: No se encontró'
+            f" supervisora con correo activo para el departamento '{emp_dpto}').",
+            'warning',
         )
 
+    cur.close()
     return redirect(
-        url_for('main.vacaciones', uid=uid) if uid else url_for('main.vacaciones')
+        url_for('main.vacaciones', uid=uid)
+        if uid
+        else url_for('main.vacaciones')
     )
 
   # GET: Obtener información del usuario y listado con su estado
