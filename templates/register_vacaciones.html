@@ -399,7 +399,7 @@
                         </td>
                         <td>
                           <div class="acciones-td">
-                            {% if vac[3] == 'Pendiente' or session.get('role')|int == 0 %}
+                            {% if vac[3] == 'Pendiente' or vac[3] == 'Rechazado' or session.get('role')|int == 0 %}
                               <button type="button"
                                       class="btn-tbl edit"
                                       id="btn-edit-{{ loop.index }}"
