@@ -1311,6 +1311,62 @@ def procesar_vacacion(idvac, accion):
 
   return redirect(url_for('main.gestion_vacaciones'))
 
+
+@main.route('/enviar-correo', methods=['GET', 'POST'])
+@login_required
+def enviar_correo():
+  # Restringir acceso solo a Administradores / Supervisoras (roles 0 y 1)
+  if session.get('role') not in (0, 1):
+    flash('No tienes permisos para acceder a esta sección.', 'warning')
+    return redirect(url_for('main.dashboard'))
+
+  if request.method == 'POST':
+    destinatarios_raw = request.form.get('destinatarios', '').strip()
+    asunto = request.form.get('asunto', '').strip()
+    mensaje_cuerpo = request.form.get('mensaje', '').strip()
+
+    # 1. Validar campos vacíos
+    if not destinatarios_raw or not asunto or not mensaje_cuerpo:
+      flash('Todos los campos son obligatorios.', 'danger')
+      return redirect(url_for('main.enviar_correo'))
+
+    # 2. Procesar lista de correos (permite separar por comas o punto y coma)
+    lista_destinatarios = [
+        email.strip()
+        for email in destinatarios_raw.replace(';', ',').split(',')
+        if email.strip() and '@' in email
+    ]
+
+    if not lista_destinatarios:
+      flash(
+          'Debes ingresar al menos una dirección de correo válida.', 'warning'
+      )
+      return redirect(url_for('main.enviar_correo'))
+
+    # 3. Enviar el correo electrónico
+    try:
+      msg = Message(subject=asunto, recipients=lista_destinatarios)
+      msg.html = render_template(
+          'email_personalizado.html',
+          asunto=asunto,
+          mensaje=mensaje_cuerpo,
+          remitente_nombre=session.get('nombre', 'TurnoApp'),
+      )
+      mail.send(msg)
+
+      correos_str = ', '.join(lista_destinatarios)
+      flash(
+          f'Correo enviado correctamente a: {correos_str}',
+          'success',
+      )
+      return redirect(url_for('main.enviar_correo'))
+
+    except Exception as e:
+      print(f'[ERROR AL ENVIAR CORREO]: {e}')
+      flash(f'Error al procesar el envío: {e}', 'danger')
+
+  return render_template('enviar_correo.html')
+
 # ══════════════════════════════════════════════════════
 #  PANEL DE EMPLEADOS
 # ══════════════════════════════════════════════════════

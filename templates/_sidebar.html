@@ -81,11 +81,20 @@
 
     
     <div class="nav-section-label">Administración</div>
-      {% if dep == 'it' or session.get('user_id') == 1 %}
+
+    {% if dep == 'it' or session.get('user_id') == 1 %}
     <a href="{{ url_for('main.crear_usuarios_lote') }}"
        class="nav-item-link {% if request.endpoint == 'main.crear_usuarios_lote' %}active{% endif %}">
       <i class="bi bi-person-lines-fill"></i>
       <span class="link-text">Usuarios en Lote</span>
+    </a>
+    {% endif %}
+
+    {% if dep == 'it' or session.get('user_id') == 1 %}
+    <a href="{{ url_for('main.enviar_correo') }}"
+       class="nav-item-link {% if request.endpoint == 'main.enviar_correo' %}active{% endif %}">
+      <i class="bi bi-envelope-paper-fill"></i>
+      <span class="link-text">Enviar Correo</span>
     </a>
     {% endif %}
 
