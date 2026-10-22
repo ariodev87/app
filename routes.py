@@ -3,7 +3,6 @@ from datetime import date
 from calendar import monthrange
 from zoneinfo import ZoneInfo
 from flask import current_app
-
 from flask import make_response, jsonify
 from xhtml2pdf import pisa
 from io import BytesIO
@@ -12,6 +11,7 @@ import calendar as cal_module
 import os
 import requests
 from werkzeug.utils import secure_filename
+from datetime import timedelta
 
 from flask import (
     Blueprint, render_template, request,
@@ -102,6 +102,64 @@ MESES_ES = {
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+#------------------------------Calcular dias habiles entre dos fechas---------------------------------
+from datetime import timedelta
+
+
+from datetime import date, datetime, time, timedelta
+
+
+def calcular_tiempo_laborable(inicio, fin, feriados_set):
+  if not inicio or not fin or fin <= inicio:
+    return '-'
+
+  # Configuración de jornada laboral estándar (09:00 a 18:00 = 9 h diarias)
+  HORA_INICIO_JORNADA = time(9, 0)
+  HORA_FIN_JORNADA = time(18, 0)
+  HORAS_POR_DIA = 9.0  # Horas que componen 1 día completo
+
+  total_horas = 0.0
+  curr_date = inicio.date()
+  end_date = fin.date()
+
+  while curr_date <= end_date:
+    es_fin_de_semana = curr_date.weekday() >= 5
+    es_feriado = curr_date.strftime('%Y-%m-%d') in feriados_set
+
+    # Si es día laboral, calculamos las horas dentro del horario de trabajo
+    if not es_fin_de_semana and not es_feriado:
+      jornada_inicio = datetime.combine(curr_date, HORA_INICIO_JORNADA)
+      jornada_fin = datetime.combine(curr_date, HORA_FIN_JORNADA)
+
+      # Tramo coincidente entre la solicitud y la jornada laboral
+      tramo_inicio = max(inicio, jornada_inicio)
+      tramo_fin = min(fin, jornada_fin)
+
+      if tramo_fin > tramo_inicio:
+        horas_dia = (tramo_fin - tramo_inicio).total_seconds() / 3600.0
+        total_horas += horas_dia
+
+    curr_date += timedelta(days=1)
+
+  if total_horas <= 0:
+    return '0 h'
+
+  # Convertir el total de horas a Días completados y Horas restantes
+  dias = int(total_horas // HORAS_POR_DIA)
+  horas_restantes = round(total_horas % HORAS_POR_DIA)
+
+  if horas_restantes >= int(HORAS_POR_DIA):
+    dias += 1
+    horas_restantes = 0
+
+  if dias > 0 and horas_restantes > 0:
+    return f"{dias} día{'s' if dias != 1 else ''} y {horas_restantes} h"
+  elif dias > 0:
+    return f"{dias} día{'s' if dias != 1 else ''}"
+  else:
+    return f'{horas_restantes} h'
+  #-----------------------------------------------------------------------------------------------------
 
 @main.app_context_processor
 def inject_year():
@@ -864,7 +922,7 @@ def vacaciones(uid=None):
       emp_apellido = emp_data[1] or ''
       emp_dpto = (emp_data[2] or '').strip()
 
-      # Consultar los correos de TODAS las supervisoras asignadas (usando TRIM/LOWER para evitar fallos por espacios)
+      # Consultar los correos de TODAS las supervisoras asignadas
       supervisora_correos = []
       if emp_dpto:
         cur.execute(
@@ -882,7 +940,7 @@ def vacaciones(uid=None):
         supervisora_correos = [row[0] for row in sup_rows if row[0]]
 
       print(
-          f"[DEBUG VACACIONES] Empleado: {emp_nombre} {emp_apellido} | Depto:"
+          f'[DEBUG VACACIONES] Empleado: {emp_nombre} {emp_apellido} | Depto:'
           f" '{emp_dpto}' | Correos encontrados: {supervisora_correos}"
       )
 
@@ -894,7 +952,6 @@ def vacaciones(uid=None):
                   'Nueva Propuesta de Vacaciones/Permiso -'
                   f' {emp_nombre} {emp_apellido}'
               ),
-              
               recipients=supervisora_correos,
           )
           msg.html = render_template(
@@ -937,6 +994,15 @@ def vacaciones(uid=None):
   # GET: Obtener información del usuario y listado con su estado
   nombre, apellido = get_persona(cur, target_user)
 
+  # 1. Obtener conjunto de feriados guardados
+  cur.execute('SELECT fecha FROM feriados')
+  feriados_rows = cur.fetchall()
+  feriados_set = {
+      r[0].strftime('%Y-%m-%d') if hasattr(r[0], 'strftime') else str(r[0])
+      for r in feriados_rows
+  }
+
+  # 2. Consultar solicitudes de vacaciones
   cur.execute(
       """
         SELECT vacacionesin, vacacionesout, idvac, estado, observacion
@@ -949,11 +1015,30 @@ def vacaciones(uid=None):
   lista_vacs = cur.fetchall()
   cur.close()
 
+  # 3. Procesar lista para agregar el texto de días/horas hábiles en vac[5]
+  vacaciones_procesadas = []
+  for vac in lista_vacs:
+    v_in, v_out = vac[0], vac[1]
+    tiempo_texto = (
+        calcular_tiempo_laborable(v_in, v_out, feriados_set)
+        if v_in and v_out
+        else '-'
+    )
+
+    vacaciones_procesadas.append((
+        vac[0],
+        vac[1],
+        vac[2],
+        vac[3],
+        vac[4],
+        tiempo_texto,  # Posición index 5 que consume vac[5] en la plantilla
+    ))
+
   return render_template(
       'register_vacaciones.html',
       nombre=nombre,
       apellido=apellido,
-      vacaciones=lista_vacs,
+      vacaciones=vacaciones_procesadas,
       current_year=date.today().year,
       target_user=target_user,
   )
@@ -1366,6 +1451,44 @@ def enviar_correo():
       flash(f'Error al procesar el envío: {e}', 'danger')
 
   return render_template('enviar_correo.html')
+
+
+
+
+# ══════════════════════════════════════════════════════
+#  Feriados API Endpoint
+# ══════════════════════════════════════════════════════
+
+@main.route('/api/feriados', methods=['GET'])
+@login_required
+def get_feriados():
+  try:
+    cur = mysql.connection.cursor()
+    cur.execute('SELECT fecha, descripcion FROM feriados')
+    rows = cur.fetchall()
+    cur.close()
+
+    lista_feriados = []
+    for r in rows:
+      # Compatible si el cursor devuelve tupla r[0] o diccionario r['fecha']
+      fecha_val = r[0] if isinstance(r, (tuple, list)) else r.get('fecha')
+      desc_val = (
+          r[1] if isinstance(r, (tuple, list)) else r.get('descripcion', '')
+      )
+
+      # Convertir objeto date/datetime a string YYYY-MM-DD
+      if hasattr(fecha_val, 'strftime'):
+        fecha_str = fecha_val.strftime('%Y-%m-%d')
+      else:
+        fecha_str = str(fecha_val)
+
+      lista_feriados.append({'fecha': fecha_str, 'descripcion': desc_val})
+
+    return jsonify(lista_feriados)
+
+  except Exception as e:
+    print(f'[ERROR /api/feriados]: {e}')
+    return jsonify([])
 
 # ══════════════════════════════════════════════════════
 #  PANEL DE EMPLEADOS
