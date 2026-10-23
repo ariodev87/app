@@ -284,6 +284,130 @@
         </span>
       </div>
     </div>
+    <!-- Widget de Resumen de Saldo de Vacaciones -->
+<!-- ESTILOS APPLE COMPACTOS -->
+<style>
+  .stat-card-apple {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 16px;
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.025), 0 1px 2px rgba(0, 0, 0, 0.02);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  }
+
+  .stat-card-apple:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    border-color: rgba(0, 0, 0, 0.12);
+  }
+
+  .stat-icon-pill {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  /* Paleta de colores entintados estilo iOS */
+  .stat-card-blue .stat-icon-pill   { background: rgba(37, 99, 235, 0.09); color: #2563eb; }
+  .stat-card-green .stat-icon-pill  { background: rgba(16, 185, 129, 0.11); color: #059669; }
+  .stat-card-amber .stat-icon-pill  { background: rgba(217, 119, 6, 0.11); color: #d97706; }
+  .stat-card-purple .stat-icon-pill { background: rgba(124, 58, 237, 0.10); color: #7c3aed; }
+
+  .stat-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .stat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(29, 29, 31, 0.45);
+    margin-bottom: 2px;
+    white-space: nowrap;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.1;
+    color: #1d1d1f;
+    letter-spacing: -0.02em;
+  }
+
+  .stat-unit {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(29, 29, 31, 0.45);
+    margin-left: 2px;
+  }
+</style>
+
+<!-- TARJETAS DE RESUMEN DE VACACIONES -->
+<div class="row g-2 mb-4">
+  <!-- Cupo Anual -->
+  <div class="col-6 col-md-3">
+    <div class="stat-card-apple stat-card-blue">
+      <div class="stat-icon-pill">
+        <i class="bi bi-calendar-range-fill"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Cupo Anual</span>
+        <span class="stat-value">{{ resumen_vac.totales }} <span class="stat-unit">días</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aprobados -->
+  <div class="col-6 col-md-3">
+    <div class="stat-card-apple stat-card-green">
+      <div class="stat-icon-pill">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Aprobados</span>
+        <span class="stat-value" style="color:#059669;">{{ resumen_vac.aprobados }} <span class="stat-unit">días</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- En Revisión -->
+  <div class="col-6 col-md-3">
+    <div class="stat-card-apple stat-card-amber">
+      <div class="stat-icon-pill">
+        <i class="bi bi-hourglass-split"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">En Revisión</span>
+        <span class="stat-value" style="color:#d97706;">{{ resumen_vac.pendientes }} <span class="stat-unit">días</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Disponibles -->
+  <div class="col-6 col-md-3">
+    <div class="stat-card-apple stat-card-purple">
+      <div class="stat-icon-pill">
+        <i class="bi bi-stars"></i>
+      </div>
+      <div class="stat-info">
+        <span class="stat-label">Disponibles</span>
+        <span class="stat-value" style="color:#7c3aed;">{{ resumen_vac.disponibles }} <span class="stat-unit">días</span></span>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div class="content-area">
 
