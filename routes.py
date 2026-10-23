@@ -322,69 +322,134 @@ def login():
 @main.route('/dashboard')
 @login_required
 def dashboard():
-    cur = mysql.connection.cursor()
-    hoy = date.today().strftime('%Y-%m-%d')
-    tiempos_hoy = get_attendance(cur, session.get('user_id'), hoy)
+  cur = mysql.connection.cursor()
+  fecha_actual = date.today()
+  hoy = fecha_actual.strftime('%Y-%m-%d')
+  tiempos_hoy = get_attendance(cur, session.get('user_id'), hoy)
 
-    anio = date.today().year
-    cur.execute("""
-        SELECT vacacionesin, vacacionesout,idvac
+  anio = fecha_actual.year
+  cur.execute(
+      """
+        SELECT vacacionesin, vacacionesout, idvac
         FROM vacaciones
         WHERE iduser = %s
           AND YEAR(vacacionesin) = %s
         ORDER BY vacacionesin
-    """, (session.get('user_id'), anio))
-    vacaciones_anio = cur.fetchall()
+    """,
+      (session.get('user_id'), anio),
+  )
+  vacaciones_anio = cur.fetchall()
 
-    cur.execute("""
+  cur.execute(
+      """
         SELECT u.foto, p.departamento
         FROM `user` u
         JOIN personas p ON u.iduser = p.iduser
         WHERE u.iduser = %s
-    """, (session.get('user_id'),))
-    row = cur.fetchone()
-    user_foto         = row[0].strip().replace("\\", "/") if row and row[0] else None
-    user_departamento = row[1] if row and row[1] else ''
+    """,
+      (session.get('user_id'),),
+  )
+  row = cur.fetchone()
+  user_foto = row[0].strip().replace('\\', '/') if row and row[0] else None
+  user_departamento = row[1] if row and row[1] else ''
 
-    cur.execute("""
-        SELECT titulo, noticia, created_at
-        FROM noticias
-        ORDER BY created_at DESC
-        LIMIT 2
-    """)
-    noticias = cur.fetchall()
+  # ── CONSULTAR AUTOMÁTICAMENTE LOS PRÓXIMOS PRÓXIMOS 2 O 3 FESTIVOS ──
+  cur.execute(
+      """
+        SELECT fecha, descripcion
+        FROM feriados
+        WHERE fecha >= CURDATE()
+        ORDER BY fecha ASC
+        LIMIT 3
+    """
+  )
+  feriados_rows = cur.fetchall()
 
-    cur.execute("""
+  DIAS_SEMANA = [
+      'Lunes',
+      'Martes',
+      'Miércoles',
+      'Jueves',
+      'Viernes',
+      'Sábado',
+      'Domingo',
+  ]
+  MESES_NOMBRE = [
+      '',
+      'enero',
+      'febrero',
+      'marzo',
+      'abril',
+      'mayo',
+      'junio',
+      'julio',
+      'agosto',
+      'septiembre',
+      'octubre',
+      'noviembre',
+      'diciembre',
+  ]
+
+  proximos_feriados = []
+  for r in feriados_rows:
+    f_val = r[0]
+    desc = r[1] if (len(r) > 1 and r[1]) else 'Día Festivo'
+
+    # Normalizar fecha a objeto date
+    if isinstance(f_val, datetime):
+      f_date = f_val.date()
+    elif isinstance(f_val, date):
+      f_date = f_val
+    else:
+      f_date = datetime.strptime(str(f_val), '%Y-%m-%d').date()
+
+    dia_semana = DIAS_SEMANA[f_date.weekday()]
+    mes_nom = MESES_NOMBRE[f_date.month]
+
+    proximos_feriados.append({
+        'titulo': desc,
+        'fecha_larga': f'{f_date.day} de {mes_nom} ({dia_semana})',
+        'fecha_corta': f_date.strftime('%d/%m/%Y'),
+    })
+
+  cur.execute(
+      """
         SELECT salida, entrada
         FROM turn_lunch
         WHERE iduser = %s AND DATE(salida) = CURDATE()
         ORDER BY salida DESC LIMIT 1
-    """, (session.get('user_id'),))
-    lunch_hoy = cur.fetchone()
+    """,
+      (session.get('user_id'),),
+  )
+  lunch_hoy = cur.fetchone()
 
-    cur.execute("""
+  cur.execute(
+      """
         SELECT timein
         FROM turn_in_laboral
         WHERE iduser = %s AND DATE(timein) = CURDATE()
         ORDER BY timein ASC
         LIMIT 1
-    """, (session.get('user_id'),))
-    row_laboral = cur.fetchone()
-    entrada_laboral_hoy = row_laboral[0] if row_laboral else None
+    """,
+      (session.get('user_id'),),
+  )
+  row_laboral = cur.fetchone()
+  entrada_laboral_hoy = row_laboral[0] if row_laboral else None
 
-    cur.close()
-    return render_template('dashboard.html',
-                           user=session.get('username'),
-                           role=session.get('role'),
-                           tiempos_hoy=tiempos_hoy,
-                           vacaciones_anio=vacaciones_anio,
-                           user_foto=user_foto,
-                           noticias=noticias,
-                           lunch_hoy=lunch_hoy,
-                           entrada_laboral_hoy=entrada_laboral_hoy,
-                           departamento=user_departamento,
-                           current_year=anio)
-
+  cur.close()
+  return render_template(
+      'dashboard.html',
+      user=session.get('username'),
+      role=session.get('role'),
+      tiempos_hoy=tiempos_hoy,
+      vacaciones_anio=vacaciones_anio,
+      user_foto=user_foto,
+      proximos_feriados=proximos_feriados,  # ← Se envía la lista dinámica de festivos
+      lunch_hoy=lunch_hoy,
+      entrada_laboral_hoy=entrada_laboral_hoy,
+      departamento=user_departamento,
+      current_year=anio,
+  )
 # ══════════════════════════════════════════════════════
 #  Dashboard IT — Solo para usuarios del departamento IT (roles 0 )
 # ══════════════════════════════════════════════════════

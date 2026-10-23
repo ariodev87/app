@@ -680,27 +680,29 @@
             <div class="card-head-icon" style="background:rgba(37,99,235,0.08);color:#2563eb;">
               <i class="bi bi-megaphone-fill"></i>
             </div>
-            <h5>Noticias</h5>
+            <h5>Próximos Festivos</h5>
           </div>
           <div class="card-body-p">
-            {% if noticias %}
-              {% for titulo, noticia, created_at in noticias %}
+            {% if proximos_feriados %}
+              {% for f in proximos_feriados %}
                 <div class="noticia-item">
                   <div class="noticia-titulo">
                     <span class="dot"></span>
-                    <span>{{ titulo }}</span>
+                    <span>{{ f.titulo }}</span>
                   </div>
-                  <p class="noticia-texto">{{ noticia }}</p>
+                  <p class="noticia-texto" style="margin-bottom:2px; font-weight:500;">
+                    {{ f.fecha_larga }}
+                  </p>
                   <div class="noticia-meta">
                     <i class="bi bi-clock"></i>
-                    {{ created_at.strftime('%d/%m/%Y') }}
+                    {{ f.fecha_corta }}
                   </div>
                 </div>
               {% endfor %}
             {% else %}
               <div class="vac-empty">
-                <i class="bi bi-megaphone"></i>
-                Sin noticias recientes
+                <i class="bi bi-calendar-check"></i>
+                Sin festivos próximos registrados
               </div>
             {% endif %}
           </div>
