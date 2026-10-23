@@ -164,14 +164,6 @@
       font-weight: 700; font-size: 0.72rem;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0; letter-spacing: 0.5px;
-      .avatar-emp-img {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      object-fit: cover;
-     flex-shrink: 0;
-     border: 1px solid var(--border);
-}
     }
 
     /* Bloques de Estado en Celdas */
@@ -213,6 +205,9 @@
 <body>
 {% include '_sidebar.html' %}
 
+  {# Evaluar departamento IT directamente desde la sesión en Jinja #}
+  {% set es_it_user = ((session.get('dep') or '')|lower == 'it') %}
+
   <div id="main-content">
 
     <div class="topbar">
@@ -224,6 +219,10 @@
         {% if es_solo_lectura %}
           <span class="badge bg-secondary text-white fw-semibold px-3 py-1 rounded-pill" style="font-size: 0.72rem;">
             <i class="bi bi-eye-fill"></i> Modo Consulta (Solo Lectura)
+          </span>
+        {% elif es_it_user %}
+          <span class="badge bg-info text-dark fw-semibold px-3 py-1 rounded-pill" style="font-size: 0.72rem;">
+            <i class="bi bi-shield-lock-fill"></i> Modo IT (Lectura para terceros)
           </span>
         {% endif %}
       </div>
@@ -318,15 +317,15 @@
                     {% set dia_num = dia.day %}
                     {% set es_fin_semana = dia.weekday() >= 5 %}
                     <td class="{% if es_fin_semana %}fin-semana{% endif %}">
-  {% if emp_id in matriz_eventos and dia_num in matriz_eventos[emp_id] %}
-    {% for ev in matriz_eventos[emp_id][dia_num] %}
-      <div class="bloque-vac {{ 'pendiente' if ev.estado == 'Pendiente' else 'aprobado' }}"
-           onclick="abrirModalProcesar('{{ ev.idvac }}', '{{ ev.nombre_completo }}', '{{ ev.vac_in_fmt }}', '{{ ev.vac_out_fmt }}', '{{ ev.observacion }}', '{{ ev.estado }}')">
-        {{ ev.texto_bloque }}
-      </div>
-    {% endfor %}
-  {% endif %}
-</td>
+                      {% if emp_id in matriz_eventos and dia_num in matriz_eventos[emp_id] %}
+                        {% for ev in matriz_eventos[emp_id][dia_num] %}
+                          <div class="bloque-vac {{ 'pendiente' if ev.estado == 'Pendiente' else 'aprobado' }}"
+                               onclick="abrirModalProcesar('{{ ev.idvac }}', '{{ ev.nombre_completo }}', '{{ ev.vac_in_fmt }}', '{{ ev.vac_out_fmt }}', '{{ ev.observacion }}', '{{ ev.estado }}', '{{ emp_id }}')">
+                            {{ ev.texto_bloque }}
+                          </div>
+                        {% endfor %}
+                      {% endif %}
+                    </td>
                   {% endfor %}
                 </tr>
               {% endfor %}
@@ -361,6 +360,9 @@
 
         {% if pendientes %}
           {% for p in pendientes %}
+            {% set es_mi_solicitud = (p[1]|int == session.get('user_id')|int) %}
+            {% set puede_gestionar = not es_solo_lectura and (not es_it_user or es_mi_solicitud) %}
+
             <div class="card-pendiente">
               <div>
                 <div class="fw-bold text-dark fs-6">{{ p[2] }} {{ p[3] }}</div>
@@ -380,15 +382,15 @@
                 {% endif %}
               </div>
               <div>
-                {% if es_solo_lectura %}
-                  <button class="btn btn-sm btn-outline-secondary fw-semibold me-2" 
-                          onclick="abrirModalProcesar('{{ p[0] }}', '{{ p[2] }} {{ p[3] }}', '{{ p[5].strftime('%d/%m/%Y %H:%M') }}', '{{ p[6].strftime('%d/%m/%Y %H:%M') }}', '{{ p[7] or '' }}', 'Pendiente')">
-                    <i class="bi bi-eye-fill"></i> Ver Detalle
+                {% if puede_gestionar %}
+                  <button class="btn btn-sm btn-success fw-semibold me-2" 
+                          onclick="abrirModalProcesar('{{ p[0] }}', '{{ p[2] }} {{ p[3] }}', '{{ p[5].strftime('%d/%m/%Y %H:%M') }}', '{{ p[6].strftime('%d/%m/%Y %H:%M') }}', '{{ p[7] or '' }}', 'Pendiente', '{{ p[1] }}')">
+                    <i class="bi bi-check-lg"></i> Revisar
                   </button>
                 {% else %}
-                  <button class="btn btn-sm btn-success fw-semibold me-2" 
-                          onclick="abrirModalProcesar('{{ p[0] }}', '{{ p[2] }} {{ p[3] }}', '{{ p[5].strftime('%d/%m/%Y %H:%M') }}', '{{ p[6].strftime('%d/%m/%Y %H:%M') }}', '{{ p[7] or '' }}', 'Pendiente')">
-                    <i class="bi bi-check-lg"></i> Revisar
+                  <button class="btn btn-sm btn-outline-secondary fw-semibold me-2" 
+                          onclick="abrirModalProcesar('{{ p[0] }}', '{{ p[2] }} {{ p[3] }}', '{{ p[5].strftime('%d/%m/%Y %H:%M') }}', '{{ p[6].strftime('%d/%m/%Y %H:%M') }}', '{{ p[7] or '' }}', 'Pendiente', '{{ p[1] }}')">
+                    <i class="bi bi-eye-fill"></i> Ver Detalle
                   </button>
                 {% endif %}
               </div>
@@ -427,27 +429,27 @@
             </div>
           </div>
 
-          {% if es_solo_lectura %}
-            <div class="alert alert-info small mb-0 d-flex align-items-center gap-2">
-              <i class="bi bi-info-circle-fill fs-5"></i>
-              <div>Estás en <strong>Modo Consulta (Solo Lectura)</strong>. No dispones de permisos para aprobar o rechazar solicitudes.</div>
+          <!-- Mensaje Informativo para Solo Lectura -->
+          <div id="modalAlertSoloLectura" class="alert alert-info small mb-0 align-items-center gap-2" style="display:none;">
+            <i class="bi bi-info-circle-fill fs-5"></i>
+            <div>Estás en <strong>Modo Consulta (Solo Lectura)</strong>. No dispones de permisos para modificar solicitudes de otros empleados.</div>
+          </div>
+
+          <!-- Formulario de Acción para Supervisores o IT en solicitud propia -->
+          <form id="formProcesarVacacion" method="POST" style="display:none;">
+            <div class="mb-3">
+              <label for="motivo_rechazo" class="form-label small fw-bold text-muted">Motivo de Rechazo (Solo si se rechaza):</label>
+              <textarea name="motivo_rechazo" id="motivo_rechazo" class="form-control form-control-sm" rows="2" placeholder="Explica la causa del rechazo..."></textarea>
             </div>
-          {% else %}
-            <form id="formProcesarVacacion" method="POST">
-              <div class="mb-3">
-                <label for="motivo_rechazo" class="form-label small fw-bold text-muted">Motivo de Rechazo (Solo si se rechaza):</label>
-                <textarea name="motivo_rechazo" id="motivo_rechazo" class="form-control form-control-sm" rows="2" placeholder="Explica la causa del rechazo..."></textarea>
-              </div>
-              <div class="d-flex gap-2 pt-2">
-                <button type="button" class="btn btn-success flex-fill fw-bold" onclick="enviarAccion('Aprobado')">
-                  <i class="bi bi-check-circle-fill"></i> Aprobar
-                </button>
-                <button type="button" class="btn btn-outline-danger flex-fill fw-bold" onclick="enviarAccion('Rechazado')">
-                  <i class="bi bi-x-circle-fill"></i> Rechazar
-                </button>
-              </div>
-            </form>
-          {% endif %}
+            <div class="d-flex gap-2 pt-2">
+              <button type="button" class="btn btn-success flex-fill fw-bold" onclick="enviarAccion('Aprobado')">
+                <i class="bi bi-check-circle-fill"></i> Aprobar
+              </button>
+              <button type="button" class="btn btn-outline-danger flex-fill fw-bold" onclick="enviarAccion('Rechazado')">
+                <i class="bi bi-x-circle-fill"></i> Rechazar
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -472,7 +474,12 @@
     let modalBs = null;
     let vacacionIdActual = null;
 
-    function abrirModalProcesar(idvac, nombre, vacIn, vacOut, obs, estado) {
+    // Recibir variables directamente desde Flask
+    const sessionUserId = {{ session.get('user_id') | tojson }};
+    const esITUser = {{ (es_it or False) | tojson }};
+    const esSoloLecturaUser = {{ (es_solo_lectura or False) | tojson }};
+
+    function abrirModalProcesar(idvac, nombre, vacIn, vacOut, obs, estado, iduserSolicitud) {
       vacacionIdActual = idvac;
       document.getElementById('modalEmpNombre').textContent = nombre;
       document.getElementById('modalFechas').textContent = vacIn + '  ➔  ' + vacOut;
@@ -487,6 +494,31 @@
 
       const motivoArea = document.getElementById('motivo_rechazo');
       if (motivoArea) motivoArea.value = '';
+
+      // Evaluar permisos según el dueño de la solicitud
+      const esMiSolicitud = (String(iduserSolicitud) === String(sessionUserId));
+      let puedeEditar = false;
+
+      if (esSoloLecturaUser) {
+        puedeEditar = false;
+      } else if (esITUser) {
+        // Los usuarios de IT SOLO pueden modificar sus propias solicitudes
+        puedeEditar = esMiSolicitud;
+      } else {
+        // Supervisores / Admin
+        puedeEditar = true;
+      }
+
+      const formElem = document.getElementById('formProcesarVacacion');
+      const alertElem = document.getElementById('modalAlertSoloLectura');
+
+      if (puedeEditar) {
+        if (formElem) formElem.style.display = 'block';
+        if (alertElem) alertElem.style.display = 'none';
+      } else {
+        if (formElem) formElem.style.display = 'none';
+        if (alertElem) alertElem.style.display = 'flex';
+      }
 
       modalBs = new bootstrap.Modal(document.getElementById('modalProcesar'));
       modalBs.show();

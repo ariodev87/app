@@ -1069,7 +1069,7 @@ def editar_vacacion():
   vac_owner, estado_actual = vac
 
   # 2. Permitir editar si está 'Pendiente' O 'Rechazado' (o si es Admin)
-  if estado_actual not in ['Pendiente', 'Rechazado'] and user_role != 0:
+  if estado_actual not in ['Pendiente', 'Rechazado'] and user_role != 0  :
     cur.close()
     flash(
         f'No puedes editar una solicitud que ya ha sido procesada ({estado_actual}).',
@@ -1307,28 +1307,29 @@ def gestion_vacaciones():
       mes_actual=mes,
       anio_actual=anio,
       es_solo_lectura=es_solo_lectura,
+      es_it=es_it,
       current_year=date.today().year,
   )
 
 @main.route('/procesar-vacacion/<int:idvac>/<string:accion>', methods=['POST'])
 @login_required
 def procesar_vacacion(idvac, accion):
-  # Bloqueo total si no es Rol 0 (los usuarios de lectura no pueden ejecutar esto)
-  if session.get('role') != 0:
-    flash(
-        'No tienes permisos para aprobar o rechazar solicitudes (Modo'
-        ' Lectura).',
-        'danger',
-    )
+  user_id = session['user_id']
+
+  # 1. Validar que la acción enviada sea válida
+  if accion not in ('Aprobado', 'Rechazado'):
+    flash('Acción no válida.', 'danger')
     return redirect(url_for('main.gestion_vacaciones'))
-
-  
-
-  sup_iduser = session['user_id']
-  motivo_rechazo = request.form.get('motivo_rechazo', '').strip()
 
   cur = mysql.connection.cursor()
 
+  # 2. Obtener departamento del usuario actual (para comprobar IT)
+  cur.execute('SELECT departamento FROM personas WHERE iduser = %s', (user_id,))
+  dep_row = cur.fetchone()
+  user_dep = dep_row[0].lower() if (dep_row and dep_row[0]) else ''
+  es_it = user_dep == 'it'
+
+  # 3. Obtener datos de la solicitud y del empleado solicitante
   cur.execute(
       """
         SELECT 
@@ -1353,17 +1354,31 @@ def procesar_vacacion(idvac, accion):
 
   emp_id, emp_nombre, emp_apellido, emp_correo, vac_in, vac_out = solicitud
 
+  # 4. Permisos IT: Si el usuario es de IT y la solicitud NO es suya -> Bloquear
+  if es_it and emp_id != user_id:
+    cur.close()
+    flash(
+        'Como personal de IT solo puedes gestionar tus propias solicitudes.',
+        'warning',
+    )
+    return redirect(url_for('main.gestion_vacaciones'))
+
+  # 5. Obtener motivo de rechazo si aplica
+  motivo_rechazo = request.form.get('motivo_rechazo', '').strip()
+
+  # 6. Actualizar estado y registrador en la base de datos
   cur.execute(
       """
         UPDATE vacaciones
         SET estado = %s, aprobado_por = %s
         WHERE idvac = %s
     """,
-      (accion, sup_iduser, idvac),
+      (accion, user_id, idvac),
   )
   mysql.connection.commit()
   cur.close()
 
+  # 7. Enviar correo de notificación al empleado
   if emp_correo:
     try:
       msg = Message(
@@ -1382,10 +1397,16 @@ def procesar_vacacion(idvac, accion):
           url_mis_vacaciones=url_for('main.vacaciones', _external=True),
       )
       mail.send(msg)
-      flash(f'Solicitud {accion.lower()} y empleado notificado.', 'success')
-    except Exception as e:
       flash(
-          f'Solicitud {accion.lower()} en base de datos. (Error mail: {e})',
+          f'Solicitud {accion.lower()} correctamente y empleado notificado por'
+          ' correo.',
+          'success',
+      )
+    except Exception as e:
+      print(f'[ERROR SMTP RESPUESTA VACACIÓN]: {e}')
+      flash(
+          f'Solicitud {accion.lower()} registrada en la base de datos. (Aviso'
+          f' correo: {e})',
           'warning',
       )
   else:
@@ -1394,6 +1415,7 @@ def procesar_vacacion(idvac, accion):
         'success',
     )
 
+  # REDIRECCIÓN FINAL (OBLIGATORIA)
   return redirect(url_for('main.gestion_vacaciones'))
 
 
