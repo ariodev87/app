@@ -160,7 +160,104 @@ def calcular_tiempo_laborable(inicio, fin, feriados_set):
   else:
     return f'{horas_restantes} h'
   #-----------------------------------------------------------------------------------------------------
+HORAS_JORNADA_DIARIA = 8.0  # O 9.0 según el horario estándar de la empresa
 
+
+def obtener_resumen_vacaciones(cur, user_id, anio, feriados_set):
+  # 1. Obtener cupo total asignado
+  cur.execute(
+      """
+        SELECT dias_totales 
+        FROM vacaciones_cupo 
+        WHERE iduser = %s AND anio = %s
+    """,
+      (user_id, anio),
+  )
+  row_cupo = cur.fetchone()
+  dias_totales = float(row_cupo[0]) if row_cupo else 22.0
+
+  # 2. Obtener solicitudes (Pendientes y Aprobadas)
+  cur.execute(
+      """
+        SELECT vacacionesin, vacacionesout, estado 
+        FROM vacaciones 
+        WHERE iduser = %s 
+          AND YEAR(vacacionesin) = %s 
+          AND estado IN ('Pendiente', 'Aprobado')
+    """,
+      (user_id, anio),
+  )
+  solicitudes = cur.fetchall()
+
+  horas_aprobadas = 0.0
+  horas_pendientes = 0.0
+
+  for v_in, v_out, estado in solicitudes:
+    if v_in and v_out:
+      # Calcular horas laborables exactas en días hábiles
+      horas_solicitud = 0.0
+      curr_date = v_in.date()
+      end_date = v_out.date()
+
+      while curr_date <= end_date:
+        es_fin_semana = curr_date.weekday() >= 5
+        es_feriado = curr_date.strftime('%Y-%m-%d') in feriados_set
+
+        if not es_fin_semana and not es_feriado:
+          if curr_date == v_in.date() and curr_date == v_out.date():
+            # Mismo día: diferencia exacta de horas
+            h = (v_out - v_in).total_seconds() / 3600.0
+            horas_solicitud += min(h, HORAS_JORNADA_DIARIA)
+          elif curr_date == v_out.date():
+            # Último día parcial (ej. hasta las 12:00 desde las 09:00 = 3h)
+            h_fin = v_out.hour + (v_out.minute / 60.0)
+            h_inicio_jornada = 9.0  # Hora normal de entrada
+            horas_solicitud += max(
+                0.0, min(h_fin - h_inicio_jornada, HORAS_JORNADA_DIARIA)
+            )
+          else:
+            # Día completo
+            horas_solicitud += HORAS_JORNADA_DIARIA
+
+        curr_date += timedelta(days=1)
+
+      if estado == 'Aprobado':
+        horas_aprobadas += horas_solicitud
+      elif estado == 'Pendiente':
+        horas_pendientes += horas_solicitud
+
+  # Convertir horas a días
+  dias_aprobados = round(horas_aprobadas / HORAS_JORNADA_DIARIA, 1)
+  dias_pendientes = round(horas_pendientes / HORAS_JORNADA_DIARIA, 1)
+  dias_disponibles = round(
+      dias_totales - dias_aprobados - dias_pendientes, 1
+  )
+
+  if dias_disponibles < 0:
+    dias_disponibles = 0.0
+
+  return {
+      'totales': (
+          int(dias_totales)
+          if dias_totales.is_integer()
+          else round(dias_totales, 1)
+      ),
+      'aprobados': (
+          int(dias_aprobados)
+          if dias_aprobados.is_integer()
+          else round(dias_aprobados, 1)
+      ),
+      'pendientes': (
+          int(dias_pendientes)
+          if dias_pendientes.is_integer()
+          else round(dias_pendientes, 1)
+      ),
+      'disponibles': (
+          int(dias_disponibles)
+          if dias_disponibles.is_integer()
+          else round(dias_disponibles, 1)
+      ),
+  }
 @main.app_context_processor
 def inject_year():
     return {'current_year': date.today().year}
@@ -876,7 +973,7 @@ def vacaciones(uid=None):
     flash('No tienes permisos para esta sección.', 'warning')
     return redirect(url_for('main.dashboard'))
 
-  # Determina el usuario objetivo (si es supervisor/admin viendo a otro o si es el usuario logueado)
+  # Determina el usuario objetivo
   target_user = (
       uid if (uid and session.get('role') in (0, 1)) else session['user_id']
   )
@@ -884,8 +981,8 @@ def vacaciones(uid=None):
   cur = mysql.connection.cursor()
 
   if request.method == 'POST':
-    vac_in = request.form.get('vacacionesin')  # Recibe 'YYYY-MM-DDTHH:MM'
-    vac_out = request.form.get('vacacionesout')  # Recibe 'YYYY-MM-DDTHH:MM'
+    vac_in = request.form.get('vacacionesin')
+    vac_out = request.form.get('vacacionesout')
     observacion = request.form.get('observacion', '').strip()
 
     # 1. Validar presencia de datos
@@ -961,6 +1058,39 @@ def vacaciones(uid=None):
           else url_for('main.vacaciones')
       )
 
+    # 4.5. Validar disponibilidad de días de vacaciones
+    cur.execute('SELECT fecha FROM feriados')
+    f_set = {
+        r[0].strftime('%Y-%m-%d') if hasattr(r[0], 'strftime') else str(r[0])
+        for r in cur.fetchall()
+    }
+    resumen_check = obtener_resumen_vacaciones(
+        cur, target_user, dt_in.year, f_set
+    )
+
+    curr_date = dt_in.date()
+    dias_solicitados = 0
+    while curr_date <= dt_out.date():
+      es_fin_semana = curr_date.weekday() >= 5
+      es_feriado = curr_date.strftime('%Y-%m-%d') in f_set
+      if not es_fin_semana and not es_feriado:
+        dias_solicitados += 1
+      curr_date += timedelta(days=1)
+
+    if dias_solicitados > resumen_check['disponibles']:
+      cur.close()
+      flash(
+          f'No dispones de suficientes días disponibles. Solicitaste'
+          f' {dias_solicitados} día(s) hábil(es) y solo tienes'
+          f" {resumen_check['disponibles']} disponible(s).",
+          'danger',
+      )
+      return redirect(
+          url_for('main.vacaciones', uid=uid)
+          if uid
+          else url_for('main.vacaciones')
+      )
+
     # 5. Inserción en la base de datos en estado 'Pendiente'
     cur.execute(
         """
@@ -1003,11 +1133,6 @@ def vacaciones(uid=None):
         )
         sup_rows = cur.fetchall()
         supervisora_correos = [row[0] for row in sup_rows if row[0]]
-
-      print(
-          f'[DEBUG VACACIONES] Empleado: {emp_nombre} {emp_apellido} | Depto:'
-          f" '{emp_dpto}' | Correos encontrados: {supervisora_correos}"
-      )
 
       # 7. Envío del correo a la(s) supervisora(s)
       if supervisora_correos:
@@ -1078,9 +1203,8 @@ def vacaciones(uid=None):
       (target_user,),
   )
   lista_vacs = cur.fetchall()
-  cur.close()
 
-  # 3. Procesar lista para agregar el texto de días/horas hábiles en vac[5]
+  # 3. Procesar lista para agregar el texto de días/horas hábiles
   vacaciones_procesadas = []
   for vac in lista_vacs:
     v_in, v_out = vac[0], vac[1]
@@ -1096,8 +1220,16 @@ def vacaciones(uid=None):
         vac[2],
         vac[3],
         vac[4],
-        tiempo_texto,  # Posición index 5 que consume vac[5] en la plantilla
+        tiempo_texto,
     ))
+
+  # 4. Obtener resumen con el cursor AÚN ABIERTO
+  resumen_vac = obtener_resumen_vacaciones(
+      cur, target_user, date.today().year, feriados_set
+  )
+
+  # 5. Cierre final del cursor
+  cur.close()
 
   return render_template(
       'register_vacaciones.html',
@@ -1106,6 +1238,7 @@ def vacaciones(uid=None):
       vacaciones=vacaciones_procesadas,
       current_year=date.today().year,
       target_user=target_user,
+      resumen_vac=resumen_vac,
   )
 
 @main.route('/editar-vacacion', methods=['POST'])
@@ -1143,6 +1276,35 @@ def editar_vacacion():
     return redirect(url_for('main.vacaciones'))
 
   # 3. Actualizar la solicitud y reestablecer su estado a 'Pendiente'
+  # 3.1 Validar si la solicitud supera los días disponibles
+    feriados_set = {
+        r[0].strftime("%Y-%m-%d") if hasattr(r[0], "strftime") else str(r[0])
+        for r in cur.fetchall_feriados()  # usa tu set de feriados existente
+    }
+    resumen = obtener_resumen_vacaciones(
+        cur, target_user, dt_in.year, feriados_set
+    )
+
+    # Calcular cuántos días hábiles requiere la nueva solicitud
+    curr = dt_in.date()
+    dias_nuevos = 0
+    while curr <= dt_out.date():
+      if curr.weekday() < 5 and curr.strftime("%Y-%m-%d") not in feriados_set:
+        dias_nuevos += 1
+      curr += timedelta(days=1)
+
+    if dias_nuevos > resumen["disponibles"]:
+      cur.close()
+      flash(
+          f"No dispones de suficientes días. Solicitaste {dias_nuevos} día(s)"
+          f" hábil(es) y solo tienes {resumen['disponibles']} disponible(s).",
+          "warning",
+      )
+      return redirect(
+          url_for("main.vacaciones", uid=uid)
+          if uid
+          else url_for("main.vacaciones")
+      )
   cur.execute(
       """
         UPDATE vacaciones
