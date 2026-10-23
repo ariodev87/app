@@ -1160,31 +1160,44 @@ def gestion_vacaciones():
   user_dep = dep_row[0].lower() if (dep_row and dep_row[0]) else ''
   es_it = user_dep == 'it'
 
-  # 2. Comprobar departamentos asignados en Supervisoras
+  # 2. Consultar festivos registrados en la BD
+  cur.execute('SELECT fecha FROM feriados')
+  feriados_rows = cur.fetchall()
+  feriados_set = {
+      r[0].strftime('%Y-%m-%d') if hasattr(r[0], 'strftime') else str(r[0])
+      for r in feriados_rows
+  }
+
+  # 3. Comprobar asignación en la tabla Supervisoras
   cur.execute(
       'SELECT departamento FROM Supervisoras WHERE UserID = %s', (user_id,)
   )
   deptos_registrados = [row[0] for row in cur.fetchall()]
 
-  # Si no es Rol 0, no está en Supervisoras y no es IT, denegar acceso
+  # Si no es Rol 0, no tiene departamentos en Supervisoras y tampoco es IT -> Denegar
   if user_role != 0 and not deptos_registrados and not es_it:
     cur.close()
     flash('No tienes permisos para acceder a esta sección.', 'danger')
     return redirect(url_for('main.dashboard'))
 
-  # Determinar modos de visualización y edición
-  es_solo_lectura = user_role != 0
-  # Solo ve todos si pertenece a IT o si tiene asignado 'TODOS' en Supervisoras
-  ver_todos = ('TODOS' in deptos_registrados) or es_it
+  # Determinar si es solo lectura (Si no es admin ni supervisora asignada)
+  es_solo_lectura = user_role != 0 and not deptos_registrados
 
-  # 3. Fechas del mes a visualizar
+  # SOLO ven a todos: si tienen 'TODOS' asignado, si pertenecen a IT, o si es un Admin sin restricción
+  ver_todos = (
+      ('TODOS' in deptos_registrados)
+      or es_it
+      or (user_role == 0 and not deptos_registrados)
+  )
+
+  # 4. Fechas del mes a visualizar
   hoy = date.today()
   anio = request.args.get('anio', hoy.year, type=int)
   mes = request.args.get('mes', hoy.month, type=int)
   num_dias_mes = monthrange(anio, mes)[1]
   dias_mes = [date(anio, mes, d) for d in range(1, num_dias_mes + 1)]
 
-  # 4. Consultar Empleados
+  # 5. Consultar Empleados (Filtrado estricto por equipo si no es ver_todos)
   if ver_todos:
     cur.execute("""
             SELECT DISTINCT p.iduser, p.nombre, p.apellido, p.departamento, u.foto
@@ -1193,7 +1206,6 @@ def gestion_vacaciones():
             ORDER BY p.apellido, p.nombre
         """)
   else:
-    # Filtra estrictamente por los departamentos que la supervisora tiene en Supervisoras
     cur.execute(
         """
             SELECT DISTINCT p.iduser, p.nombre, p.apellido, p.departamento, u.foto
@@ -1208,7 +1220,7 @@ def gestion_vacaciones():
 
   empleados = cur.fetchall()
 
-  # 5. Solicitudes Pendientes (Bandeja rápida)
+  # 6. Solicitudes Pendientes de la bandeja rápida
   if ver_todos:
     cur.execute("""
             SELECT DISTINCT v.idvac, p.iduser, p.nombre, p.apellido, p.departamento, v.vacacionesin, v.vacacionesout, v.observacion, v.fecha_solicitud
@@ -1232,7 +1244,7 @@ def gestion_vacaciones():
 
   pendientes = cur.fetchall()
 
-  # 6. Obtener vacaciones para la matriz del mes
+  # 7. Obtener vacaciones para la matriz del mes
   inicio_mes = f'{anio}-{mes:02d}-01 00:00:00'
   fin_mes = f'{anio}-{mes:02d}-{num_dias_mes:02d} 23:59:59'
 
@@ -1264,7 +1276,7 @@ def gestion_vacaciones():
   vacaciones_mes = cur.fetchall()
   cur.close()
 
-  # 7. Mapear la matriz
+  # 8. Mapear la matriz (omite fines de semana y feriados)
   matriz_eventos = {emp[0]: {} for emp in empleados}
   for vac in vacaciones_mes:
     idvac, iduser, vac_in, vac_out, estado, obs, nom, ape = vac
@@ -1281,6 +1293,12 @@ def gestion_vacaciones():
 
       for dia in dias_mes:
         if vac_in.date() <= dia <= vac_out.date():
+          es_fin_semana = dia.weekday() >= 5
+          es_feriado = dia.strftime('%Y-%m-%d') in feriados_set
+
+          if es_fin_semana or es_feriado:
+            continue
+
           dia_num = dia.day
           if dia_num not in matriz_eventos[iduser]:
             matriz_eventos[iduser][dia_num] = []
@@ -1304,6 +1322,7 @@ def gestion_vacaciones():
       pendientes=pendientes,
       matriz_eventos=matriz_eventos,
       dias_mes=dias_mes,
+      feriados_set=feriados_set,
       mes_actual=mes,
       anio_actual=anio,
       es_solo_lectura=es_solo_lectura,
