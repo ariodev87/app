@@ -1,12 +1,14 @@
-# turno/app/__init__.py
-
 from flask import Flask
 from flask_mysqldb import MySQL
 from flask_bcrypt import Bcrypt
+from flask_mail import Mail
 from config import Config
+
 
 mysql = MySQL()
 bcrypt = Bcrypt()
+mail = Mail()
+
 
 def create_app():
     app = Flask(__name__)
@@ -15,6 +17,7 @@ def create_app():
     # Inicializa extensiones
     mysql.init_app(app)
     bcrypt.init_app(app)
+    mail.init_app(app)
 
     # Registra el blueprint de rutas
     from app.routes import main as main_blueprint
