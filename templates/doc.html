@@ -183,6 +183,29 @@
         <h4>Centro de Documentación 📚</h4>
         <p>Recursos formativos y guías de cumplimiento del sistema TurnoApp.</p>
       </div>
+       <!-- ══ TurnoApp ══ -->
+      <div class="doc-panel">
+        <div class="doc-panel-header" onclick="togglePanel(this)">
+          <div class="doc-panel-icon"><i class="bi bi-shield-lock-fill"></i></div>
+          <h5>TurnoApp Tutoriales</h5>
+          <span class="doc-badge">Cumplimiento</span>
+          <i class="bi bi-chevron-down chevron"></i>
+        </div>
+        <div class="video-grid">
+           <!-- ➕ AÑADIR MÁS VÍDEOS AQUÍ — copia el bloque de arriba y cambia el .mp4 y el título -->
+              <div class="video-card">
+              <div class="video-wrapper">
+                <video controls preload="metadata">
+                  <source src="{{ url_for('static', filename='video/TurnoApp_Gestion_de_Vacaciones.mp4') }}" type="video/mp4">
+                  Tu navegador no soporta vídeo HTML5.
+                </video>
+              </div>
+              <div class="video-info">
+                <p class="video-title"> Gestión de Vacaciones</p>
+                <p class="video-desc"></p>
+              </div>
+            </div>
+          </div>
 
       <!-- ══ PANEL PCI-DSS ══ -->
       <div class="doc-panel">
@@ -244,19 +267,7 @@
               </div>
             </div>
 
-            <!-- ➕ AÑADIR MÁS VÍDEOS AQUÍ — copia el bloque de arriba y cambia el .mp4 y el título -->
-              <div class="video-card">
-              <div class="video-wrapper">
-                <video controls preload="metadata">
-                  <source src="{{ url_for('static', filename='video/TurnoApp_Gestion_de_Vacaciones.mp4') }}" type="video/mp4">
-                  Tu navegador no soporta vídeo HTML5.
-                </video>
-              </div>
-              <div class="video-info">
-                <p class="video-title"> Gestión de Vacaciones</p>
-                <p class="video-desc"></p>
-              </div>
-            </div>
+         
 
           </div>
         </div>
