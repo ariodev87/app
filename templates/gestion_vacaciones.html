@@ -140,6 +140,14 @@
       background: rgba(0,0,0,0.02); color: var(--text-3);
     }
 
+    /* DÍAS FESTIVOS / FERIADOS EN ROJO PASTEL */
+    .matriz-tbl th.dia-feriado, 
+    .matriz-tbl td.dia-feriado {
+      background: rgba(239, 68, 68, 0.12) !important;
+      color: #dc2626 !important;
+      font-weight: 700;
+    }
+
     /* MEJORAS VISUALES DE FILAS */
     .matriz-tbl tbody tr {
       border-bottom: 2px solid #e2e8f0 !important;
@@ -287,10 +295,13 @@
               <tr>
                 <th class="col-emp">Empleado</th>
                 {% for dia in dias_mes %}
+                  {% set fecha_str = dia.strftime('%Y-%m-%d') %}
                   {% set es_fin_semana = dia.weekday() >= 5 %}
-                  <th class="{% if es_fin_semana %}fin-semana{% endif %}">
+                  {% set es_feriado = feriados_set and fecha_str in feriados_set %}
+                  <th class="{% if es_feriado %}dia-feriado{% elif es_fin_semana %}fin-semana{% endif %}"
+                      {% if es_feriado %}title="Día Festivo / Feriado"{% endif %}>
                     <div>{{ dia.strftime('%d') }}</div>
-                    <div style="font-size:0.62rem; opacity:0.7;">
+                    <div style="font-size:0.62rem; opacity:0.85;">
                       {% set dias_es = ['L','M','X','J','V','S','D'] %}
                       {{ dias_es[dia.weekday()] }}
                     </div>
@@ -315,8 +326,11 @@
                   </td>
                   {% for dia in dias_mes %}
                     {% set dia_num = dia.day %}
+                    {% set fecha_str = dia.strftime('%Y-%m-%d') %}
                     {% set es_fin_semana = dia.weekday() >= 5 %}
-                    <td class="{% if es_fin_semana %}fin-semana{% endif %}">
+                    {% set es_feriado = feriados_set and fecha_str in feriados_set %}
+                    
+                    <td class="{% if es_feriado %}dia-feriado{% elif es_fin_semana %}fin-semana{% endif %}">
                       {% if emp_id in matriz_eventos and dia_num in matriz_eventos[emp_id] %}
                         {% for ev in matriz_eventos[emp_id][dia_num] %}
                           <div class="bloque-vac {{ 'pendiente' if ev.estado == 'Pendiente' else 'aprobado' }}"
@@ -342,6 +356,10 @@
           <div class="leyenda-item">
             <div class="leyenda-box" style="background:var(--green-bg); border:1px solid var(--green);"></div>
             <span>Aprobado</span>
+          </div>
+          <div class="leyenda-item">
+            <div class="leyenda-box" style="background:rgba(239, 68, 68, 0.15); border:1px solid #dc2626;"></div>
+            <span>Día Festivo / Feriado</span>
           </div>
           <div class="leyenda-item">
             <div class="leyenda-box" style="background:rgba(0,0,0,0.04); border:1px solid var(--border);"></div>
