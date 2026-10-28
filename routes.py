@@ -419,134 +419,223 @@ def login():
 @main.route('/dashboard')
 @login_required
 def dashboard():
-  cur = mysql.connection.cursor()
-  fecha_actual = date.today()
-  hoy = fecha_actual.strftime('%Y-%m-%d')
-  tiempos_hoy = get_attendance(cur, session.get('user_id'), hoy)
+    cur = mysql.connection.cursor()
+    fecha_actual = date.today()
+    hoy = fecha_actual.strftime('%Y-%m-%d')
+    user_id = session.get('user_id')
+    user_role = session.get('role')
 
-  anio = fecha_actual.year
-  cur.execute(
-      """
+    tiempos_hoy = get_attendance(cur, user_id, hoy)
+
+    anio = fecha_actual.year
+    cur.execute("""
         SELECT vacacionesin, vacacionesout, idvac
         FROM vacaciones
         WHERE iduser = %s
           AND YEAR(vacacionesin) = %s
         ORDER BY vacacionesin
-    """,
-      (session.get('user_id'), anio),
-  )
-  vacaciones_anio = cur.fetchall()
+    """, (user_id, anio))
+    vacaciones_anio = cur.fetchall()
 
-  cur.execute(
-      """
+    cur.execute("""
         SELECT u.foto, p.departamento
         FROM `user` u
         JOIN personas p ON u.iduser = p.iduser
         WHERE u.iduser = %s
-    """,
-      (session.get('user_id'),),
-  )
-  row = cur.fetchone()
-  user_foto = row[0].strip().replace('\\', '/') if row and row[0] else None
-  user_departamento = row[1] if row and row[1] else ''
+    """, (user_id,))
+    row = cur.fetchone()
+    user_foto = row[0].strip().replace('\\', '/') if row and row[0] else None
+    user_departamento = row[1] if row and row[1] else ''
 
-  # ── CONSULTAR AUTOMÁTICAMENTE LOS PRÓXIMOS PRÓXIMOS 2 O 3 FESTIVOS ──
-  cur.execute(
-      """
+    # ── 1. CONSULTAR DEPARTAMENTOS ASIGNADOS A LA SUPERVISORA ──
+    cur.execute("SELECT departamento FROM Supervisoras WHERE UserID = %s", (user_id,))
+    deptos_registrados = [r[0] for r in cur.fetchall() if r[0]]
+
+    es_supervisora = False
+    if (user_role is not None and int(user_role) == 0) or deptos_registrados:
+        es_supervisora = True
+
+    # ── 2. MONITOR DE ASISTENCIA DEL EQUIPO (SOLO SU DEPARTAMENTO) ──
+    equipo_asistencia = []
+    if es_supervisora:
+        ver_todos = ('TODOS' in deptos_registrados) or (user_departamento.lower() == 'it')
+
+        if ver_todos:
+            # IT o Admin ver_todos
+            cur.execute("""
+                SELECT u.iduser, p.nombre, p.apellido, p.departamento, u.foto
+                FROM `user` u
+                JOIN personas p ON u.iduser = p.iduser
+                ORDER BY CASE WHEN u.iduser = %s THEN 0 ELSE 1 END, p.nombre, p.apellido
+            """, (user_id,))
+        elif deptos_registrados:
+            # Filtrar por departamentos asignados en la tabla Supervisoras
+            cur.execute("""
+                SELECT DISTINCT u.iduser, p.nombre, p.apellido, p.departamento, u.foto
+                FROM `user` u
+                JOIN personas p ON u.iduser = p.iduser
+                JOIN Supervisoras s ON p.departamento = s.departamento
+                WHERE s.UserID = %s OR u.iduser = %s
+                ORDER BY CASE WHEN u.iduser = %s THEN 0 ELSE 1 END, p.nombre, p.apellido
+            """, (user_id, user_id, user_id))
+        else:
+            # Fallback: Filtrar por su propio departamento en personas
+            cur.execute("""
+                SELECT u.iduser, p.nombre, p.apellido, p.departamento, u.foto
+                FROM `user` u
+                JOIN personas p ON u.iduser = p.iduser
+                WHERE p.departamento = %s OR u.iduser = %s
+                ORDER BY CASE WHEN u.iduser = %s THEN 0 ELSE 1 END, p.nombre, p.apellido
+            """, (user_departamento, user_id, user_id))
+
+        emps_rows = cur.fetchall()
+
+        for emp in emps_rows:
+            emp_id = emp[0]
+            emp_nombre = emp[1] or ''
+            emp_apellido = emp[2] or ''
+            emp_depto = emp[3] or ''
+            emp_foto = emp[4].strip().replace('\\', '/') if emp[4] else None
+            es_tu = (emp_id == user_id)
+
+            # Entrada Laboral del día
+            cur.execute("""
+                SELECT timein 
+                FROM turn_in_laboral 
+                WHERE iduser = %s AND DATE(timein) = CURDATE() 
+                ORDER BY timein ASC LIMIT 1
+            """, (emp_id,))
+            r_in = cur.fetchone()
+            hora_in = r_in[0].strftime('%H:%M') if r_in and r_in[0] else None
+
+            # Salida Laboral del día
+            cur.execute("""
+                SELECT timeout 
+                FROM turn_out_laboral 
+                WHERE iduser = %s AND DATE(timeout) = CURDATE() 
+                ORDER BY timeout DESC LIMIT 1
+            """, (emp_id,))
+            r_out = cur.fetchone()
+            hora_out = r_out[0].strftime('%H:%M') if r_out and r_out[0] else None
+
+            # Pausa Almuerzo del día
+            cur.execute("""
+                SELECT salida, entrada 
+                FROM turn_lunch 
+                WHERE iduser = %s AND DATE(salida) = CURDATE() 
+                ORDER BY salida DESC LIMIT 1
+            """, (emp_id,))
+            r_lunch = cur.fetchone()
+
+            lunch_salida = r_lunch[0].strftime('%H:%M') if r_lunch and r_lunch[0] else None
+            lunch_entrada = r_lunch[1].strftime('%H:%M') if r_lunch and r_lunch[1] else None
+
+            if lunch_salida and lunch_entrada:
+                almuerzo_txt = f"{lunch_salida} ➔ {lunch_entrada}"
+            elif lunch_salida:
+                almuerzo_txt = f"{lunch_salida} ➔ En curso"
+            else:
+                almuerzo_txt = "—"
+
+            if hora_out:
+                estado_nom = "Jornada Finalizada"
+                estado_clase = "chip-gray"
+                estado_icono = "bi-stop-circle-fill"
+            elif lunch_salida and not lunch_entrada:
+                estado_nom = "En Almuerzo"
+                estado_clase = "chip-amber"
+                estado_icono = "bi-cup-hot-fill"
+            elif hora_in:
+                estado_nom = "En Jornada"
+                estado_clase = "chip-green"
+                estado_icono = "bi-check-circle-fill"
+            else:
+                estado_nom = "Sin Fichar"
+                estado_clase = "chip-red"
+                estado_icono = "bi-x-circle-fill"
+
+            equipo_asistencia.append({
+                'iduser': emp_id,
+                'nombre_completo': f"{emp_nombre} {emp_apellido}".strip(),
+                'departamento': emp_depto,
+                'foto': emp_foto,
+                'es_tu': es_tu,
+                'hora_entrada': hora_in or '—',
+                'hora_salida': hora_out or '—',
+                'almuerzo_txt': almuerzo_txt,
+                'estado_nom': estado_nom,
+                'estado_clase': estado_clase,
+                'estado_icono': estado_icono
+            })
+
+    # ── 3. PRÓXIMOS FESTIVOS ──
+    cur.execute("""
         SELECT fecha, descripcion
         FROM feriados
         WHERE fecha >= CURDATE()
         ORDER BY fecha ASC
         LIMIT 3
-    """
-  )
-  feriados_rows = cur.fetchall()
+    """)
+    feriados_rows = cur.fetchall()
 
-  DIAS_SEMANA = [
-      'Lunes',
-      'Martes',
-      'Miércoles',
-      'Jueves',
-      'Viernes',
-      'Sábado',
-      'Domingo',
-  ]
-  MESES_NOMBRE = [
-      '',
-      'enero',
-      'febrero',
-      'marzo',
-      'abril',
-      'mayo',
-      'junio',
-      'julio',
-      'agosto',
-      'septiembre',
-      'octubre',
-      'noviembre',
-      'diciembre',
-  ]
+    DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+    MESES_NOMBRE = ['', 'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 
-  proximos_feriados = []
-  for r in feriados_rows:
-    f_val = r[0]
-    desc = r[1] if (len(r) > 1 and r[1]) else 'Día Festivo'
+    proximos_feriados = []
+    for r in feriados_rows:
+        f_val = r[0]
+        desc = r[1] if (len(r) > 1 and r[1]) else 'Día Festivo'
 
-    # Normalizar fecha a objeto date
-    if isinstance(f_val, datetime):
-      f_date = f_val.date()
-    elif isinstance(f_val, date):
-      f_date = f_val
-    else:
-      f_date = datetime.strptime(str(f_val), '%Y-%m-%d').date()
+        if isinstance(f_val, datetime):
+            f_date = f_val.date()
+        elif isinstance(f_val, date):
+            f_date = f_val
+        else:
+            f_date = datetime.strptime(str(f_val), '%Y-%m-%d').date()
 
-    dia_semana = DIAS_SEMANA[f_date.weekday()]
-    mes_nom = MESES_NOMBRE[f_date.month]
+        dia_semana = DIAS_SEMANA[f_date.weekday()]
+        mes_nom = MESES_NOMBRE[f_date.month]
 
-    proximos_feriados.append({
-        'titulo': desc,
-        'fecha_larga': f'{f_date.day} de {mes_nom} ({dia_semana})',
-        'fecha_corta': f_date.strftime('%d/%m/%Y'),
-    })
+        proximos_feriados.append({
+            'titulo': desc,
+            'fecha_larga': f'{f_date.day} de {mes_nom} ({dia_semana})',
+            'fecha_corta': f_date.strftime('%d/%m/%Y'),
+        })
 
-  cur.execute(
-      """
+    cur.execute("""
         SELECT salida, entrada
         FROM turn_lunch
         WHERE iduser = %s AND DATE(salida) = CURDATE()
         ORDER BY salida DESC LIMIT 1
-    """,
-      (session.get('user_id'),),
-  )
-  lunch_hoy = cur.fetchone()
+    """, (user_id,))
+    lunch_hoy = cur.fetchone()
 
-  cur.execute(
-      """
+    cur.execute("""
         SELECT timein
         FROM turn_in_laboral
         WHERE iduser = %s AND DATE(timein) = CURDATE()
         ORDER BY timein ASC
         LIMIT 1
-    """,
-      (session.get('user_id'),),
-  )
-  row_laboral = cur.fetchone()
-  entrada_laboral_hoy = row_laboral[0] if row_laboral else None
+    """, (user_id,))
+    row_laboral = cur.fetchone()
+    entrada_laboral_hoy = row_laboral[0] if row_laboral else None
 
-  cur.close()
-  return render_template(
-      'dashboard.html',
-      user=session.get('username'),
-      role=session.get('role'),
-      tiempos_hoy=tiempos_hoy,
-      vacaciones_anio=vacaciones_anio,
-      user_foto=user_foto,
-      proximos_feriados=proximos_feriados,  # ← Se envía la lista dinámica de festivos
-      lunch_hoy=lunch_hoy,
-      entrada_laboral_hoy=entrada_laboral_hoy,
-      departamento=user_departamento,
-      current_year=anio,
-  )
+    cur.close()
+    return render_template(
+        'dashboard.html',
+        user=session.get('username'),
+        role=session.get('role'),
+        tiempos_hoy=tiempos_hoy,
+        vacaciones_anio=vacaciones_anio,
+        user_foto=user_foto,
+        proximos_feriados=proximos_feriados,
+        lunch_hoy=lunch_hoy,
+        entrada_laboral_hoy=entrada_laboral_hoy,
+        departamento=user_departamento,
+        current_year=anio,
+        es_supervisora=es_supervisora,
+        equipo_asistencia=equipo_asistencia,
+    )
 # ══════════════════════════════════════════════════════
 #  Dashboard IT — Solo para usuarios del departamento IT (roles 0 )
 # ══════════════════════════════════════════════════════

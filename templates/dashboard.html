@@ -202,7 +202,6 @@
     transition: border-color var(--transition), box-shadow var(--transition);
   }
 
-  /* Línea superior discreta: referencia Halloween sin invadir */
   .card-apple::before {
     content: "";
     position: absolute;
@@ -528,7 +527,7 @@
 
   .chip-cyan {
     background: rgba(8, 145, 178, 0.10);
-    color: #900e7f;
+    color: #0891b2;
   }
 
   .chip-green {
@@ -549,6 +548,38 @@
   .chip-slate {
     background: var(--accent-soft);
     color: #6d28d9;
+  }
+
+  .chip-red {
+    background: rgba(239, 68, 68, 0.10);
+    color: #dc2626;
+  }
+
+  .chip-gray {
+    background: rgba(107, 114, 128, 0.10);
+    color: #4b5563;
+  }
+
+  .badge-tu {
+    background: rgba(124, 58, 237, 0.12);
+    color: #6d28d9;
+    border: 1px solid rgba(124, 58, 237, 0.25);
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 12px;
+  }
+
+  .tr-tu {
+    background: rgba(124, 58, 237, 0.03) !important;
+  }
+
+  .avatar-emp-sm {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
   }
 
   .alert {
@@ -765,103 +796,194 @@
         {{ card_noticias() }}
       </div>
 
-      <!-- CONTROL HORARIO -->
-      <div class="table-panel mb-3">
-        <div class="panel-head">
-          <div class="panel-head-icon" style="background:rgba(8,145,178,0.09);color:#0891b2;">
-            <i class="bi bi-calendar-check-fill"></i>
+      <!-- SECCIÓN INFORMATIVA DE CONTROL HORARIO -->
+      {% if es_supervisora %}
+        <!-- VISTA PARA SUPERVISORAS: MONITOR DE ASISTENCIA DEL EQUIPO -->
+        <div class="table-panel mb-4">
+          <div class="panel-head">
+            <div class="panel-head-icon" style="background:rgba(124,58,237,0.09);color:#7c3aed;">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <h5>Monitor de Asistencia del Equipo — Hoy</h5>
           </div>
-          <h5>Control Horario de hoy</h5>
-        </div>
-        {% if entrada_laboral_hoy %}
-          <table class="table table-hover mb-0">
-            <thead>
-              <tr>
-                <th>Registro de jornada</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <span class="chip chip-cyan">
-                    <i class="bi bi-calendar-check-fill"></i>
-                    {{ entrada_laboral_hoy.strftime('%H:%M') }}
-                  </span>
-                </td>
-                <td>
-                  <span class="chip chip-green">
-                    <i class="bi bi-check-circle-fill"></i>
-                    Jornada registrada
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        {% else %}
-          <div class="table-empty">
-            <i class="bi bi-info-circle"></i>
-            Sin registro de jornada laboral hoy.
-          </div>
-        {% endif %}
-      </div>
 
-      <!-- PAUSA ALMUERZO -->
-      <div class="table-panel mb-3">
-        <div class="panel-head">
-          <div class="panel-head-icon" style="background:rgba(245,158,11,0.09);color:#f59e0b;">
-            <i class="bi bi-cup-hot-fill"></i>
-          </div>
-          <h5>Pausa de Almuerzo de hoy</h5>
+          {% if equipo_asistencia %}
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Empleado</th>
+                    <th class="text-center">Hora Entrada</th>
+                    <th class="text-center">Pausa Almuerzo</th>
+                    <th class="text-center">Hora Salida</th>
+                    <th class="text-center">Estado Actual</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for emp in equipo_asistencia %}
+                    <tr class="{{ 'tr-tu' if emp.es_tu else '' }}">
+                      <td>
+                        <div class="d-flex align-items-center gap-2">
+                          {% set emp_avatar = url_for('static', filename=emp.foto) if emp.foto else url_for('static', filename='img/user.png') %}
+                          <img src="{{ emp_avatar }}" alt="Foto" class="avatar-emp-sm">
+                          <div>
+                            <div class="fw-bold text-dark" style="line-height: 1.2;">
+                              {{ emp.nombre_completo }}
+                              {% if emp.es_tu %}
+                                <span class="badge-tu ms-1">Tú</span>
+                              {% endif %}
+                            </div>
+                            <div style="font-size:0.71rem;" class="text-muted">{{ emp.departamento or 'Sin Depto' }}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="text-center">
+                        {% if emp.hora_entrada != '—' %}
+                          <span class="chip chip-cyan">
+                            <i class="bi bi-clock-fill"></i> {{ emp.hora_entrada }}
+                          </span>
+                        {% else %}
+                          <span class="text-muted" style="font-size:0.835rem;">—</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-center">
+                        {% if emp.almuerzo_txt != '—' %}
+                          <span class="chip chip-amber">
+                            <i class="bi bi-cup-hot-fill"></i> {{ emp.almuerzo_txt }}
+                          </span>
+                        {% else %}
+                          <span class="text-muted" style="font-size:0.835rem;">—</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-center">
+                        {% if emp.hora_salida != '—' %}
+                          <span class="chip chip-slate">
+                            <i class="bi bi-door-closed-fill"></i> {{ emp.hora_salida }}
+                          </span>
+                        {% else %}
+                          <span class="text-muted" style="font-size:0.835rem;">—</span>
+                        {% endif %}
+                      </td>
+                      <td class="text-center">
+                        <span class="chip {{ emp.estado_clase }}">
+                          <i class="bi {{ emp.estado_icono }}"></i> {{ emp.estado_nom }}
+                        </span>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <div class="table-empty">
+              <i class="bi bi-info-circle"></i>
+              No hay empleados asignados para mostrar en el monitor hoy.
+            </div>
+          {% endif %}
         </div>
-        {% if lunch_hoy %}
-          {% set sal_lunch = lunch_hoy[0] %}
-          {% set ent_lunch = lunch_hoy[1] %}
-          <table class="table table-hover mb-0">
-            <thead>
-              <tr>
-                <th>Salida a comer</th>
-                <th>Vuelta de comer</th>
-                <th>Duración pausa</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <span class="chip chip-amber">
-                    <i class="bi bi-cup-hot-fill"></i>
-                    {{ sal_lunch.strftime('%H:%M') if sal_lunch else '—' }}
-                  </span>
-                </td>
-                <td>
-                  {% if ent_lunch %}
-                    <span class="chip chip-teal">
-                      <i class="bi bi-cup-straw"></i>
-                      {{ ent_lunch.strftime('%H:%M') }}
-                    </span>
-                  {% else %}
-                    <span class="chip chip-slate">Pendiente</span>
-                  {% endif %}
-                </td>
-                <td style="font-weight:600;color:var(--text);font-size:0.835rem;">
-                  {% if sal_lunch and ent_lunch %}
-                    {% set mins = ((ent_lunch - sal_lunch).seconds // 60) %}
-                    {% if mins >= 60 %}{{ mins // 60 }}h {{ mins % 60 }}m
-                    {% else %}{{ mins }}m{% endif %}
-                  {% else %}
-                    <span style="color:var(--text-3);">—</span>
-                  {% endif %}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        {% else %}
-          <div class="table-empty">
-            <i class="bi bi-info-circle"></i>
-            Sin pausa de almuerzo registrada hoy.
+
+      {% else %}
+        <!-- VISTA PARA EMPLEADOS NORMALES: CONTROL HORARIO INDIVIDUAL -->
+
+        <!-- CONTROL HORARIO -->
+        <div class="table-panel mb-3">
+          <div class="panel-head">
+            <div class="panel-head-icon" style="background:rgba(8,145,178,0.09);color:#0891b2;">
+              <i class="bi bi-calendar-check-fill"></i>
+            </div>
+            <h5>Control Horario de hoy</h5>
           </div>
-        {% endif %}
-      </div>
+          {% if entrada_laboral_hoy %}
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Registro de jornada</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <span class="chip chip-cyan">
+                      <i class="bi bi-calendar-check-fill"></i>
+                      {{ entrada_laboral_hoy.strftime('%H:%M') }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="chip chip-green">
+                      <i class="bi bi-check-circle-fill"></i>
+                      Jornada registrada
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          {% else %}
+            <div class="table-empty">
+              <i class="bi bi-info-circle"></i>
+              Sin registro de jornada laboral hoy.
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- PAUSA ALMUERZO -->
+        <div class="table-panel mb-3">
+          <div class="panel-head">
+            <div class="panel-head-icon" style="background:rgba(245,158,11,0.09);color:#f59e0b;">
+              <i class="bi bi-cup-hot-fill"></i>
+            </div>
+            <h5>Pausa de Almuerzo de hoy</h5>
+          </div>
+          {% if lunch_hoy %}
+            {% set sal_lunch = lunch_hoy[0] %}
+            {% set ent_lunch = lunch_hoy[1] %}
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>Salida a comer</th>
+                  <th>Vuelta de comer</th>
+                  <th>Duración pausa</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <span class="chip chip-amber">
+                      <i class="bi bi-cup-hot-fill"></i>
+                      {{ sal_lunch.strftime('%H:%M') if sal_lunch else '—' }}
+                    </span>
+                  </td>
+                  <td>
+                    {% if ent_lunch %}
+                      <span class="chip chip-teal">
+                        <i class="bi bi-cup-straw"></i>
+                        {{ ent_lunch.strftime('%H:%M') }}
+                      </span>
+                    {% else %}
+                      <span class="chip chip-slate">Pendiente</span>
+                    {% endif %}
+                  </td>
+                  <td style="font-weight:600;color:var(--text);font-size:0.835rem;">
+                    {% if sal_lunch and ent_lunch %}
+                      {% set mins = ((ent_lunch - sal_lunch).seconds // 60) %}
+                      {% if mins >= 60 %}{{ mins // 60 }}h {{ mins % 60 }}m
+                      {% else %}{{ mins }}m{% endif %}
+                    {% else %}
+                      <span style="color:var(--text-3);">—</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          {% else %}
+            <div class="table-empty">
+              <i class="bi bi-info-circle"></i>
+              Sin pausa de almuerzo registrada hoy.
+            </div>
+          {% endif %}
+        </div>
+
+      {% endif %}
 
     </div>
 
@@ -913,7 +1035,6 @@
     }
 
     (function fetchWeather() {
-      // Coordenadas de Madrid — ajusta si la oficina está en otra ciudad
       const LAT = 40.4168, LON = -3.7038;
       fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current_weather=true&wind_speed_unit=kmh`)
         .then(r => r.json())
@@ -926,7 +1047,6 @@
           document.getElementById('weatherWidget').title = `Madrid · ${desc} · ${Math.round(temperature)}°C`;
         })
         .catch(() => {
-          // Si falla la red, oculta el widget silenciosamente
           document.getElementById('weatherWidget').style.display = 'none';
         });
     })();
