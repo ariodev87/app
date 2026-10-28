@@ -12,7 +12,7 @@ setInterval(() => {
   }
 
   // Lanza la notificación a las 17:40
-  if (horas === 17 && minutos === 52 && !notifEnviada) {
+  if (horas === 17 && minutos === 58 && !notifEnviada) {
     notifEnviada = true;
     self.registration.showNotification('⏰ TurnoApp', {
       body: '¡No olvides fichar la salida!',
