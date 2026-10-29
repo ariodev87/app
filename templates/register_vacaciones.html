@@ -631,8 +631,18 @@
     };
 
     // Inicialización inmediata
-    pickerIn  = flatpickr("#vacacionesin", configBase);
-    pickerOut = flatpickr("#vacacionesout", configBase);
+   // Inicialización con horas por defecto (09:00 para inicio, 18:00 para fin)
+    pickerIn = flatpickr("#vacacionesin", {
+      ...configBase,
+      defaultHour: 9,
+      defaultMinute: 0
+    });
+
+    pickerOut = flatpickr("#vacacionesout", {
+      ...configBase,
+      defaultHour: 18,
+      defaultMinute: 0
+    });
 
     // Cargar feriados y vincularlos dinámicamente
     fetch('/api/feriados')
