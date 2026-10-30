@@ -80,9 +80,12 @@
     }
 
     .panel-head {
-      display: flex; align-items: center; gap: 9px;
+      display: flex; align-items: center; justify-content: space-between;
       padding-bottom: 14px; margin-bottom: 18px;
       border-bottom: 1px solid var(--border);
+    }
+    .panel-head-title {
+      display: flex; align-items: center; gap: 9px;
     }
     .panel-head-icon {
       width: 28px; height: 28px; border-radius: 8px;
@@ -100,7 +103,7 @@
       text-transform: uppercase; letter-spacing: 0.06em;
       margin-bottom: 6px; display: block;
     }
-    .form-control {
+    .form-control, .form-select {
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 10px 14px; font-size: 0.875rem; color: var(--text);
@@ -108,7 +111,7 @@
       transition: border-color var(--transition), box-shadow var(--transition);
       font-family: var(--font);
     }
-    .form-control:focus {
+    .form-control:focus, .form-select:focus {
       border-color: var(--amber);
       box-shadow: 0 0 0 3px rgba(217,119,6,0.10);
       outline: none;
@@ -129,7 +132,6 @@
       background: var(--amber) !important;
       border-color: var(--amber) !important;
     }
-    /* Estilo para los días feriados en la cuadrícula */
     .flatpickr-day.dia-feriado {
       background-color: #fee2e2 !important;
       color: #dc2626 !important;
@@ -141,7 +143,7 @@
       cursor: not-allowed !important;
     }
 
-    /* Banner edicion */
+    /* Banner edición */
     #modo-edicion-banner {
       display: none;
       background: rgba(217,119,6,0.07);
@@ -256,6 +258,40 @@
     /* Alert */
     .alert { border-radius: 14px; font-size: 0.875rem; border: 1px solid var(--border); }
 
+    /* Tarjetas de Resumen */
+    .stat-card-apple {
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      border-radius: 16px;
+      padding: 12px 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.025), 0 1px 2px rgba(0, 0, 0, 0.02);
+      display: flex; align-items: center; gap: 12px;
+      transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+    .stat-card-apple:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+      border-color: rgba(0, 0, 0, 0.12);
+    }
+    .stat-icon-pill {
+      width: 38px; height: 38px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; flex-shrink: 0;
+    }
+    .stat-card-blue .stat-icon-pill   { background: rgba(37, 99, 235, 0.09); color: #2563eb; }
+    .stat-card-green .stat-icon-pill  { background: rgba(16, 185, 129, 0.11); color: #059669; }
+    .stat-card-amber .stat-icon-pill  { background: rgba(217, 119, 6, 0.11); color: #d97706; }
+    .stat-card-purple .stat-icon-pill { background: rgba(124, 58, 237, 0.10); color: #7c3aed; }
+
+    .stat-info { display: flex; flex-direction: column; min-width: 0; }
+    .stat-label {
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: rgba(29, 29, 31, 0.45); margin-bottom: 2px;
+      white-space: nowrap;
+    }
+    .stat-value { font-size: 1.25rem; font-weight: 700; line-height: 1.1; color: #1d1d1f; letter-spacing: -0.02em; }
+    .stat-unit { font-size: 0.75rem; font-weight: 500; color: rgba(29, 29, 31, 0.45); margin-left: 2px; }
+
     footer { background: transparent; border-top: 1px solid var(--border); padding: 14px 32px; text-align: center; }
     footer p { color: var(--text-3); font-size: 0.76rem; margin: 0; font-weight: 500; }
     footer strong { color: var(--text-2); }
@@ -284,132 +320,55 @@
         </span>
       </div>
     </div>
-    <!-- Widget de Resumen de Saldo de Vacaciones -->
-<!-- ESTILOS APPLE COMPACTOS -->
-<style>
-  .stat-card-apple {
-    background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    border-radius: 16px;
-    padding: 12px 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.025), 0 1px 2px rgba(0, 0, 0, 0.02);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
-  }
-
-  .stat-card-apple:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-    border-color: rgba(0, 0, 0, 0.12);
-  }
-
-  .stat-icon-pill {
-    width: 38px;
-    height: 38px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-
-  /* Paleta de colores entintados estilo iOS */
-  .stat-card-blue .stat-icon-pill   { background: rgba(37, 99, 235, 0.09); color: #2563eb; }
-  .stat-card-green .stat-icon-pill  { background: rgba(16, 185, 129, 0.11); color: #059669; }
-  .stat-card-amber .stat-icon-pill  { background: rgba(217, 119, 6, 0.11); color: #d97706; }
-  .stat-card-purple .stat-icon-pill { background: rgba(124, 58, 237, 0.10); color: #7c3aed; }
-
-  .stat-info {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-
-  .stat-label {
-    font-size: 0.68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: rgba(29, 29, 31, 0.45);
-    margin-bottom: 2px;
-    white-space: nowrap;
-  }
-
-  .stat-value {
-    font-size: 1.25rem;
-    font-weight: 700;
-    line-height: 1.1;
-    color: #1d1d1f;
-    letter-spacing: -0.02em;
-  }
-
-  .stat-unit {
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: rgba(29, 29, 31, 0.45);
-    margin-left: 2px;
-  }
-</style>
-
-<!-- TARJETAS DE RESUMEN DE VACACIONES -->
-<div class="row g-2 mb-4">
-  <!-- Cupo Anual -->
-  <div class="col-6 col-md-3">
-    <div class="stat-card-apple stat-card-blue">
-      <div class="stat-icon-pill">
-        <i class="bi bi-calendar-range-fill"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-label">Cupo Anual</span>
-        <span class="stat-value">{{ resumen_vac.totales }} <span class="stat-unit">días</span></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Aprobados -->
-  <div class="col-6 col-md-3">
-    <div class="stat-card-apple stat-card-green">
-      <div class="stat-icon-pill">
-        <i class="bi bi-check-circle-fill"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-label">Aprobados</span>
-        <span class="stat-value" style="color:#059669;">{{ resumen_vac.aprobados }} <span class="stat-unit">días</span></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- En Revisión -->
-  <div class="col-6 col-md-3">
-    <div class="stat-card-apple stat-card-amber">
-      <div class="stat-icon-pill">
-        <i class="bi bi-hourglass-split"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-label">En Revisión</span>
-        <span class="stat-value" style="color:#d97706;">{{ resumen_vac.pendientes }} <span class="stat-unit">días</span></span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Disponibles -->
-  <div class="col-6 col-md-3">
-    <div class="stat-card-apple stat-card-purple">
-      <div class="stat-icon-pill">
-        <i class="bi bi-stars"></i>
-      </div>
-      <div class="stat-info">
-        <span class="stat-label">Disponibles</span>
-        <span class="stat-value" style="color:#7c3aed;">{{ resumen_vac.disponibles }} <span class="stat-unit">días</span></span>
-      </div>
-    </div>
-  </div>
-</div>
 
     <div class="content-area">
+
+      <!-- TARJETAS DE RESUMEN DE VACACIONES DE AÑO SELECCIONADO -->
+      <div class="row g-2 mb-4">
+        <!-- Cupo Anual -->
+        <div class="col-6 col-md-3">
+          <div class="stat-card-apple stat-card-blue">
+            <div class="stat-icon-pill"><i class="bi bi-calendar-range-fill"></i></div>
+            <div class="stat-info">
+              <span class="stat-label">Cupo Anual ({{ selected_year|default(current_year) }})</span>
+              <span class="stat-value">{{ resumen_vac.totales }} <span class="stat-unit">días</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aprobados -->
+        <div class="col-6 col-md-3">
+          <div class="stat-card-apple stat-card-green">
+            <div class="stat-icon-pill"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="stat-info">
+              <span class="stat-label">Aprobados</span>
+              <span class="stat-value" style="color:#059669;">{{ resumen_vac.aprobados }} <span class="stat-unit">días</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- En Revisión -->
+        <div class="col-6 col-md-3">
+          <div class="stat-card-apple stat-card-amber">
+            <div class="stat-icon-pill"><i class="bi bi-hourglass-split"></i></div>
+            <div class="stat-info">
+              <span class="stat-label">En Revisión</span>
+              <span class="stat-value" style="color:#d97706;">{{ resumen_vac.pendientes }} <span class="stat-unit">días</span></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Disponibles -->
+        <div class="col-6 col-md-3">
+          <div class="stat-card-apple stat-card-purple">
+            <div class="stat-icon-pill"><i class="bi bi-stars"></i></div>
+            <div class="stat-info">
+              <span class="stat-label">Disponibles</span>
+              <span class="stat-value" style="color:#7c3aed;">{{ resumen_vac.disponibles }} <span class="stat-unit">días</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -424,20 +383,29 @@
 
       <div class="row g-4">
 
-        <!-- FORMULARIO -->
+        <!-- FORMULARIO DE SOLICITUD -->
         <div class="col-12 col-lg-4">
           <div class="panel">
             <div class="panel-head">
-              <div class="panel-head-icon" style="background:rgba(217,119,6,0.09);color:var(--amber);">
-                <i class="bi bi-calendar-plus"></i>
+              <div class="panel-head-title">
+                <div class="panel-head-icon" style="background:rgba(217,119,6,0.09);color:var(--amber);">
+                  <i class="bi bi-calendar-plus"></i>
+                </div>
+                <h5 id="form-titulo">Solicitar Vacaciones</h5>
               </div>
-              <h5 id="form-titulo">Solicitar Vacaciones</h5>
             </div>
 
             <div id="modo-edicion-banner">
               <i class="bi bi-pencil-square" style="flex-shrink:0;"></i>
               Editando registro existente
             </div>
+
+            {% if selected_year is defined and selected_year != current_year %}
+              <div class="alert alert-info py-2 px-3 mb-3" style="font-size: 0.78rem;">
+                <i class="bi bi-info-circle-fill me-1"></i>
+                Estás consultando el histórico del año <strong>{{ selected_year }}</strong>. Para enviar o gestionar nuevas solicitudes debes seleccionar el año actual ({{ current_year }}).
+              </div>
+            {% endif %}
 
             <form method="post" id="form-vacaciones" action="{{ url_for('main.vacaciones') }}">
               <input type="hidden" name="vacacion_id" id="vacacion_id" value="">
@@ -475,10 +443,28 @@
         <div class="col-12 col-lg-8">
           <div class="panel">
             <div class="panel-head">
-              <div class="panel-head-icon" style="background:rgba(217,119,6,0.09);color:var(--amber);">
-                <i class="bi bi-card-list"></i>
+              <div class="panel-head-title">
+                <div class="panel-head-icon" style="background:rgba(217,119,6,0.09);color:var(--amber);">
+                  <i class="bi bi-card-list"></i>
+                </div>
+                <h5>Mis Solicitudes ({{ selected_year|default(current_year) }})</h5>
               </div>
-              <h5>Mis Solicitudes y Vacaciones</h5>
+
+              <!-- DESPLEGABLE DE FILTRO POR AÑO -->
+              <div class="d-flex align-items-center gap-2">
+                <label for="selectAnio" class="form-label mb-0 text-muted" style="font-size: 0.75rem; font-weight: 600;">Año:</label>
+                <select id="selectAnio" class="form-select form-select-sm" style="width: auto; border-radius: 10px; font-weight: 600;" onchange="cambiarAnio(this.value)">
+                  {% if anios_disponibles is defined and anios_disponibles %}
+                    {% for a in anios_disponibles %}
+                      <option value="{{ a }}" {% if a == selected_year %}selected{% endif %}>
+                        {{ a }} {% if a == current_year %}(Actual){% endif %}
+                      </option>
+                    {% endfor %}
+                  {% else %}
+                    <option value="{{ current_year }}" selected>{{ current_year }} (Actual)</option>
+                  {% endif %}
+                </select>
+              </div>
             </div>
 
             {% if vacaciones %}
@@ -509,9 +495,9 @@
                             {{ vac[1].strftime('%d/%m/%Y %H:%M') if vac[1] else '' }}
                           </span>
                         </td>
-                        <<td style="font-weight:600; color:var(--text); font-size:0.835rem;">
-  {{ vac[5] if vac[5] else '-' }}
-</td>
+                        <td style="font-weight:600; color:var(--text); font-size:0.835rem;">
+                          {{ vac[5] if vac[5] else '-' }}
+                        </td>
                         <td>
                           {% set estado_vac = vac[3] if vac[3] else 'Pendiente' %}
                           {% if estado_vac == 'Pendiente' %}
@@ -537,7 +523,8 @@
                         </td>
                         <td>
                           <div class="acciones-td">
-                            {% if vac[3] == 'Pendiente' or vac[3] == 'Rechazado' or session.get('role')|int == 0 %}
+                            {% set es_anio_actual = (selected_year|default(current_year) == current_year) %}
+                            {% if es_anio_actual and (vac[3] == 'Pendiente' or vac[3] == 'Rechazado' or session.get('role')|int == 0) %}
                               <button type="button"
                                       class="btn-tbl edit"
                                       id="btn-edit-{{ loop.index }}"
@@ -561,7 +548,7 @@
                               </form>
                             {% else %}
                               <span class="text-muted" style="font-size: 0.76rem; font-weight: 500;">
-                                <i class="bi bi-lock-fill"></i> Procesado
+                                <i class="bi bi-lock-fill"></i> {% if not es_anio_actual %}Histórico{% else %}Procesado{% endif %}
                               </span>
                             {% endif %}
                           </div>
@@ -574,7 +561,7 @@
             {% else %}
               <div class="empty-state">
                 <i class="bi bi-calendar-x"></i>
-                No tienes solicitudes de vacaciones o permisos registrados.
+                No tienes solicitudes de vacaciones para el año {{ selected_year|default(current_year) }}.
               </div>
             {% endif %}
           </div>
@@ -616,6 +603,13 @@
       mainContent.classList.add('expanded');
     }
 
+    // NAVEGACIÓN Y CAMBIO DE AÑO
+    function cambiarAnio(anio) {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set('anio', anio);
+      window.location.search = urlParams.toString();
+    }
+
     // Instancias Globales de Flatpickr
     let pickerIn = null;
     let pickerOut = null;
@@ -630,8 +624,7 @@
       locale: "es"
     };
 
-    // Inicialización inmediata
-   // Inicialización con horas por defecto (09:00 para inicio, 18:00 para fin)
+    // Inicialización con horas por defecto (09:00 para inicio, 18:00 para fin)
     pickerIn = flatpickr("#vacacionesin", {
       ...configBase,
       defaultHour: 9,

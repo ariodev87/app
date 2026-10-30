@@ -1054,6 +1054,11 @@ def create_user():
     current_year = datetime.now().year,
 
 
+from datetime import date, datetime, timedelta
+from flask import flash, redirect, render_template, request, session, url_for
+
+
+
 @main.route('/vacaciones', methods=['GET', 'POST'])
 @main.route('/vacaciones/<int:uid>', methods=['GET', 'POST'])
 @login_required
@@ -1066,6 +1071,7 @@ def vacaciones(uid=None):
   target_user = (
       uid if (uid and session.get('role') in (0, 1)) else session['user_id']
   )
+  año_actual = date.today().year
 
   cur = mysql.connection.cursor()
 
@@ -1108,6 +1114,20 @@ def vacaciones(uid=None):
           url_for('main.vacaciones', uid=uid)
           if uid
           else url_for('main.vacaciones')
+      )
+
+    # 🛑 RESTRICCIÓN DE AÑO ACTUAL: Solo se permite crear en el año en curso
+    if dt_in.year != año_actual or dt_out.year != año_actual:
+      cur.close()
+      flash(
+          f'Solo se pueden registrar propuestas para el año en curso'
+          f' ({año_actual}).',
+          'danger',
+      )
+      return redirect(
+          url_for('main.vacaciones', uid=uid, anio=año_actual)
+          if uid
+          else url_for('main.vacaciones', anio=año_actual)
       )
 
     # 3. Validar coherencia cronológica
@@ -1194,7 +1214,7 @@ def vacaciones(uid=None):
     cur.execute(
         """
             SELECT nombre, apellido, departamento 
-            FROM personas 
+            FROM personas
             WHERE iduser = %s
         """,
         (target_user,),
@@ -1206,7 +1226,6 @@ def vacaciones(uid=None):
       emp_apellido = emp_data[1] or ''
       emp_dpto = (emp_data[2] or '').strip()
 
-      # Consultar los correos de TODAS las supervisoras asignadas
       supervisora_correos = []
       if emp_dpto:
         cur.execute(
@@ -1223,7 +1242,6 @@ def vacaciones(uid=None):
         sup_rows = cur.fetchall()
         supervisora_correos = [row[0] for row in sup_rows if row[0]]
 
-      # 7. Envío del correo a la(s) supervisora(s)
       if supervisora_correos:
         try:
           msg = Message(
@@ -1265,15 +1283,18 @@ def vacaciones(uid=None):
 
     cur.close()
     return redirect(
-        url_for('main.vacaciones', uid=uid)
+        url_for('main.vacaciones', uid=uid, anio=dt_in.year)
         if uid
-        else url_for('main.vacaciones')
+        else url_for('main.vacaciones', anio=dt_in.year)
     )
 
-  # GET: Obtener información del usuario y listado con su estado
+  # GET: Capturar el año seleccionado en la URL (por defecto, año actual)
+  anio_seleccionado = request.args.get('anio', type=int, default=año_actual)
+
+  # GET: Obtener información del usuario
   nombre, apellido = get_persona(cur, target_user)
 
-  # 1. Obtener conjunto de feriados guardados
+  # 1. Obtener conjunto de feriados
   cur.execute('SELECT fecha FROM feriados')
   feriados_rows = cur.fetchall()
   feriados_set = {
@@ -1281,19 +1302,19 @@ def vacaciones(uid=None):
       for r in feriados_rows
   }
 
-  # 2. Consultar solicitudes de vacaciones
+  # 2. Consultar solicitudes FILTRADAS POR EL AÑO SELECCIONADO
   cur.execute(
       """
         SELECT vacacionesin, vacacionesout, idvac, estado, observacion
         FROM vacaciones
-        WHERE iduser = %s
+        WHERE iduser = %s AND YEAR(vacacionesin) = %s
         ORDER BY vacacionesin DESC
     """,
-      (target_user,),
+      (target_user, anio_seleccionado),
   )
   lista_vacs = cur.fetchall()
 
-  # 3. Procesar lista para agregar el texto de días/horas hábiles
+  # 3. Procesar lista para calcular tiempo laborable
   vacaciones_procesadas = []
   for vac in lista_vacs:
     v_in, v_out = vac[0], vac[1]
@@ -1312,23 +1333,28 @@ def vacaciones(uid=None):
         tiempo_texto,
     ))
 
-  # 4. Obtener resumen con el cursor AÚN ABIERTO
+  # 4. Obtener resumen de días correspondientes al AÑO SELECCIONADO
   resumen_vac = obtener_resumen_vacaciones(
-      cur, target_user, date.today().year, feriados_set
+      cur, target_user, anio_seleccionado, feriados_set
   )
 
-  # 5. Cierre final del cursor
   cur.close()
+
+  # Lista de años para el desplegable del selector (histórico)
+  anios_disponibles = list(range(año_actual - 2, año_actual + 2))
 
   return render_template(
       'register_vacaciones.html',
       nombre=nombre,
       apellido=apellido,
       vacaciones=vacaciones_procesadas,
-      current_year=date.today().year,
+      current_year=año_actual,
+      selected_year=anio_seleccionado,
+      anios_disponibles=anios_disponibles,
       target_user=target_user,
       resumen_vac=resumen_vac,
   )
+
 
 @main.route('/editar-vacacion', methods=['POST'])
 @login_required
@@ -1337,14 +1363,16 @@ def editar_vacacion():
   vac_in = request.form.get('vacacionesin')
   vac_out = request.form.get('vacacionesout')
   obs = request.form.get('observacion', '').strip()
-  user_id = session.get('user_id')
+  uid = request.form.get('uid')
   user_role = session.get('role')
+  año_actual = date.today().year
 
   cur = mysql.connection.cursor()
 
   # 1. Obtener los datos actuales de la solicitud
   cur.execute(
-      'SELECT iduser, estado FROM vacaciones WHERE idvac = %s', (vacacion_id,)
+      'SELECT iduser, estado, vacacionesin FROM vacaciones WHERE idvac = %s',
+      (vacacion_id,),
   )
   vac = cur.fetchone()
 
@@ -1353,47 +1381,90 @@ def editar_vacacion():
     flash('La solicitud no existe.', 'danger')
     return redirect(url_for('main.vacaciones'))
 
-  vac_owner, estado_actual = vac
+  vac_owner, estado_actual, fecha_original = vac
+
+  # Restricción de año actual
+  if fecha_original and fecha_original.year != año_actual:
+    cur.close()
+    flash(
+        f'No se pueden editar registros de otros años ({fecha_original.year}).',
+        'danger',
+    )
+    return redirect(
+        url_for('main.vacaciones', uid=uid, anio=fecha_original.year)
+        if uid
+        else url_for('main.vacaciones', anio=fecha_original.year)
+    )
 
   # 2. Permitir editar si está 'Pendiente' O 'Rechazado' (o si es Admin)
-  if estado_actual not in ['Pendiente', 'Rechazado'] and user_role != 0  :
+  if estado_actual not in ['Pendiente', 'Rechazado'] and user_role != 0:
     cur.close()
     flash(
         f'No puedes editar una solicitud que ya ha sido procesada ({estado_actual}).',
         'danger',
     )
-    return redirect(url_for('main.vacaciones'))
-
-  # 3. Actualizar la solicitud y reestablecer su estado a 'Pendiente'
-  # 3.1 Validar si la solicitud supera los días disponibles
-    feriados_set = {
-        r[0].strftime("%Y-%m-%d") if hasattr(r[0], "strftime") else str(r[0])
-        for r in cur.fetchall_feriados()  # usa tu set de feriados existente
-    }
-    resumen = obtener_resumen_vacaciones(
-        cur, target_user, dt_in.year, feriados_set
+    return redirect(
+        url_for('main.vacaciones', uid=uid)
+        if uid
+        else url_for('main.vacaciones')
     )
 
-    # Calcular cuántos días hábiles requiere la nueva solicitud
-    curr = dt_in.date()
-    dias_nuevos = 0
-    while curr <= dt_out.date():
-      if curr.weekday() < 5 and curr.strftime("%Y-%m-%d") not in feriados_set:
-        dias_nuevos += 1
-      curr += timedelta(days=1)
+  # Parsear fechas de edición
+  try:
+    dt_in = datetime.strptime(
+        vac_in.replace('T', ' '),
+        '%Y-%m-%d %H:%M:%S' if len(vac_in) > 16 else '%Y-%m-%d %H:%M',
+    )
+    dt_out = datetime.strptime(
+        vac_out.replace('T', ' '),
+        '%Y-%m-%d %H:%M:%S' if len(vac_out) > 16 else '%Y-%m-%d %H:%M',
+    )
+  except ValueError:
+    cur.close()
+    flash('Formato de fecha u hora no válido.', 'danger')
+    return redirect(url_for('main.vacaciones'))
 
-    if dias_nuevos > resumen["disponibles"]:
-      cur.close()
-      flash(
-          f"No dispones de suficientes días. Solicitaste {dias_nuevos} día(s)"
-          f" hábil(es) y solo tienes {resumen['disponibles']} disponible(s).",
-          "warning",
-      )
-      return redirect(
-          url_for("main.vacaciones", uid=uid)
-          if uid
-          else url_for("main.vacaciones")
-      )
+  # Validar que la nueva fecha pertenezca al año actual
+  if dt_in.year != año_actual or dt_out.year != año_actual:
+    cur.close()
+    flash(
+        f'La nueva fecha debe pertenecer al año en curso ({año_actual}).',
+        'danger',
+    )
+    return redirect(url_for('main.vacaciones'))
+
+  # 3. Validar disponibilidad de días
+  cur.execute('SELECT fecha FROM feriados')
+  feriados_set = {
+      r[0].strftime('%Y-%m-%d') if hasattr(r[0], 'strftime') else str(r[0])
+      for r in cur.fetchall()
+  }
+
+  resumen = obtener_resumen_vacaciones(
+      cur, vac_owner, dt_in.year, feriados_set
+  )
+
+  curr = dt_in.date()
+  dias_nuevos = 0
+  while curr <= dt_out.date():
+    if curr.weekday() < 5 and curr.strftime('%Y-%m-%d') not in feriados_set:
+      dias_nuevos += 1
+    curr += timedelta(days=1)
+
+  if dias_nuevos > resumen['disponibles']:
+    cur.close()
+    flash(
+        f'No dispones de suficientes días. Solicitaste {dias_nuevos} día(s)'
+        f" hábil(es) y solo tienes {resumen['disponibles']} disponible(s).",
+        'warning',
+    )
+    return redirect(
+        url_for('main.vacaciones', uid=uid)
+        if uid
+        else url_for('main.vacaciones')
+    )
+
+  # 4. Actualizar solicitud y restablecer estado a 'Pendiente'
   cur.execute(
       """
         UPDATE vacaciones
@@ -1404,19 +1475,88 @@ def editar_vacacion():
             aprobado_por = NULL
         WHERE idvac = %s
     """,
-      (vac_in, vac_out, obs, vacacion_id),
+      (dt_in, dt_out, obs, vacacion_id),
   )
 
   mysql.connection.commit()
-  cur.close()
 
-  flash(
-      'Solicitud actualizada correctamente y reenviada para revisión.',
-      'success',
+  # 5. Buscar datos del solicitante y enviar correo de renotificación
+  cur.execute(
+      """
+        SELECT nombre, apellido, departamento 
+        FROM personas 
+        WHERE iduser = %s
+    """,
+      (vac_owner,),
   )
-  return redirect(url_for('main.vacaciones'))
+  emp_data = cur.fetchone()
 
+  if emp_data:
+    emp_nombre = emp_data[0] or 'Empleado'
+    emp_apellido = emp_data[1] or ''
+    emp_dpto = (emp_data[2] or '').strip()
 
+    supervisora_correos = []
+    if emp_dpto:
+      cur.execute(
+          """
+                SELECT DISTINCT TRIM(p.correo)
+                FROM Supervisoras s
+                JOIN personas p ON s.UserID = p.iduser
+                WHERE LOWER(TRIM(s.departamento)) = LOWER(TRIM(%s))
+                  AND p.correo IS NOT NULL 
+                  AND TRIM(p.correo) != ''
+            """,
+          (emp_dpto,),
+      )
+      sup_rows = cur.fetchall()
+      supervisora_correos = [row[0] for row in sup_rows if row[0]]
+
+    if supervisora_correos:
+      try:
+        msg = Message(
+            subject=(
+                'Propuesta Modificada de Vacaciones -'
+                f' {emp_nombre} {emp_apellido}'
+            ),
+            recipients=supervisora_correos,
+        )
+        msg.html = render_template(
+            'email_vacaciones_pendiente.html',
+            nombre_supervisora='Supervisora',
+            nombre_empleado=f'{emp_nombre} {emp_apellido}',
+            departamento=emp_dpto,
+            fecha_inicio=dt_in.strftime('%d/%m/%Y %H:%M'),
+            fecha_fin=dt_out.strftime('%d/%m/%Y %H:%M'),
+            observacion=obs,
+            url_revision=url_for('main.gestion_vacaciones', _external=True),
+        )
+        mail.send(msg)
+        flash(
+            'Solicitud actualizada correctamente y reenviada por correo a la'
+            ' supervisora.',
+            'success',
+        )
+      except Exception as e:
+        print(f'[ERROR SMTP AL REENVIAR CORREO]: {e}')
+        flash(
+            'Solicitud actualizada en estado Pendiente. (Aviso de correo:'
+            f' {e})',
+            'warning',
+        )
+    else:
+      flash(
+          'Solicitud actualizada en estado Pendiente. (Aviso: No se encontró'
+          f" supervisora con correo activo para el departamento '{emp_dpto}').",
+          'warning',
+      )
+
+  cur.close()
+  return redirect(
+      url_for('main.vacaciones', uid=uid, anio=año_actual)
+      if uid
+      else url_for('main.vacaciones', anio=año_actual)
+  )
 @main.route('/vacaciones/delete', methods=['POST'])
 @login_required
 def delete_vacacion():
@@ -1425,12 +1565,15 @@ def delete_vacacion():
     return redirect(url_for('main.dashboard'))
 
   vacacion_id = request.form.get('vacacion_id')
+  uid = request.form.get('uid')
+  año_actual = date.today().year
 
   cur = mysql.connection.cursor()
 
-  # Consultar estado antes de borrar
+  # Consultar fecha y estado antes de borrar
   cur.execute(
-      'SELECT iduser, estado FROM vacaciones WHERE idvac = %s', (vacacion_id,)
+      'SELECT iduser, estado, vacacionesin FROM vacaciones WHERE idvac = %s',
+      (vacacion_id,),
   )
   vac = cur.fetchone()
 
@@ -1440,12 +1583,27 @@ def delete_vacacion():
     return redirect(url_for('main.vacaciones'))
 
   estado_actual = vac[1]
+  fecha_original = vac[2]
 
-  # Bloquear borrado a empleados solo si la solicitud fue 'Aprobado' o procesada definitivamente
+  # 🛑 RESTRICCIÓN DE AÑO ACTUAL: Impedir borrar registros de otros años
+  if fecha_original and fecha_original.year != año_actual:
+    cur.close()
+    flash(
+        f'No se pueden eliminar registros del año {fecha_original.year}. Solo'
+        f' se pueden gestionar solicitudes del año actual ({año_actual}).',
+        'danger',
+    )
+    return redirect(
+        url_for('main.vacaciones', uid=uid, anio=fecha_original.year)
+        if uid
+        else url_for('main.vacaciones', anio=fecha_original.year)
+    )
+
+  # Bloquear borrado a empleados si la solicitud no está Pendiente/Rechazada
   if session.get('role') == 1 and estado_actual not in ('Pendiente', 'Rechazado'):
     cur.close()
     flash(
-        f'No puedes eliminar una solicitud que ya fue aprobada ({estado_actual}).',
+        f'No puedes eliminar una solicitud que ya fue procesada ({estado_actual}).',
         'danger',
     )
     return redirect(url_for('main.vacaciones'))
@@ -1461,7 +1619,11 @@ def delete_vacacion():
   cur.close()
 
   flash('Solicitud de vacaciones eliminada.', 'info')
-  return redirect(url_for('main.vacaciones'))
+  return redirect(
+      url_for('main.vacaciones', uid=uid, anio=año_actual)
+      if uid
+      else url_for('main.vacaciones', anio=año_actual)
+  )
 #--------------------------------------------------------
 @main.route('/gestion-vacaciones')
 @login_required
