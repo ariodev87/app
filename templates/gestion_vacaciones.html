@@ -332,9 +332,20 @@
                 <tr>
                   <td class="col-emp">
                     <div class="d-flex align-items-center gap-2">
-                      <div class="avatar-emp">
-                        {{ emp[1][0] if emp[1] else '' }}{{ emp[2][0] if emp[2] else '' }}
-                      </div>
+                      {% if emp[4] %}
+                        <img src="{{ url_for('static', filename='uploads/profiles/' ~ emp[4]) }}" 
+                             class="rounded-circle" 
+                             style="width:32px; height:32px; object-fit:cover;" 
+                             alt="Avatar"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="avatar-emp" style="display:none;">
+                          {{ emp[1][0] if emp[1] else '' }}{{ emp[2][0] if emp[2] else '' }}
+                        </div>
+                      {% else %}
+                        <div class="avatar-emp">
+                          {{ emp[1][0] if emp[1] else '' }}{{ emp[2][0] if emp[2] else '' }}
+                        </div>
+                      {% endif %}
                       <div>
                         <div class="fw-bold text-dark" style="line-height: 1.2;">{{ emp[1] }} {{ emp[2] }}</div>
                         <div style="font-size:0.68rem;" class="text-muted">{{ emp[3] or 'Sin Depto' }}</div>
@@ -471,9 +482,17 @@
                       <div class="d-flex align-items-center gap-2">
                         {% if emp.foto %}
                           <img src="{{ url_for('static', filename='uploads/profiles/' ~ emp.foto) }}" 
-                               class="rounded-circle" style="width:34px; height:34px; object-fit:cover;" alt="Avatar">
+                               class="rounded-circle" 
+                               style="width:34px; height:34px; object-fit:cover;" 
+                               alt="Avatar"
+                               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                          <div class="avatar-circle-sm" 
+                               style="display:none; width:34px; height:34px; border-radius:50%; background:#2563eb; color:#fff; font-size:0.75rem; font-weight:700; align-items:center; justify-content:center;">
+                            {{ emp.iniciales }}
+                          </div>
                         {% else %}
-                          <div class="avatar-circle-sm" style="width:34px; height:34px; border-radius:50%; background:#2563eb; color:#fff; font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center;">
+                          <div class="avatar-circle-sm" 
+                               style="width:34px; height:34px; border-radius:50%; background:#2563eb; color:#fff; font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center;">
                             {{ emp.iniciales }}
                           </div>
                         {% endif %}
@@ -494,7 +513,7 @@
                       <span class="badge-saldo bg-slate">{{ emp.disfrutados }} d</span>
                     </td>
 
-                    <!-- Aprobados (Futuros) -->
+                    <!-- Aprobados Total -->
                     <td class="text-center">
                       <span class="badge-saldo bg-green">{{ emp.aprobados }} d</span>
                     </td>
