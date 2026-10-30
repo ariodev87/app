@@ -451,16 +451,34 @@
       </div>
 
       <!-- VISTA 3: RESUMEN DE SALDOS DEL EQUIPO -->
-      <div id="tab-saldos" class="panel" style="display:none;">
-        <div class="panel-head">
-          <div class="panel-head-title">
-            <div class="panel-head-icon" style="background:rgba(37,99,235,0.09); color:#2563eb;">
-              <i class="bi bi-people-fill"></i>
-            </div>
-            <h5>Balance y Control de Vacaciones ({{ selected_year|default(current_year) }})</h5>
-          </div>
-        </div>
+      <!-- VISTA 3: RESUMEN DE SALDOS DEL EQUIPO -->
+<div id="tab-saldos" class="panel" style="display:none;">
+  <div class="panel-head">
+    <div class="panel-head-title">
+      <div class="panel-head-icon" style="background:rgba(37,99,235,0.09); color:#2563eb;">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <h5>Balance y Control de Vacaciones ({{ selected_year|default(current_year) }})</h5>
+    </div>
 
+    <!-- DESPLEGABLE DE SELECCIÓN DE AÑO -->
+    <div class="d-flex align-items-center gap-2">
+      <label for="selectAnioSaldos" class="form-label mb-0 text-muted" style="font-size: 0.75rem; font-weight: 600;">Año:</label>
+      <select id="selectAnioSaldos" class="form-select form-select-sm" style="width: auto; border-radius: 10px; font-weight: 600;" onchange="cambiarAnioGestion(this.value)">
+        {% if anios_disponibles is defined and anios_disponibles %}
+          {% for a in anios_disponibles %}
+            <option value="{{ a }}" {% if a == selected_year %}selected{% endif %}>
+              {{ a }} {% if a == current_year %}(Actual){% endif %}
+            </option>
+          {% endfor %}
+        {% else %}
+          <option value="{{ current_year }}" selected>{{ current_year }} (Actual)</option>
+        {% endif %}
+      </select>
+    </div>
+  </div>
+
+  <!-- Resto del contenido de la tabla de saldos -->
         {% if equipo_saldos %}
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -686,6 +704,22 @@
       sidebar.classList.add('collapsed');
       mainContent.classList.add('expanded');
     }
+    // Cambiar año actualizando la URL y manteniendo la pestaña de saldos activa
+function cambiarAnioGestion(anio) {
+  const urlParams = new URLSearchParams(window.location.search);
+  urlParams.set('anio', anio);
+  urlParams.set('tab', 'saldos'); // Forzar apertura en la 3ª pestaña tras la recarga
+  window.location.search = urlParams.toString();
+}
+
+// Cargar la pestaña correspondiente al recargar la página si existe en la URL
+document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabParam = urlParams.get('tab');
+  if (tabParam) {
+    cambiarTab(tabParam);
+  }
+});
   </script>
 </body>
 </html>
