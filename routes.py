@@ -1633,7 +1633,9 @@ def gestion_vacaciones():
   cur = mysql.connection.cursor()
 
   # 1. Obtener departamento del usuario actual
-  cur.execute('SELECT departamento FROM personas WHERE iduser = %s', (user_id,))
+  cur.execute(
+      'SELECT departamento FROM personas WHERE iduser = %s', (user_id,)
+  )
   dep_row = cur.fetchone()
   user_dep = dep_row[0].lower() if (dep_row and dep_row[0]) else ''
   es_it = user_dep == 'it'
@@ -1668,7 +1670,7 @@ def gestion_vacaciones():
       or (user_role == 0 and not deptos_registrados)
   )
 
-  # 4. Fechas del mes a visualizar
+  # 4. Fechas del mes y año a visualizar
   hoy = date.today()
   anio = request.args.get('anio', hoy.year, type=int)
   mes = request.args.get('mes', hoy.month, type=int)
@@ -1752,9 +1754,41 @@ def gestion_vacaciones():
     )
 
   vacaciones_mes = cur.fetchall()
+
+  # 8. CALCULAR SALDOS Y RESUMEN DE VACACIONES DE CADA EMPLEADO (PARA LA 3ª PESTAÑA)
+  equipo_saldos = []
+  for emp in empleados:
+    emp_id = emp[0]
+    emp_nom = emp[1] or ''
+    emp_ape = emp[2] or ''
+    emp_dpto = emp[3] or '-'
+    emp_foto = emp[4]
+
+    # Generar iniciales para el avatar
+    ini_nom = emp_nom[0].upper() if emp_nom else ''
+    ini_ape = emp_ape[0].upper() if emp_ape else ''
+    iniciales = f'{ini_nom}{ini_ape}' or 'U'
+
+    # Consultar resumen para el año seleccionado (anio)
+    resumen = obtener_resumen_vacaciones(cur, emp_id, anio, feriados_set)
+
+    equipo_saldos.append({
+        'iduser': emp_id,
+        'nombre': f'{emp_nom} {emp_ape}'.strip(),
+        'departamento': emp_dpto,
+        'foto': emp_foto,
+        'iniciales': iniciales,
+        'totales': resumen.get('totales', 30),
+        'disfrutados': resumen.get('disfrutados', 0),
+        'aprobados': resumen.get('aprobados', 0),
+        'pendientes': resumen.get('pendientes', 0),
+        'disponibles': resumen.get('disponibles', 0),
+    })
+
+  # Cierre del cursor de MySQL
   cur.close()
 
-  # 8. Mapear la matriz (omite fines de semana y feriados)
+  # 9. Mapear la matriz (omite fines de semana y feriados)
   matriz_eventos = {emp[0]: {} for emp in empleados}
   for vac in vacaciones_mes:
     idvac, iduser, vac_in, vac_out, estado, obs, nom, ape = vac
@@ -1794,18 +1828,24 @@ def gestion_vacaciones():
                 'nombre_completo': f'{nom} {ape}',
             })
 
+  # Lista de años para el selector
+  anios_disponibles = list(range(hoy.year - 2, hoy.year + 2))
+
   return render_template(
       'gestion_vacaciones.html',
       empleados=empleados,
       pendientes=pendientes,
       matriz_eventos=matriz_eventos,
+      equipo_saldos=equipo_saldos,  # ← Se envía la lista de saldos
       dias_mes=dias_mes,
       feriados_set=feriados_set,
       mes_actual=mes,
       anio_actual=anio,
+      selected_year=anio,
+      anios_disponibles=anios_disponibles,
       es_solo_lectura=es_solo_lectura,
       es_it=es_it,
-      current_year=date.today().year,
+      current_year=hoy.year,
   )
 
 @main.route('/procesar-vacacion/<int:idvac>/<string:accion>', methods=['POST'])
