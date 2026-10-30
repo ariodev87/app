@@ -163,100 +163,69 @@ def calcular_tiempo_laborable(inicio, fin, feriados_set):
 HORAS_JORNADA_DIARIA = 8.0  # O 9.0 según el horario estándar de la empresa
 
 
-def obtener_resumen_vacaciones(cur, user_id, anio, feriados_set):
-  # 1. Obtener cupo total asignado
+from datetime import date, timedelta
+
+
+def obtener_resumen_vacaciones(cur, iduser, anio, feriados_set=None):
+  if feriados_set is None:
+    feriados_set = set()
+
+  hoy = date.today()
+
+  # 1. Consultar cupo anual del usuario en la tabla personas
   cur.execute(
-      """
-        SELECT dias_totales 
-        FROM vacaciones_cupo 
-        WHERE iduser = %s AND anio = %s
-    """,
-      (user_id, anio),
+      'SELECT dias_totales FROM vacaciones_cupo WHERE iduser = %s', (iduser,)
   )
   row_cupo = cur.fetchone()
-  dias_totales = float(row_cupo[0]) if row_cupo else 22.0
+  totales = (
+      row_cupo[0]
+      if (row_cupo and row_cupo[0] is not None)
+      else 30
+  )
 
-  # 2. Obtener solicitudes (Pendientes y Aprobadas)
+  # 2. Consultar solicitudes del usuario para el año seleccionado
   cur.execute(
       """
         SELECT vacacionesin, vacacionesout, estado 
         FROM vacaciones 
-        WHERE iduser = %s 
-          AND YEAR(vacacionesin) = %s 
-          AND estado IN ('Pendiente', 'Aprobado')
+        WHERE iduser = %s AND YEAR(vacacionesin) = %s
     """,
-      (user_id, anio),
+      (iduser, anio),
   )
-  solicitudes = cur.fetchall()
+  registros = cur.fetchall()
 
-  horas_aprobadas = 0.0
-  horas_pendientes = 0.0
+  disfrutados = 0
+  aprobados = 0
+  pendientes = 0
 
-  for v_in, v_out, estado in solicitudes:
-    if v_in and v_out:
-      # Calcular horas laborables exactas en días hábiles
-      horas_solicitud = 0.0
-      curr_date = v_in.date()
-      end_date = v_out.date()
+  # 3. Recorrer día a día descontando fines de semana y feriados
+  for vac_in, vac_out, estado in registros:
+    curr = vac_in.date()
+    fin = vac_out.date()
 
-      while curr_date <= end_date:
-        es_fin_semana = curr_date.weekday() >= 5
-        es_feriado = curr_date.strftime('%Y-%m-%d') in feriados_set
+    while curr <= fin:
+      es_fin_semana = curr.weekday() >= 5
+      es_feriado = curr.strftime('%Y-%m-%d') in feriados_set
 
-        if not es_fin_semana and not es_feriado:
-          if curr_date == v_in.date() and curr_date == v_out.date():
-            # Mismo día: diferencia exacta de horas
-            h = (v_out - v_in).total_seconds() / 3600.0
-            horas_solicitud += min(h, HORAS_JORNADA_DIARIA)
-          elif curr_date == v_out.date():
-            # Último día parcial (ej. hasta las 12:00 desde las 09:00 = 3h)
-            h_fin = v_out.hour + (v_out.minute / 60.0)
-            h_inicio_jornada = 9.0  # Hora normal de entrada
-            horas_solicitud += max(
-                0.0, min(h_fin - h_inicio_jornada, HORAS_JORNADA_DIARIA)
-            )
-          else:
-            # Día completo
-            horas_solicitud += HORAS_JORNADA_DIARIA
+      if not es_fin_semana and not es_feriado:
+        if estado == 'Aprobado':
+          aprobados += 1  # Suma a TODOS los aprobados
+          if curr < hoy:
+            disfrutados += 1  # Subconjunto de aprobados pasados a la fecha actual
+        elif estado == 'Pendiente':
+          pendientes += 1  # En revisión
 
-        curr_date += timedelta(days=1)
+      curr += timedelta(days=1)
 
-      if estado == 'Aprobado':
-        horas_aprobadas += horas_solicitud
-      elif estado == 'Pendiente':
-        horas_pendientes += horas_solicitud
-
-  # Convertir horas a días
-  dias_aprobados = round(horas_aprobadas / HORAS_JORNADA_DIARIA, 1)
-  dias_pendientes = round(horas_pendientes / HORAS_JORNADA_DIARIA, 1)
-  dias_disponibles = round(
-      dias_totales - dias_aprobados - dias_pendientes, 1
-  )
-
-  if dias_disponibles < 0:
-    dias_disponibles = 0.0
+  # 4. Por Solicitar / Disponibles = Cupo Anual - Aprobados - En Revisión
+  disponibles = totales - aprobados - pendientes
 
   return {
-      'totales': (
-          int(dias_totales)
-          if dias_totales.is_integer()
-          else round(dias_totales, 1)
-      ),
-      'aprobados': (
-          int(dias_aprobados)
-          if dias_aprobados.is_integer()
-          else round(dias_aprobados, 1)
-      ),
-      'pendientes': (
-          int(dias_pendientes)
-          if dias_pendientes.is_integer()
-          else round(dias_pendientes, 1)
-      ),
-      'disponibles': (
-          int(dias_disponibles)
-          if dias_disponibles.is_integer()
-          else round(dias_disponibles, 1)
-      ),
+      'totales': totales,
+      'disfrutados': disfrutados,
+      'aprobados': aprobados,
+      'pendientes': pendientes,
+      'disponibles': max(0, disponibles),
   }
 @main.app_context_processor
 def inject_year():
