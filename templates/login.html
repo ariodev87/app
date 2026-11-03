@@ -26,12 +26,11 @@
       --radius-2xl: 1.25rem;
       --transition: 180ms cubic-bezier(0.16, 1, 0.3, 1);
 
-      /* Halloween */
-      --halloween-orange: #f97316;
-      --halloween-orange-dark: #c2410c;
-      --halloween-purple: #581c87;
-      --halloween-yellow: #fbbf24;
-      --halloween-dark: #10061f;
+      /* Colores Estándar Brand */
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: rgba(37, 99, 235, 0.15);
+      --surface-dark: #0f172a;
     }
 
     *, *::before, *::after {
@@ -59,204 +58,45 @@
       overflow: hidden;
     }
 
-    /* Capa oscura temática */
+    /* Capa oscura estándar */
     body::before {
       content: "";
       position: fixed;
       inset: 0;
-      background:
-        radial-gradient(circle at 78% 15%, rgba(255, 174, 66, 0.13) 0%, transparent 20%),
-        linear-gradient(
-          135deg,
-          rgba(10, 6, 25, 0.88) 0%,
-          rgba(43, 13, 69, 0.72) 50%,
-          rgba(92, 35, 10, 0.45) 100%
-        );
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.75) 100%);
       z-index: 0;
       pointer-events: none;
     }
 
-    /* ── Luna de Halloween ── */
-    .luna-halloween {
-      position: fixed;
-      top: 8%;
-      left: 8%;
-      width: 130px;
-      height: 130px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 36% 32%, #fff7cc 0%, #ffd56a 42%, #f59e0b 100%);
-      box-shadow:
-        0 0 30px rgba(251, 191, 36, 0.75),
-        0 0 80px rgba(251, 191, 36, 0.30),
-        0 0 160px rgba(249, 115, 22, 0.17);
-      z-index: 1;
-      opacity: 0.78;
-      pointer-events: none;
-      animation: brilloLuna 4s ease-in-out infinite alternate;
-    }
-
-    .luna-halloween::before,
-    .luna-halloween::after {
-      content: "";
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(173, 104, 18, 0.16);
-    }
-
-    .luna-halloween::before {
-      width: 23px;
-      height: 23px;
-      top: 26px;
-      left: 33px;
-    }
-
-    .luna-halloween::after {
-      width: 16px;
-      height: 16px;
-      bottom: 28px;
-      right: 30px;
-    }
-
-    @keyframes brilloLuna {
-      from {
-        transform: scale(0.98);
-        filter: brightness(0.95);
-      }
-      to {
-        transform: scale(1.03);
-        filter: brightness(1.12);
-      }
-    }
-
-    /* ── Telarañas CSS ── */
-    .telarana {
-      position: fixed;
-      width: 210px;
-      height: 210px;
-      z-index: 4;
-      pointer-events: none;
-      opacity: 0.40;
-      background:
-        radial-gradient(circle at 0 0, transparent 0 26px, rgba(238, 230, 255, 0.46) 27px 28px, transparent 29px 55px, rgba(238, 230, 255, 0.32) 56px 57px, transparent 58px 87px, rgba(238, 230, 255, 0.25) 88px 89px, transparent 90px),
-        repeating-conic-gradient(
-          from 0deg at 0 0,
-          rgba(238, 230, 255, 0.40) 0deg 1deg,
-          transparent 1deg 22.5deg
-        );
-      filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.10));
-    }
-
-    .telarana-izquierda {
-      top: 0;
-      left: 0;
-    }
-
-    .telarana-derecha {
-      top: 0;
-      right: 0;
-      transform: scaleX(-1);
-    }
-
-    /* ── Murciélagos ── */
-    .murcielagos {
-      position: fixed;
-      inset: 0;
-      z-index: 4;
-      pointer-events: none;
-      overflow: hidden;
-    }
-
-    .murcielagos span {
-      position: absolute;
-      left: -10vw;
-      color: rgba(10, 3, 20, 0.92);
-      text-shadow: 0 0 8px rgba(0, 0, 0, 0.45);
-      opacity: 0;
-      animation: volarMurcielago 19s linear infinite;
-    }
-
-    .murcielagos span:nth-child(1) {
-      top: 17%;
-      font-size: 1.7rem;
-      animation-delay: 1s;
-    }
-
-    .murcielagos span:nth-child(2) {
-      top: 28%;
-      font-size: 1.15rem;
-      animation-delay: 6s;
-    }
-
-    .murcielagos span:nth-child(3) {
-      top: 11%;
-      font-size: 2rem;
-      animation-delay: 11s;
-    }
-
-    .murcielagos span:nth-child(4) {
-      top: 43%;
-      font-size: 1.3rem;
-      animation-delay: 15s;
-    }
-
-    @keyframes volarMurcielago {
-      0% {
-        transform: translateX(-10vw) translateY(0) rotate(-8deg);
-        opacity: 0;
-      }
-
-      7% {
-        opacity: 0.72;
-      }
-
-      32% {
-        transform: translateX(34vw) translateY(-32px) rotate(7deg);
-      }
-
-      57% {
-        transform: translateX(65vw) translateY(20px) rotate(-5deg);
-        opacity: 0.65;
-      }
-
-      91% {
-        opacity: 0.18;
-      }
-
-      100% {
-        transform: translateX(115vw) translateY(-15px) rotate(8deg);
-        opacity: 0;
-      }
-    }
-
-    /* ── Estilos Typed.js ── */
+    /* ── Estilos Typed.js Terminal ── */
     .terminal-container {
       margin-bottom: 24px;
       text-align: center;
       font-family: 'Courier New', Courier, monospace;
-      color: rgba(255, 244, 225, 0.90);
+      color: rgba(255, 255, 255, 0.90);
       font-size: 0.85rem;
       min-height: 40px;
-      background: rgba(20, 7, 33, 0.48);
+      background: rgba(15, 23, 42, 0.50);
       padding: 10px 15px;
       border-radius: 8px;
-      border: 1px solid rgba(249, 115, 22, 0.30);
-      box-shadow: inset 0 0 20px rgba(249, 115, 22, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.20);
     }
 
     .terminal-container a {
-      color: #fed7aa;
+      color: #93c5fd;
       text-decoration: none;
       transition: color 180ms ease;
       font-weight: bold;
     }
 
     .terminal-container a:hover {
-      color: #fbbf24;
+      color: #60a5fa;
       text-decoration: underline;
     }
 
     .typed-cursor {
-      color: var(--halloween-orange);
+      color: #60a5fa;
       font-weight: bold;
       animation: blink 1s infinite;
     }
@@ -291,7 +131,7 @@
       top: 0;
       width: 1.5px;
       border-radius: 2px;
-      background: linear-gradient(to bottom, transparent, rgba(214, 177, 255, 0.62));
+      background: linear-gradient(to bottom, transparent, rgba(147, 197, 253, 0.65));
       animation: caerGota linear infinite;
     }
 
@@ -304,7 +144,7 @@
       position: fixed;
       inset: 0;
       z-index: 3;
-      background: #f3e8ff;
+      background: #e0f2fe;
       pointer-events: none;
       opacity: 0;
       display: none;
@@ -336,7 +176,7 @@
       position: absolute;
       top: 0;
       border-radius: 50%;
-      background: rgba(235, 220, 255, 0.80);
+      background: rgba(255, 255, 255, 0.85);
       animation: caerNieve linear infinite;
     }
 
@@ -346,7 +186,7 @@
         opacity: 0;
       }
       20%, 80% {
-        opacity: 0.07;
+        opacity: 0.08;
       }
       100% {
         transform: translateX(110%) scale(1.1);
@@ -357,7 +197,7 @@
     .nube-niebla {
       position: absolute;
       height: 80px;
-      background: rgba(218, 196, 241, 0.15);
+      background: rgba(255, 255, 255, 0.15);
       border-radius: 50%;
       filter: blur(20px);
       animation: niebla linear infinite;
@@ -390,11 +230,11 @@
       right: 22px;
       z-index: 10;
       border-radius: var(--radius-2xl);
-      border: 1px solid rgba(249, 115, 22, 0.35);
-      background: rgba(24, 8, 38, 0.44);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.50);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 22px rgba(249, 115, 22, 0.10);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
       padding: 14px 20px;
       color: #fff;
       text-align: center;
@@ -408,7 +248,7 @@
       line-height: 1;
       letter-spacing: 0.04em;
       color: #fff;
-      text-shadow: 0 0 12px rgba(249, 115, 22, 0.55);
+      text-shadow: 0 0 12px rgba(37, 99, 235, 0.40);
     }
 
     /* ── Widget tiempo ── */
@@ -419,8 +259,8 @@
       z-index: 10;
       width: 290px;
       border-radius: var(--radius-2xl);
-      border: 1px solid rgba(249, 115, 22, 0.30);
-      background: rgba(24, 8, 38, 0.44);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.50);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
@@ -441,13 +281,13 @@
       width: 52px;
       height: 52px;
       border-radius: var(--radius-lg);
-      background: rgba(249, 115, 22, 0.16);
+      background: rgba(37, 99, 235, 0.16);
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
       font-size: 1.75rem;
-      color: #fff7ed;
+      color: #93c5fd;
       transition: background var(--transition);
     }
 
@@ -516,27 +356,16 @@
     .login-card {
       position: relative;
       overflow: hidden;
-      background: rgba(29, 12, 42, 0.34);
+      background: rgba(15, 23, 42, 0.55);
       backdrop-filter: blur(22px);
       -webkit-backdrop-filter: blur(22px);
-      border: 1px solid rgba(255, 190, 115, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.14);
       border-radius: var(--radius-2xl);
       padding: 44px 40px;
       box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.14),
         0 16px 40px rgba(0, 0, 0, 0.34),
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    }
-
-    .login-card::before {
-      content: "🎃";
-      position: absolute;
-      right: -22px;
-      bottom: -34px;
-      font-size: 8rem;
-      opacity: 0.12;
-      transform: rotate(-12deg);
-      pointer-events: none;
     }
 
     .login-brand {
@@ -547,13 +376,13 @@
     .brand-icon {
       width: 64px;
       height: 64px;
-      background: linear-gradient(135deg, var(--halloween-orange), var(--halloween-orange-dark));
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       border-radius: var(--radius-xl);
       display: flex;
       align-items: center;
       justify-content: center;
       margin: 0 auto 14px;
-      box-shadow: 0 4px 18px rgba(249, 115, 22, 0.60);
+      box-shadow: 0 4px 18px rgba(37, 99, 235, 0.40);
     }
 
     .brand-icon i {
@@ -583,7 +412,7 @@
       display: block;
       font-size: 0.78rem;
       font-weight: 600;
-      color: rgba(255, 244, 230, 0.84);
+      color: rgba(255, 255, 255, 0.84);
       margin-bottom: 7px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
@@ -607,7 +436,7 @@
     .input-wrap input {
       width: 100%;
       background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 211, 167, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.18);
       border-radius: var(--radius-lg);
       padding: 13px 14px 13px 44px;
       color: #fff;
@@ -624,18 +453,18 @@
     }
 
     .input-wrap:focus-within .input-icon {
-      color: #fed7aa;
+      color: #93c5fd;
     }
 
     .input-wrap input:focus {
       background: rgba(255, 255, 255, 0.14);
-      border-color: rgba(249, 115, 22, 0.74);
-      box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+      border-color: rgba(37, 99, 235, 0.75);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.10);
     }
 
     .btn-login {
       width: 100%;
-      background: linear-gradient(135deg, var(--halloween-orange), #ea580c);
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
       color: #fff;
       border: none;
       border-radius: var(--radius-lg);
@@ -648,7 +477,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 16px rgba(249, 115, 22, 0.50);
+      box-shadow: 0 4px 16px rgba(37, 99, 235, 0.40);
       transition: background var(--transition), transform 0.10s, box-shadow var(--transition);
       position: relative;
       overflow: hidden;
@@ -672,14 +501,14 @@
     }
 
     .btn-login:hover {
-      background: linear-gradient(135deg, #ea580c, #c2410c);
+      background: linear-gradient(135deg, var(--primary-dark), #1e40af);
       transform: translateY(-1px);
-      box-shadow: 0 6px 22px rgba(249, 115, 22, 0.72);
+      box-shadow: 0 6px 22px rgba(37, 99, 235, 0.60);
     }
 
     .btn-login:active {
       transform: translateY(0);
-      box-shadow: 0 2px 8px rgba(249, 115, 22, 0.40);
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.40);
     }
 
     .error-box {
@@ -708,12 +537,12 @@
       content: "";
       flex: 1;
       height: 1px;
-      background: rgba(249, 115, 22, 0.20);
+      background: rgba(255, 255, 255, 0.15);
     }
 
     .divider span {
       font-size: 0.72rem;
-      color: rgba(255, 225, 190, 0.48);
+      color: rgba(255, 255, 255, 0.50);
       font-weight: 600;
       letter-spacing: 0.06em;
       text-transform: uppercase;
@@ -728,7 +557,7 @@
     }
 
     .login-footer strong {
-      color: rgba(255, 223, 183, 0.70);
+      color: rgba(255, 255, 255, 0.70);
     }
 
     .deco {
@@ -744,7 +573,7 @@
       height: 320px;
       top: -90px;
       right: -90px;
-      background: rgba(249, 115, 22, 0.14);
+      background: rgba(37, 99, 235, 0.15);
     }
 
     .deco-2 {
@@ -752,7 +581,7 @@
       height: 220px;
       bottom: -70px;
       left: -70px;
-      background: rgba(126, 34, 206, 0.20);
+      background: rgba(99, 102, 241, 0.15);
     }
 
     @media (max-width: 600px) {
@@ -775,42 +604,15 @@
       .login-card {
         padding: 32px 22px;
       }
-
-      .luna-halloween {
-        width: 84px;
-        height: 84px;
-        top: 10%;
-        left: 6%;
-      }
-
-      .telarana {
-        width: 130px;
-        height: 130px;
-      }
-
-      .murcielagos span {
-        font-size: 1rem !important;
-      }
     }
   </style>
 </head>
 
 <body>
 
-  <!-- Decoración Halloween -->
+  <!-- Decoración sutil -->
   <div class="deco deco-1"></div>
   <div class="deco deco-2"></div>
-  <div class="luna-halloween" aria-hidden="true"></div>
-
-  <div class="telarana telarana-izquierda" aria-hidden="true"></div>
-  <div class="telarana telarana-derecha" aria-hidden="true"></div>
-
-  <div class="murcielagos" aria-hidden="true">
-    <span>🦇</span>
-    <span>🦇</span>
-    <span>🦇</span>
-    <span>🦇</span>
-  </div>
 
   <div id="lluvia"></div>
   <div id="flashOverlay"></div>
@@ -844,7 +646,7 @@
 
       <div class="login-brand">
         <div class="brand-icon">
-          <i class="bi bi-moon-stars-fill"></i>
+          <i class="bi bi-clock-history"></i>
         </div>
 
         <h1>TurnoApp</h1>
@@ -890,7 +692,7 @@
       </form>
 
       <div class="divider">
-        <span>TurnoApp v2.0 · Especial Halloween</span>
+        <span>TurnoApp v2.0 · Acceso al Sistema</span>
       </div>
 
       <div class="login-footer">
@@ -925,7 +727,7 @@
     }
 
     actualizarReloj();
-    setInterval(actualizarReloj, 10 * 1000);
+    setInterval(actualizarReloj, 10000);
 
     const contenedorLluvia = document.getElementById("lluvia");
     const flashEl = document.getElementById("flashOverlay");
@@ -1093,22 +895,22 @@
     }
 
     cargarTiempo();
-    setInterval(cargarTiempo, 10 * 60 * 1000);
+    setInterval(cargarTiempo, 600000);
   </script>
 
   <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12"></script>
   <script>
     new Typed('#typed-output', {
       strings: [
-        "La noche comienza...",
-        "TurnoApp te está esperando...",
-        "Control de asistencia... incluso después de medianoche.",
-        "Acceso seguro al sistema de turnos."
+        "Bienvenido a TurnoApp",
+        "Gestión eficiente de turnos y horarios",
+        "Control de asistencia en tiempo real",
+        "Acceso seguro al sistema"
       ],
       typeSpeed: 38,
       backSpeed: 18,
-      backDelay: 1600,
-      startDelay: 500,
+      backDelay: 1800,
+      startDelay: 400,
       loop: true,
       showCursor: true,
       cursorChar: '█'
