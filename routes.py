@@ -178,9 +178,9 @@ def obtener_resumen_vacaciones(cur, iduser, anio, feriados_set=None):
   )
   row_cupo = cur.fetchone()
   totales = (
-      row_cupo[0]
+      float(row_cupo[0])
       if (row_cupo and row_cupo[0] is not None)
-      else 30
+      else 23.0
   )
 
   # 2. Consultar solicitudes del usuario para el año seleccionado
@@ -194,38 +194,51 @@ def obtener_resumen_vacaciones(cur, iduser, anio, feriados_set=None):
   )
   registros = cur.fetchall()
 
-  disfrutados = 0
-  aprobados = 0
-  pendientes = 0
+  disfrutados = 0.0
+  aprobados = 0.0
+  pendientes = 0.0
 
-  # 3. Recorrer día a día descontando fines de semana y feriados
+  # 3. Recorrer solicitudes evaluando la duración de cada una
   for vac_in, vac_out, estado in registros:
     curr = vac_in.date()
     fin = vac_out.date()
+
+    es_multidia = (fin - curr).days >= 1
+    duracion_horas = (vac_out - vac_in).total_seconds() / 3600.0
 
     while curr <= fin:
       es_fin_semana = curr.weekday() >= 5
       es_feriado = curr.strftime('%Y-%m-%d') in feriados_set
 
       if not es_fin_semana and not es_feriado:
+        # Si es el mismo día y dura menos de 7 horas (ej. 13:00 a 17:00 = 4h), se computa como medio día (0.5)
+        if not es_multidia and duracion_horas < 7:
+          valor_dia = 0.5
+        else:
+          valor_dia = 1.0
+
         if estado == 'Aprobado':
-          aprobados += 1  # Suma a TODOS los aprobados
+          aprobados += valor_dia
           if curr < hoy:
-            disfrutados += 1  # Subconjunto de aprobados pasados a la fecha actual
+            disfrutados += valor_dia
         elif estado == 'Pendiente':
-          pendientes += 1  # En revisión
+          pendientes += valor_dia
 
       curr += timedelta(days=1)
 
-  # 4. Por Solicitar / Disponibles = Cupo Anual - Aprobados - En Revisión
-  disponibles = totales - aprobados - pendientes
+  # Función auxiliar para mostrar enteros limpios (ej: 1 en vez de 1.0, pero 1.5 si es medio día)
+  def format_num(val):
+    val = round(val, 2)
+    return int(val) if val.is_integer() else val
+
+  disponibles = max(0.0, totales - aprobados - pendientes)
 
   return {
-      'totales': totales,
-      'disfrutados': disfrutados,
-      'aprobados': aprobados,
-      'pendientes': pendientes,
-      'disponibles': max(0, disponibles),
+      'totales': format_num(totales),
+      'disfrutados': format_num(disfrutados),
+      'aprobados': format_num(aprobados),
+      'pendientes': format_num(pendientes),
+      'disponibles': format_num(disponibles),
   }
 @main.app_context_processor
 def inject_year():
