@@ -1099,7 +1099,7 @@ def vacaciones(uid=None):
       )
 
     # 🛑 RESTRICCIÓN DE AÑO ACTUAL: Solo se permite crear en el año en curso
-    if dt_in.year != año_actual or dt_out.year != año_actual:
+    if dt_in.year < año_actual or dt_out.year < año_actual:
       cur.close()
       flash(
           f'Solo se pueden registrar propuestas para el año en curso'

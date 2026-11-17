@@ -523,7 +523,7 @@
                         </td>
                         <td>
                           <div class="acciones-td">
-                            {% set es_anio_actual = (selected_year|default(current_year) == current_year) %}
+                            {% set es_anio_actual = (selected_year|default(current_year) >= current_year) %}
                             {% if es_anio_actual and (vac[3] == 'Pendiente' or vac[3] == 'Rechazado' or session.get('role')|int == 0) %}
                               <button type="button"
                                       class="btn-tbl edit"
