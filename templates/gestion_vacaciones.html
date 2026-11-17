@@ -129,7 +129,7 @@
     }
     .matriz-tbl th.col-emp, .matriz-tbl td.col-emp {
       position: sticky; left: 0; background: var(--surface); z-index: 2;
-      text-align: left; padding: 10px 14px; min-width: 210px;
+      text-align: left; padding: 10px 14px; min-width: 230px;
       box-shadow: 2px 0 5px rgba(0,0,0,0.03);
     }
     .matriz-tbl th {
@@ -165,6 +165,62 @@
       background-color: #e2e8f0 !important;
     }
 
+    /* ── BLOQUE SEPARADO: PERSONAL AJENO AL DEPARTAMENTO (IT) ── */
+    .matriz-tbl tbody tr.fila-separador-it {
+      background: #eef2f6 !important;
+      border-top: 2px solid #cbd5e1 !important;
+      border-bottom: 1px solid #cbd5e1 !important;
+      cursor: pointer;
+    }
+    .matriz-tbl tbody tr.fila-separador-it:hover td {
+      background: #e2e8f0 !important;
+    }
+    .matriz-tbl tbody tr.fila-separador-it td.col-emp {
+      background: #eef2f6 !important;
+      padding: 8px 14px;
+    }
+    .matriz-tbl tbody tr.fila-separador-it:hover td.col-emp {
+      background: #e2e8f0 !important;
+    }
+    .separador-it-label {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      font-size: 0.72rem; font-weight: 700; color: #475569;
+      text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    .btn-toggle-it {
+      background: #ffffff; border: 1px solid #cbd5e1; color: #475569;
+      border-radius: 8px; padding: 2px 8px; font-size: 0.68rem; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 4px;
+      transition: all var(--transition);
+    }
+    .btn-toggle-it:hover {
+      background: #f8fafc; color: #1e293b; border-color: #94a3b8;
+    }
+
+    .matriz-tbl tbody tr.fila-it {
+      background-color: #f4f6f9 !important;
+    }
+    .matriz-tbl tbody tr.fila-it td.col-emp {
+      background-color: #f4f6f9 !important;
+    }
+    .matriz-tbl tbody tr.fila-it:hover td,
+    .matriz-tbl tbody tr.fila-it:hover td.col-emp {
+      background-color: #e9eef4 !important;
+    }
+    .avatar-emp.avatar-it {
+      background: #64748b;
+    }
+    .fila-it .bloque-vac.aprobado {
+      background: rgba(100, 116, 139, 0.14);
+      color: #475569;
+      border: 1px solid rgba(100, 116, 139, 0.30);
+    }
+    .fila-it .bloque-vac.pendiente {
+      background: rgba(148, 163, 184, 0.14);
+      color: #64748b;
+      border: 1px dashed rgba(100, 116, 139, 0.45);
+    }
+
     /* Avatar con Iniciales */
     .avatar-emp {
       width: 32px; height: 32px; border-radius: 50%;
@@ -190,7 +246,7 @@
 
     /* Leyenda */
     .leyenda {
-      display: flex; gap: 16px; margin-top: 14px; font-size: 0.76rem; color: var(--text-2);
+      display: flex; flex-wrap: wrap; gap: 16px; margin-top: 14px; font-size: 0.76rem; color: var(--text-2);
     }
     .leyenda-item { display: flex; align-items: center; gap: 6px; font-weight: 500; }
     .leyenda-box { width: 12px; height: 12px; border-radius: 3px; }
@@ -327,6 +383,8 @@
               </tr>
             </thead>
             <tbody>
+              {# 1. EQUIPO PROPIO DE LA SUPERVISORA #}
+              {% set ids_equipo = empleados | map(attribute=0) | list %}
               {% for emp in empleados %}
                 {% set emp_id = emp[0] %}
                 <tr>
@@ -362,7 +420,7 @@
                       {% if emp_id in matriz_eventos and dia_num in matriz_eventos[emp_id] %}
                         {% for ev in matriz_eventos[emp_id][dia_num] %}
                           <div class="bloque-vac {{ 'pendiente' if ev.estado == 'Pendiente' else 'aprobado' }}"
-                               onclick="abrirModalProcesar('{{ ev.idvac }}', '{{ ev.nombre_completo }}', '{{ ev.vac_in_fmt }}', '{{ ev.vac_out_fmt }}', '{{ ev.observacion }}', '{{ ev.estado }}', '{{ emp_id }}')">
+                               onclick="abrirModalProcesar('{{ ev.idvac }}', '{{ ev.nombre_completo }}', '{{ ev.vac_in_fmt }}', '{{ ev.vac_out_fmt }}', '{{ ev.observacion }}', '{{ ev.estado }}', '{{ emp_id }}', false)">
                             {{ ev.texto_bloque }}
                           </div>
                         {% endfor %}
@@ -371,6 +429,74 @@
                   {% endfor %}
                 </tr>
               {% endfor %}
+
+              {# 2. BLOQUE INFORMATIVO: PERSONAL AJENO AL DEPARTAMENTO (IT) #}
+              {% if empleados_it is defined and empleados_it %}
+                <tr class="fila-separador-it" onclick="toggleBloqueIT()">
+                  <td class="col-emp">
+                    <div class="separador-it-label">
+                      <span><i class="bi bi-info-circle-fill me-1 text-secondary"></i> Personal ajeno a su departamento — Para su información</span>
+                      <button type="button" class="btn-toggle-it" id="btnToggleIT" onclick="event.stopPropagation(); toggleBloqueIT();">
+                        <i class="bi bi-chevron-up" id="iconToggleIT"></i>
+                        <span id="txtToggleIT">Ocultar</span>
+                      </button>
+                    </div>
+                  </td>
+                  <td colspan="{{ dias_mes|length }}" style="text-align:left; padding-left:12px; font-size:0.70rem; color:#64748b;">
+                    Consulta informativa de disponibilidad (no afecta a los cupos de su equipo)
+                  </td>
+                </tr>
+
+                {% for emp in empleados_it %}
+                  {% if emp[0] not in ids_equipo %}
+                    {% set emp_id = emp[0] %}
+                    <tr class="fila-it">
+                      <td class="col-emp">
+                        <div class="d-flex align-items-center gap-2">
+                          {% if emp[4] %}
+                            <img src="{{ url_for('static', filename='uploads/profiles/' ~ emp[4]) }}" 
+                                 class="rounded-circle" 
+                                 style="width:32px; height:32px; object-fit:cover; filter: grayscale(25%);" 
+                                 alt="Avatar"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div class="avatar-emp avatar-it" style="display:none;">
+                              {{ emp[1][0] if emp[1] else '' }}{{ emp[2][0] if emp[2] else '' }}
+                            </div>
+                          {% else %}
+                            <div class="avatar-emp avatar-it">
+                              {{ emp[1][0] if emp[1] else '' }}{{ emp[2][0] if emp[2] else '' }}
+                            </div>
+                          {% endif %}
+                          <div>
+                            <div class="fw-semibold text-secondary" style="line-height: 1.2;">{{ emp[1] }} {{ emp[2] }}</div>
+                            <div style="font-size:0.66rem; color:#64748b;">
+                              {{ emp[3] or 'IT' }} · <span class="fst-italic">Solo informativo</span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      {% for dia in dias_mes %}
+                        {% set dia_num = dia.day %}
+                        {% set fecha_str = dia.strftime('%Y-%m-%d') %}
+                        {% set es_fin_semana = dia.weekday() >= 5 %}
+                        {% set es_feriado = feriados_set and fecha_str in feriados_set %}
+                        
+                        <td class="{% if es_feriado %}dia-feriado{% elif es_fin_semana %}fin-semana{% endif %}">
+                          {% if emp_id in matriz_eventos and dia_num in matriz_eventos[emp_id] %}
+                            {% for ev in matriz_eventos[emp_id][dia_num] %}
+                              <div class="bloque-vac {{ 'pendiente' if ev.estado == 'Pendiente' else 'aprobado' }}"
+                                   title="Solo informativo ({{ ev.estado }})"
+                                   onclick="abrirModalProcesar('{{ ev.idvac }}', '{{ ev.nombre_completo }}', '{{ ev.vac_in_fmt }}', '{{ ev.vac_out_fmt }}', '{{ ev.observacion }}', '{{ ev.estado }}', '{{ emp_id }}', true)">
+                                {{ ev.texto_bloque }}
+                              </div>
+                            {% endfor %}
+                          {% endif %}
+                        </td>
+                      {% endfor %}
+                    </tr>
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
             </tbody>
           </table>
         </div>
@@ -385,6 +511,12 @@
             <div class="leyenda-box" style="background:var(--green-bg); border:1px solid var(--green);"></div>
             <span>Aprobado</span>
           </div>
+          {% if empleados_it is defined and empleados_it %}
+            <div class="leyenda-item">
+              <div class="leyenda-box" style="background:rgba(100,116,139,0.16); border:1px solid #64748b;"></div>
+              <span>Personal ajeno al dpto. (Informativo)</span>
+            </div>
+          {% endif %}
           <div class="leyenda-item">
             <div class="leyenda-box" style="background:rgba(239, 68, 68, 0.15); border:1px solid #dc2626;"></div>
             <span>Día Festivo / Feriado</span>
@@ -430,12 +562,12 @@
               <div>
                 {% if puede_gestionar %}
                   <button class="btn btn-sm btn-success fw-semibold me-2" 
-                          onclick="abrirModalProcesar('{{ p[0] }}', '{{ p[2] }} {{ p[3] }}', '{{ p[5].strftime('%d/%m/%Y %H:%M') }}', '{{ p[6].strftime('%d/%m/%Y %H:%M') }}', '{{ p[7] or '' }}', 'Pendiente', '{{ p[1] }}')">
+                          onclick="abrirModalProcesar('{{ p[0] }}', '{{ p[2] }} {{ p[3] }}', '{{ p[5].strftime('%d/%m/%Y %H:%M') }}', '{{ p[6].strftime('%d/%m/%Y %H:%M') }}', '{{ p[7] or '' }}', 'Pendiente', '{{ p[1] }}', false)">
                     <i class="bi bi-check-lg"></i> Revisar
                   </button>
                 {% else %}
                   <button class="btn btn-sm btn-outline-secondary fw-semibold me-2" 
-                          onclick="abrirModalProcesar('{{ p[0] }}', '{{ p[2] }} {{ p[3] }}', '{{ p[5].strftime('%d/%m/%Y %H:%M') }}', '{{ p[6].strftime('%d/%m/%Y %H:%M') }}', '{{ p[7] or '' }}', 'Pendiente', '{{ p[1] }}')">
+                          onclick="abrirModalProcesar('{{ p[0] }}', '{{ p[2] }} {{ p[3] }}', '{{ p[5].strftime('%d/%m/%Y %H:%M') }}', '{{ p[6].strftime('%d/%m/%Y %H:%M') }}', '{{ p[7] or '' }}', 'Pendiente', '{{ p[1] }}', false)">
                     <i class="bi bi-eye-fill"></i> Ver Detalle
                   </button>
                 {% endif %}
@@ -451,34 +583,32 @@
       </div>
 
       <!-- VISTA 3: RESUMEN DE SALDOS DEL EQUIPO -->
-      <!-- VISTA 3: RESUMEN DE SALDOS DEL EQUIPO -->
-<div id="tab-saldos" class="panel" style="display:none;">
-  <div class="panel-head">
-    <div class="panel-head-title">
-      <div class="panel-head-icon" style="background:rgba(37,99,235,0.09); color:#2563eb;">
-        <i class="bi bi-people-fill"></i>
-      </div>
-      <h5>Balance y Control de Vacaciones ({{ selected_year|default(current_year) }})</h5>
-    </div>
+      <div id="tab-saldos" class="panel" style="display:none;">
+        <div class="panel-head">
+          <div class="panel-head-title">
+            <div class="panel-head-icon" style="background:rgba(37,99,235,0.09); color:#2563eb;">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <h5>Balance y Control de Vacaciones ({{ selected_year|default(current_year) }})</h5>
+          </div>
 
-    <!-- DESPLEGABLE DE SELECCIÓN DE AÑO -->
-    <div class="d-flex align-items-center gap-2">
-      <label for="selectAnioSaldos" class="form-label mb-0 text-muted" style="font-size: 0.75rem; font-weight: 600;">Año:</label>
-      <select id="selectAnioSaldos" class="form-select form-select-sm" style="width: auto; border-radius: 10px; font-weight: 600;" onchange="cambiarAnioGestion(this.value)">
-        {% if anios_disponibles is defined and anios_disponibles %}
-          {% for a in anios_disponibles %}
-            <option value="{{ a }}" {% if a == selected_year %}selected{% endif %}>
-              {{ a }} {% if a == current_year %}(Actual){% endif %}
-            </option>
-          {% endfor %}
-        {% else %}
-          <option value="{{ current_year }}" selected>{{ current_year }} (Actual)</option>
-        {% endif %}
-      </select>
-    </div>
-  </div>
+          <!-- DESPLEGABLE DE SELECCIÓN DE AÑO -->
+          <div class="d-flex align-items-center gap-2">
+            <label for="selectAnioSaldos" class="form-label mb-0 text-muted" style="font-size: 0.75rem; font-weight: 600;">Año:</label>
+            <select id="selectAnioSaldos" class="form-select form-select-sm" style="width: auto; border-radius: 10px; font-weight: 600;" onchange="cambiarAnioGestion(this.value)">
+              {% if anios_disponibles is defined and anios_disponibles %}
+                {% for a in anios_disponibles %}
+                  <option value="{{ a }}" {% if a == selected_year %}selected{% endif %}>
+                    {{ a }} {% if a == current_year %}(Actual){% endif %}
+                  </option>
+                {% endfor %}
+              {% else %}
+                <option value="{{ current_year }}" selected>{{ current_year }} (Actual)</option>
+              {% endif %}
+            </select>
+          </div>
+        </div>
 
-  <!-- Resto del contenido de la tabla de saldos -->
         {% if equipo_saldos %}
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -586,7 +716,7 @@
           <!-- Mensaje Informativo para Solo Lectura -->
           <div id="modalAlertSoloLectura" class="alert alert-info small mb-0 align-items-center gap-2" style="display:none;">
             <i class="bi bi-info-circle-fill fs-5"></i>
-            <div>Estás en <strong>Modo Consulta (Solo Lectura)</strong>. No dispones de permisos para modificar solicitudes de otros empleados.</div>
+            <div id="modalAlertSoloLecturaText">Estás en <strong>Modo Consulta (Solo Lectura)</strong>. No dispones de permisos para modificar solicitudes de otros empleados.</div>
           </div>
 
           <!-- Formulario de Acción para Supervisores o IT en solicitud propia -->
@@ -626,6 +756,27 @@
       document.getElementById('btn-tab-saldos').classList.toggle('active', tab === 'saldos');
     }
 
+    // Plegar / desplegar bloque de personal ajeno al departamento (IT)
+    function aplicarEstadoBloqueIT(oculto) {
+      const filasIT = document.querySelectorAll('.fila-it');
+      const icon = document.getElementById('iconToggleIT');
+      const txt = document.getElementById('txtToggleIT');
+      filasIT.forEach(tr => {
+        tr.style.display = oculto ? 'none' : '';
+      });
+      if (icon) icon.className = oculto ? 'bi bi-chevron-down' : 'bi bi-chevron-up';
+      if (txt) txt.textContent = oculto ? 'Mostrar' : 'Ocultar';
+    }
+
+    function toggleBloqueIT() {
+      const filasIT = document.querySelectorAll('.fila-it');
+      if (!filasIT.length) return;
+      const estaOculto = filasIT[0].style.display === 'none';
+      const nuevoEstado = !estaOculto;
+      aplicarEstadoBloqueIT(nuevoEstado);
+      localStorage.setItem('ocultar_bloque_it', nuevoEstado ? '1' : '0');
+    }
+
     // Modal de Procesamiento
     let modalBs = null;
     let vacacionIdActual = null;
@@ -635,7 +786,7 @@
     const esITUser = {{ (es_it or False) | tojson }};
     const esSoloLecturaUser = {{ (es_solo_lectura or False) | tojson }};
 
-    function abrirModalProcesar(idvac, nombre, vacIn, vacOut, obs, estado, iduserSolicitud) {
+    function abrirModalProcesar(idvac, nombre, vacIn, vacOut, obs, estado, iduserSolicitud, esSoloInfo = false) {
       vacacionIdActual = idvac;
       document.getElementById('modalEmpNombre').textContent = nombre;
       document.getElementById('modalFechas').textContent = vacIn + '  ➔  ' + vacOut;
@@ -651,11 +802,11 @@
       const motivoArea = document.getElementById('motivo_rechazo');
       if (motivoArea) motivoArea.value = '';
 
-      // Evaluar permisos según el dueño de la solicitud
+      // Evaluar permisos según el dueño de la solicitud y si es bloque informativo
       const esMiSolicitud = (String(iduserSolicitud) === String(sessionUserId));
       let puedeEditar = false;
 
-      if (esSoloLecturaUser) {
+      if (esSoloInfo || esSoloLecturaUser) {
         puedeEditar = false;
       } else if (esITUser) {
         // Los usuarios de IT SOLO pueden modificar sus propias solicitudes
@@ -667,6 +818,7 @@
 
       const formElem = document.getElementById('formProcesarVacacion');
       const alertElem = document.getElementById('modalAlertSoloLectura');
+      const alertText = document.getElementById('modalAlertSoloLecturaText');
 
       if (puedeEditar) {
         if (formElem) formElem.style.display = 'block';
@@ -674,6 +826,11 @@
       } else {
         if (formElem) formElem.style.display = 'none';
         if (alertElem) alertElem.style.display = 'flex';
+        if (alertText) {
+          alertText.innerHTML = esSoloInfo
+            ? 'Este registro pertenece a <strong>personal ajeno a su departamento</strong> y se muestra únicamente para su información (Estado: <strong>' + estado + '</strong>).'
+            : 'Estás en <strong>Modo Consulta (Solo Lectura)</strong>. No dispones de permisos para modificar solicitudes de otros empleados.';
+        }
       }
 
       modalBs = new bootstrap.Modal(document.getElementById('modalProcesar'));
@@ -704,22 +861,26 @@
       sidebar.classList.add('collapsed');
       mainContent.classList.add('expanded');
     }
-    // Cambiar año actualizando la URL y manteniendo la pestaña de saldos activa
-function cambiarAnioGestion(anio) {
-  const urlParams = new URLSearchParams(window.location.search);
-  urlParams.set('anio', anio);
-  urlParams.set('tab', 'saldos'); // Forzar apertura en la 3ª pestaña tras la recarga
-  window.location.search = urlParams.toString();
-}
 
-// Cargar la pestaña correspondiente al recargar la página si existe en la URL
-document.addEventListener('DOMContentLoaded', () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const tabParam = urlParams.get('tab');
-  if (tabParam) {
-    cambiarTab(tabParam);
-  }
-});
+    // Cambiar año actualizando la URL y manteniendo la pestaña de saldos activa
+    function cambiarAnioGestion(anio) {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.set('anio', anio);
+      urlParams.set('tab', 'saldos');
+      window.location.search = urlParams.toString();
+    }
+
+    // Cargar pestaña activa y estado del bloque IT al recargar
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tabParam = urlParams.get('tab');
+      if (tabParam) {
+        cambiarTab(tabParam);
+      }
+      if (localStorage.getItem('ocultar_bloque_it') === '1') {
+        aplicarEstadoBloqueIT(true);
+      }
+    });
   </script>
 </body>
 </html>

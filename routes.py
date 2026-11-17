@@ -1610,225 +1610,236 @@ def delete_vacacion():
 @main.route('/gestion-vacaciones')
 @login_required
 def gestion_vacaciones():
-  user_id = session['user_id']
-  user_role = session.get('role')
-  cur = mysql.connection.cursor()
+    user_id = session['user_id']
+    user_role = session.get('role')
+    cur = mysql.connection.cursor()
 
-  # 1. Obtener departamento del usuario actual
-  cur.execute(
-      'SELECT departamento FROM personas WHERE iduser = %s', (user_id,)
-  )
-  dep_row = cur.fetchone()
-  user_dep = dep_row[0].lower() if (dep_row and dep_row[0]) else ''
-  es_it = user_dep == 'it'
+    # 1. Obtener departamento del usuario actual
+    cur.execute(
+        'SELECT departamento FROM personas WHERE iduser = %s', (user_id,)
+    )
+    dep_row = cur.fetchone()
+    user_dep = dep_row[0].lower() if (dep_row and dep_row[0]) else ''
+    es_it = user_dep == 'it'
 
-  # 2. Consultar festivos registrados en la BD
-  cur.execute('SELECT fecha FROM feriados')
-  feriados_rows = cur.fetchall()
-  feriados_set = {
-      r[0].strftime('%Y-%m-%d') if hasattr(r[0], 'strftime') else str(r[0])
-      for r in feriados_rows
-  }
+    # 2. Consultar festivos registrados en la BD
+    cur.execute('SELECT fecha FROM feriados')
+    feriados_rows = cur.fetchall()
+    feriados_set = {
+        r[0].strftime('%Y-%m-%d') if hasattr(r[0], 'strftime') else str(r[0])
+        for r in feriados_rows
+    }
 
-  # 3. Comprobar asignación en la tabla Supervisoras
-  cur.execute(
-      'SELECT departamento FROM Supervisoras WHERE UserID = %s', (user_id,)
-  )
-  deptos_registrados = [row[0] for row in cur.fetchall()]
+    # 3. Comprobar asignación en la tabla Supervisoras
+    cur.execute(
+        'SELECT departamento FROM Supervisoras WHERE UserID = %s', (user_id,)
+    )
+    deptos_registrados = [row[0] for row in cur.fetchall()]
 
-  # Si no es Rol 0, no tiene departamentos en Supervisoras y tampoco es IT -> Denegar
-  if user_role != 0 and not deptos_registrados and not es_it:
-    cur.close()
-    flash('No tienes permisos para acceder a esta sección.', 'danger')
-    return redirect(url_for('main.dashboard'))
+    # Si no es Rol 0, no tiene departamentos en Supervisoras y tampoco es IT -> Denegar
+    if user_role != 0 and not deptos_registrados and not es_it:
+        cur.close()
+        flash('No tienes permisos para acceder a esta sección.', 'danger')
+        return redirect(url_for('main.dashboard'))
 
-  # Determinar si es solo lectura (Si no es admin ni supervisora asignada)
-  es_solo_lectura = user_role != 0 and not deptos_registrados
+    # Determinar si es solo lectura (Si no es admin ni supervisora asignada)
+    es_solo_lectura = user_role != 0 and not deptos_registrados
 
-  # SOLO ven a todos: si tienen 'TODOS' asignado, si pertenecen a IT, o si es un Admin sin restricción
-  ver_todos = (
-      ('TODOS' in deptos_registrados)
-      or es_it
-      or (user_role == 0 and not deptos_registrados)
-  )
+    # SOLO ven a todos: si tienen 'TODOS' asignado, si pertenecen a IT, o si es un Admin sin restricción
+    ver_todos = (
+        ('TODOS' in deptos_registrados)
+        or es_it
+        or (user_role == 0 and not deptos_registrados)
+    )
 
-  # 4. Fechas del mes y año a visualizar
-  hoy = date.today()
-  anio = request.args.get('anio', hoy.year, type=int)
-  mes = request.args.get('mes', hoy.month, type=int)
-  num_dias_mes = monthrange(anio, mes)[1]
-  dias_mes = [date(anio, mes, d) for d in range(1, num_dias_mes + 1)]
+    # 4. Fechas del mes y año a visualizar
+    hoy = date.today()
+    anio = request.args.get('anio', hoy.year, type=int)
+    mes = request.args.get('mes', hoy.month, type=int)
+    num_dias_mes = monthrange(anio, mes)[1]
+    dias_mes = [date(anio, mes, d) for d in range(1, num_dias_mes + 1)]
 
-  # 5. Consultar Empleados (Filtrado estricto por equipo si no es ver_todos)
-  if ver_todos:
-    cur.execute("""
+    # 5. Consultar Empleados (Equipo propio + lista aparte de IT para supervisoras)
+    empleados_it = []
+    if ver_todos:
+        cur.execute("""
             SELECT DISTINCT p.iduser, p.nombre, p.apellido, p.departamento, u.foto
             FROM personas p
             LEFT JOIN user u ON p.iduser = u.iduser
             ORDER BY p.apellido, p.nombre
         """)
-  else:
-    cur.execute(
-        """
+        empleados = cur.fetchall()
+    else:
+        # Equipo directo de la supervisora
+        cur.execute(
+            """
             SELECT DISTINCT p.iduser, p.nombre, p.apellido, p.departamento, u.foto
             FROM personas p
             JOIN Supervisoras s ON p.departamento = s.departamento
             LEFT JOIN user u ON p.iduser = u.iduser
             WHERE s.UserID = %s
             ORDER BY p.apellido, p.nombre
-        """,
-        (user_id,),
-    )
+            """,
+            (user_id,),
+        )
+        empleados = cur.fetchall()
 
-  empleados = cur.fetchall()
+        # Personal de IT (solo informativo para el calendario)
+        cur.execute("""
+            SELECT DISTINCT p.iduser, p.nombre, p.apellido, p.departamento, u.foto
+            FROM personas p
+            LEFT JOIN user u ON p.iduser = u.iduser
+            WHERE LOWER(TRIM(p.departamento)) = 'it'
+            ORDER BY p.apellido, p.nombre
+        """)
+        empleados_it = cur.fetchall()
 
-  # 6. Solicitudes Pendientes de la bandeja rápida
-  if ver_todos:
-    cur.execute("""
+    # 6. Solicitudes Pendientes de la bandeja rápida (SOLO su equipo directo)
+    if ver_todos:
+        cur.execute("""
             SELECT DISTINCT v.idvac, p.iduser, p.nombre, p.apellido, p.departamento, v.vacacionesin, v.vacacionesout, v.observacion, v.fecha_solicitud
             FROM vacaciones v
             JOIN personas p ON v.iduser = p.iduser
             WHERE v.estado = 'Pendiente'
             ORDER BY v.vacacionesin ASC
         """)
-  else:
-    cur.execute(
-        """
+    else:
+        cur.execute(
+            """
             SELECT DISTINCT v.idvac, p.iduser, p.nombre, p.apellido, p.departamento, v.vacacionesin, v.vacacionesout, v.observacion, v.fecha_solicitud
             FROM vacaciones v
             JOIN personas p ON v.iduser = p.iduser
             JOIN Supervisoras s ON p.departamento = s.departamento
             WHERE s.UserID = %s AND v.estado = 'Pendiente'
             ORDER BY v.vacacionesin ASC
-        """,
-        (user_id,),
-    )
+            """,
+            (user_id,),
+        )
 
-  pendientes = cur.fetchall()
+    pendientes = cur.fetchall()
 
-  # 7. Obtener vacaciones para la matriz del mes
-  inicio_mes = f'{anio}-{mes:02d}-01 00:00:00'
-  fin_mes = f'{anio}-{mes:02d}-{num_dias_mes:02d} 23:59:59'
+    # 7. Obtener vacaciones para la matriz del mes (Incluye IT si es supervisora)
+    inicio_mes = f'{anio}-{mes:02d}-01 00:00:00'
+    fin_mes = f'{anio}-{mes:02d}-{num_dias_mes:02d} 23:59:59'
 
-  if ver_todos:
-    cur.execute(
-        """
+    if ver_todos:
+        cur.execute(
+            """
             SELECT DISTINCT v.idvac, v.iduser, v.vacacionesin, v.vacacionesout, v.estado, v.observacion, p.nombre, p.apellido
             FROM vacaciones v
             JOIN personas p ON v.iduser = p.iduser
             WHERE v.estado IN ('Pendiente', 'Aprobado')
               AND v.vacacionesin <= %s AND v.vacacionesout >= %s
-        """,
-        (fin_mes, inicio_mes),
-    )
-  else:
-    cur.execute(
-        """
+            """,
+            (fin_mes, inicio_mes),
+        )
+    else:
+        cur.execute(
+            """
             SELECT DISTINCT v.idvac, v.iduser, v.vacacionesin, v.vacacionesout, v.estado, v.observacion, p.nombre, p.apellido
             FROM vacaciones v
             JOIN personas p ON v.iduser = p.iduser
-            JOIN Supervisoras s ON p.departamento = s.departamento
-            WHERE s.UserID = %s 
+            LEFT JOIN Supervisoras s ON p.departamento = s.departamento
+            WHERE (s.UserID = %s OR LOWER(TRIM(p.departamento)) = 'it')
               AND v.estado IN ('Pendiente', 'Aprobado')
               AND v.vacacionesin <= %s AND v.vacacionesout >= %s
-        """,
-        (user_id, fin_mes, inicio_mes),
-    )
-
-  vacaciones_mes = cur.fetchall()
-
-  # 8. CALCULAR SALDOS Y RESUMEN DE VACACIONES DE CADA EMPLEADO (PARA LA 3ª PESTAÑA)
-  equipo_saldos = []
-  for emp in empleados:
-    emp_id = emp[0]
-    emp_nom = emp[1] or ''
-    emp_ape = emp[2] or ''
-    emp_dpto = emp[3] or '-'
-    emp_foto = emp[4]
-
-    # Generar iniciales para el avatar
-    ini_nom = emp_nom[0].upper() if emp_nom else ''
-    ini_ape = emp_ape[0].upper() if emp_ape else ''
-    iniciales = f'{ini_nom}{ini_ape}' or 'U'
-
-    # Consultar resumen para el año seleccionado (anio)
-    resumen = obtener_resumen_vacaciones(cur, emp_id, anio, feriados_set)
-
-    equipo_saldos.append({
-        'iduser': emp_id,
-        'nombre': f'{emp_nom} {emp_ape}'.strip(),
-        'departamento': emp_dpto,
-        'foto': emp_foto,
-        'iniciales': iniciales,
-        'totales': resumen.get('totales', 30),
-        'disfrutados': resumen.get('disfrutados', 0),
-        'aprobados': resumen.get('aprobados', 0),
-        'pendientes': resumen.get('pendientes', 0),
-        'disponibles': resumen.get('disponibles', 0),
-    })
-
-  # Cierre del cursor de MySQL
-  cur.close()
-
-  # 9. Mapear la matriz (omite fines de semana y feriados)
-  matriz_eventos = {emp[0]: {} for emp in empleados}
-  for vac in vacaciones_mes:
-    idvac, iduser, vac_in, vac_out, estado, obs, nom, ape = vac
-    if iduser in matriz_eventos:
-      es_multidia = (vac_out.date() - vac_in.date()).days >= 1
-      duracion_horas = (vac_out - vac_in).total_seconds() / 3600.0
-
-      if es_multidia or duracion_horas >= 7:
-        texto_bloque = 'VAC'
-      else:
-        texto_bloque = (
-            f"{vac_in.strftime('%H:%M')}-{vac_out.strftime('%H:%M')}"
+            """,
+            (user_id, fin_mes, inicio_mes),
         )
 
-      for dia in dias_mes:
-        if vac_in.date() <= dia <= vac_out.date():
-          es_fin_semana = dia.weekday() >= 5
-          es_feriado = dia.strftime('%Y-%m-%d') in feriados_set
+    vacaciones_mes = cur.fetchall()
 
-          if es_fin_semana or es_feriado:
-            continue
+    # 8. CALCULAR SALDOS Y RESUMEN DE VACACIONES DE CADA EMPLEADO (SOLO SU EQUIPO)
+    equipo_saldos = []
+    for emp in empleados:
+        emp_id = emp[0]
+        emp_nom = emp[1] or ''
+        emp_ape = emp[2] or ''
+        emp_dpto = emp[3] or '-'
+        emp_foto = emp[4]
 
-          dia_num = dia.day
-          if dia_num not in matriz_eventos[iduser]:
-            matriz_eventos[iduser][dia_num] = []
+        ini_nom = emp_nom[0].upper() if emp_nom else ''
+        ini_ape = emp_ape[0].upper() if emp_ape else ''
+        iniciales = f'{ini_nom}{ini_ape}' or 'U'
 
-          if not any(
-              e['idvac'] == idvac for e in matriz_eventos[iduser][dia_num]
-          ):
-            matriz_eventos[iduser][dia_num].append({
-                'idvac': idvac,
-                'estado': estado,
-                'texto_bloque': texto_bloque,
-                'vac_in_fmt': vac_in.strftime('%d/%m/%Y %H:%M'),
-                'vac_out_fmt': vac_out.strftime('%d/%m/%Y %H:%M'),
-                'observacion': obs or '',
-                'nombre_completo': f'{nom} {ape}',
-            })
+        resumen = obtener_resumen_vacaciones(cur, emp_id, anio, feriados_set)
 
-  # Lista de años para el selector
-  anios_disponibles = list(range(hoy.year - 2, hoy.year + 2))
+        equipo_saldos.append({
+            'iduser': emp_id,
+            'nombre': f'{emp_nom} {emp_ape}'.strip(),
+            'departamento': emp_dpto,
+            'foto': emp_foto,
+            'iniciales': iniciales,
+            'totales': resumen.get('totales', 30),
+            'disfrutados': resumen.get('disfrutados', 0),
+            'aprobados': resumen.get('aprobados', 0),
+            'pendientes': resumen.get('pendientes', 0),
+            'disponibles': resumen.get('disponibles', 0),
+        })
 
-  return render_template(
-      'gestion_vacaciones.html',
-      empleados=empleados,
-      pendientes=pendientes,
-      matriz_eventos=matriz_eventos,
-      equipo_saldos=equipo_saldos,  # ← Se envía la lista de saldos
-      dias_mes=dias_mes,
-      feriados_set=feriados_set,
-      mes_actual=mes,
-      anio_actual=anio,
-      selected_year=anio,
-      anios_disponibles=anios_disponibles,
-      es_solo_lectura=es_solo_lectura,
-      es_it=es_it,
-      current_year=hoy.year,
-  )
+    cur.close()
+
+    # 9. Mapear la matriz (omite fines de semana y feriados, incluye equipo + IT)
+    todos_para_matriz = list(empleados) + list(empleados_it)
+    matriz_eventos = {emp[0]: {} for emp in todos_para_matriz}
+
+    for vac in vacaciones_mes:
+        idvac, iduser, vac_in, vac_out, estado, obs, nom, ape = vac
+        if iduser in matriz_eventos:
+            es_multidia = (vac_out.date() - vac_in.date()).days >= 1
+            duracion_horas = (vac_out - vac_in).total_seconds() / 3600.0
+
+            if es_multidia or duracion_horas >= 7:
+                texto_bloque = 'VAC'
+            else:
+                texto_bloque = (
+                    f"{vac_in.strftime('%H:%M')}-{vac_out.strftime('%H:%M')}"
+                )
+
+            for dia in dias_mes:
+                if vac_in.date() <= dia <= vac_out.date():
+                    es_fin_semana = dia.weekday() >= 5
+                    es_feriado = dia.strftime('%Y-%m-%d') in feriados_set
+
+                    if es_fin_semana or es_feriado:
+                        continue
+
+                    dia_num = dia.day
+                    if dia_num not in matriz_eventos[iduser]:
+                        matriz_eventos[iduser][dia_num] = []
+
+                    if not any(
+                        e['idvac'] == idvac for e in matriz_eventos[iduser][dia_num]
+                    ):
+                        matriz_eventos[iduser][dia_num].append({
+                            'idvac': idvac,
+                            'estado': estado,
+                            'texto_bloque': texto_bloque,
+                            'vac_in_fmt': vac_in.strftime('%d/%m/%Y %H:%M'),
+                            'vac_out_fmt': vac_out.strftime('%d/%m/%Y %H:%M'),
+                            'observacion': obs or '',
+                            'nombre_completo': f'{nom} {ape}',
+                        })
+
+    anios_disponibles = list(range(hoy.year - 2, hoy.year + 2))
+
+    return render_template(
+        'gestion_vacaciones.html',
+        empleados=empleados,
+        empleados_it=empleados_it,
+        pendientes=pendientes,
+        matriz_eventos=matriz_eventos,
+        equipo_saldos=equipo_saldos,
+        dias_mes=dias_mes,
+        feriados_set=feriados_set,
+        mes_actual=mes,
+        anio_actual=anio,
+        selected_year=anio,
+        anios_disponibles=anios_disponibles,
+        es_solo_lectura=es_solo_lectura,
+        es_it=es_it,
+        current_year=hoy.year,
+    )
 
 @main.route('/procesar-vacacion/<int:idvac>/<string:accion>', methods=['POST'])
 @login_required
