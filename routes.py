@@ -2402,57 +2402,59 @@ def asistencia_mes():
 #  EXPORTAR PDF — turn_in_laboral + turn_out_laboral
 # ══════════════════════════════════════════════════════
 from io import BytesIO
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from calendar import monthrange
 from flask import request, redirect, url_for, flash, session, render_template, make_response
+
 
 @main.route('/doc')
 @login_required
 def doc():
     return render_template('doc.html', current_year=date.today().year)
 
+
 @main.route('/exportar-asistencia-pdf', methods=['POST'])
 @login_required
 def exportar_asistencia_pdf():
-  # 1. Validación de permisos
-  if session.get('role') != 0:
-    flash('No tienes permisos.', 'warning')
-    return redirect(url_for('main.dashboard'))
+    # 1. Validación de permisos
+    if session.get('role') != 0:
+        flash('No tienes permisos.', 'warning')
+        return redirect(url_for('main.dashboard'))
 
-  # 2. Captura y normalización de parámetros
-  user_id = int(request.form.get('user_id', 0))
-  mes = request.form.get('mes', '')
-  añadir_20min = request.form.get('añadir_20min') == 'on'
-  añadir_iniciales = request.form.get('añadir_iniciales') == 'on'
+    # 2. Captura y normalización de parámetros
+    user_id = int(request.form.get('user_id', 0))
+    mes = request.form.get('mes', '')
+    añadir_20min = request.form.get('añadir_20min') == 'on'
+    añadir_iniciales = request.form.get('añadir_iniciales') == 'on'
 
-  if not mes or user_id == 0:
-    flash('Datos de solicitud incompletos.', 'danger')
-    return redirect(url_for('main.vacaciones'))
+    if not mes or user_id == 0:
+        flash('Datos de solicitud incompletos.', 'danger')
+        return redirect(url_for('main.vacaciones'))
 
-  year, month = map(int, mes.split('-'))
-  primer_dia = f'{year}-{month:02d}-01'
-  ultimo_dia_num = monthrange(year, month)[1]
-  ultimo_dia = f'{year}-{month:02d}-{ultimo_dia_num}'
+    year, month = map(int, mes.split('-'))
+    primer_dia = f'{year}-{month:02d}-01'
+    ultimo_dia_num = monthrange(year, month)[1]
+    ultimo_dia = f'{year}-{month:02d}-{ultimo_dia_num}'
 
-  # 3. Inicialización segura de variables
-  total_minutos_ret = 0
-  total_horas_ret = 0
-  total_mins_ret = 0
-  total_minutos_trab = 0
+    # 3. Inicialización segura de variables
+    total_minutos_ret = 0
+    total_horas_ret = 0
+    total_mins_ret = 0
+    total_minutos_trab = 0
 
-  cur = mysql.connection.cursor()
+    cur = mysql.connection.cursor()
 
-  # ── CONSULTAR FESTIVOS REGISTRADOS ──
-  cur.execute('SELECT fecha FROM feriados')
-  feriados_rows = cur.fetchall()
-  feriados_set = {
-      r[0].strftime('%Y-%m-%d') if hasattr(r[0], 'strftime') else str(r[0])
-      for r in feriados_rows
-  }
+    # ── CONSULTAR FESTIVOS REGISTRADOS ──
+    cur.execute('SELECT fecha FROM feriados')
+    feriados_rows = cur.fetchall()
+    feriados_set = {
+        r[0].strftime('%Y-%m-%d') if hasattr(r[0], 'strftime') else str(r[0])
+        for r in feriados_rows
+    }
 
-  # ── ASISTENCIA ──
-  cur.execute(
-      """
+    # ── ASISTENCIA ──
+    cur.execute(
+        """
         SELECT DATE(til.timein) AS fecha, MIN(til.timein) AS entrada_manana, 
                tl.salida AS salida_comida, tl.entrada AS entrada_tarde, 
                MAX(tol.timeout) AS salida_tarde, 
@@ -2463,133 +2465,140 @@ def exportar_asistencia_pdf():
         WHERE til.iduser = %s AND DATE(til.timein) BETWEEN %s AND %s
         GROUP BY DATE(til.timein), tl.salida, tl.entrada
         ORDER BY fecha
-    """,
-      (user_id, primer_dia, ultimo_dia),
-  )
-  registros = cur.fetchall()
+        """,
+        (user_id, primer_dia, ultimo_dia),
+    )
+    registros = cur.fetchall()
 
-  # ── HORAS RETRIBUIDAS ──
-  cur.execute(
-      """
+    # ── HORAS RETRIBUIDAS ──
+    cur.execute(
+        """
         SELECT hr.fecha_inicio, hr.fecha_fin, hr.motivos, 
                TIMESTAMPDIFF(MINUTE, hr.fecha_inicio, hr.fecha_fin) AS minutos
         FROM horas_retribuidas hr
         WHERE hr.user_id = %s AND DATE_FORMAT(hr.fecha_inicio, '%%Y-%%m') = %s
         ORDER BY hr.fecha_inicio ASC
-    """,
-      (user_id, mes),
-  )
-  horas_ret = cur.fetchall()
+        """,
+        (user_id, mes),
+    )
+    horas_ret = cur.fetchall()
 
-  if horas_ret:
-    total_minutos_ret = sum(r[3] for r in horas_ret if r[3] or 0)
-    total_horas_ret = total_minutos_ret // 60
-    total_mins_ret = total_minutos_ret % 60
+    if horas_ret:
+        total_minutos_ret = sum(r[3] for r in horas_ret if r[3] or 0)
+        total_horas_ret = total_minutos_ret // 60
+        total_mins_ret = total_minutos_ret % 60
 
-  # ── VACACIONES (Filtradas sin fines de semana ni feriados) ──
-  cur.execute(
-      """
+    # ── VACACIONES (Aprobadas, acotadas al mes y sin fines de semana ni feriados) ──
+    cur.execute(
+        """
         SELECT vacacionesin, vacacionesout FROM vacaciones
-        WHERE iduser = %s AND DATE(vacacionesin) <= %s AND DATE(vacacionesout) >= %s
+        WHERE iduser = %s
+          AND estado = 'Aprobado'
+          AND DATE(vacacionesin) <= %s
+          AND DATE(vacacionesout) >= %s
         ORDER BY vacacionesin
-    """,
-      (user_id, ultimo_dia, primer_dia),
-  )
-  vacaciones_raw = cur.fetchall()
+        """,
+        (user_id, ultimo_dia, primer_dia),
+    )
+    vacaciones_raw = cur.fetchall()
 
-  vacaciones_mes = []
-  for vin, vout in vacaciones_raw:
-    if vin and vout:
-      v_start = (
-          vin
-          if isinstance(vin, datetime)
-          else datetime.strptime(str(vin), '%Y-%m-%d %H:%M:%S')
-      )
-      v_end = (
-          vout
-          if isinstance(vout, datetime)
-          else datetime.strptime(str(vout), '%Y-%m-%d %H:%M:%S')
-      )
+    inicio_mes_date = date(year, month, 1)
+    fin_mes_date = date(year, month, ultimo_dia_num)
 
-      curr_date = v_start.date()
-      end_date = v_end.date()
+    vacaciones_mes = []
+    for vin, vout in vacaciones_raw:
+        if vin and vout:
+            v_start = (
+                vin
+                if isinstance(vin, datetime)
+                else datetime.strptime(str(vin), '%Y-%m-%d %H:%M:%S')
+            )
+            v_end = (
+                vout
+                if isinstance(vout, datetime)
+                else datetime.strptime(str(vout), '%Y-%m-%d %H:%M:%S')
+            )
 
-      # Recorrer día a día omitiendo fines de semana y feriados
-      while curr_date <= end_date:
-        es_fin_semana = curr_date.weekday() >= 5
-        es_feriado = curr_date.strftime('%Y-%m-%d') in feriados_set
+            # Acotar estrictamente al mes seleccionado
+            curr_date = max(v_start.date(), inicio_mes_date)
+            end_date = min(v_end.date(), fin_mes_date)
 
-        if not es_fin_semana and not es_feriado:
-          dt_inicio = (
-              v_start
-              if curr_date == v_start.date()
-              else datetime.combine(curr_date, v_start.time())
-          )
-          dt_fin = (
-              v_end
-              if curr_date == v_end.date()
-              else datetime.combine(curr_date, v_end.time())
-          )
-          vacaciones_mes.append((dt_inicio, dt_fin))
+            # Recorrer día a día omitiendo fines de semana y feriados
+            while curr_date <= end_date:
+                es_fin_semana = curr_date.weekday() >= 5
+                es_feriado = curr_date.strftime('%Y-%m-%d') in feriados_set
 
-        curr_date += timedelta(days=1)
+                if not es_fin_semana and not es_feriado:
+                    dt_inicio = (
+                        v_start
+                        if curr_date == v_start.date()
+                        else datetime.combine(curr_date, v_start.time())
+                    )
+                    dt_fin = (
+                        v_end
+                        if curr_date == v_end.date()
+                        else datetime.combine(curr_date, v_end.time())
+                    )
+                    vacaciones_mes.append((dt_inicio, dt_fin))
 
-  # ── EMPLEADO ──
-  cur.execute(
-      'SELECT nombre, apellido, nif, nass FROM personas WHERE iduser = %s',
-      (user_id,),
-  )
-  empleado = cur.fetchone()
-  cur.close()
+                curr_date += timedelta(days=1)
 
-  # ── CALCULAR TOTAL TRABAJADAS ──
-  for r in registros:
-    if r[1] and r[4]:
-      minutos_dia = int((r[4] - r[1]).total_seconds() // 60)
-      if r[2] and r[3]:
-        minutos_dia -= int((r[3] - r[2]).total_seconds() // 60)
-      if minutos_dia > 0:
-        total_minutos_trab += minutos_dia
+    # ── EMPLEADO ──
+    cur.execute(
+        'SELECT nombre, apellido, nif, nass FROM personas WHERE iduser = %s',
+        (user_id,),
+    )
+    empleado = cur.fetchone()
+    cur.close()
 
-  total_horas_trab = total_minutos_trab // 60
-  total_mins_trab = total_minutos_trab % 60
+    # ── CALCULAR TOTAL TRABAJADAS ──
+    for r in registros:
+        if r[1] and r[4]:
+            minutos_dia = int((r[4] - r[1]).total_seconds() // 60)
+            if r[2] and r[3]:
+                minutos_dia -= int((r[3] - r[2]).total_seconds() // 60)
+            if minutos_dia > 0:
+                total_minutos_trab += minutos_dia
 
-  total_minutos_comp = total_minutos_trab + total_minutos_ret
+    total_horas_trab = total_minutos_trab // 60
+    total_mins_trab = total_minutos_trab % 60
 
-  # 4. Render final con retorno obligatorio
-  html = render_template(
-      'pdf_asistencia.html',
-      empleado=f'{empleado[0]} {empleado[1]}' if empleado else 'Desconocido',
-      mes=f'{MESES_ES[month]} {year}',
-      nif=empleado[2] if empleado else '',
-      nass=empleado[3] if empleado else '',
-      registros=registros,
-      horas_ret=horas_ret,
-      total_minutos_ret=total_minutos_ret,
-      total_horas_ret=total_horas_ret,
-      total_mins_ret=total_mins_ret,
-      total_horas_trab=total_horas_trab,
-      total_mins_trab=total_mins_trab,
-      total_horas_comp=total_minutos_comp // 60,
-      total_mins_comp=total_minutos_comp % 60,
-      vacaciones_mes=vacaciones_mes,
-      month=month,
-      year=year,
-      ultimo_dia_num=ultimo_dia_num,
-      añadir_20min=añadir_20min,
-      añadir_iniciales=añadir_iniciales,
-  )
+    total_minutos_comp = total_minutos_trab + total_minutos_ret
 
-  pdf = BytesIO()
-  pisa.CreatePDF(html, dest=pdf)
+    # 4. Render final con retorno obligatorio
+    html = render_template(
+        'pdf_asistencia.html',
+        empleado=f'{empleado[0]} {empleado[1]}' if empleado else 'Desconocido',
+        mes=f'{MESES_ES[month]} {year}',
+        nif=empleado[2] if empleado else '',
+        nass=empleado[3] if empleado else '',
+        registros=registros,
+        horas_ret=horas_ret,
+        total_minutos_ret=total_minutos_ret,
+        total_horas_ret=total_horas_ret,
+        total_mins_ret=total_mins_ret,
+        total_horas_trab=total_horas_trab,
+        total_mins_trab=total_mins_trab,
+        total_horas_comp=total_minutos_comp // 60,
+        total_mins_comp=total_minutos_comp % 60,
+        vacaciones_mes=vacaciones_mes,
+        month=month,
+        year=year,
+        ultimo_dia_num=ultimo_dia_num,
+        añadir_20min=añadir_20min,
+        añadir_iniciales=añadir_iniciales,
+    )
 
-  response = make_response(pdf.getvalue())
-  response.headers['Content-Type'] = 'application/pdf'
-  response.headers['Content-Disposition'] = (
-      f'attachment; filename=Registro-{mes}-{user_id}.pdf'
-  )
+    pdf = BytesIO()
+    pisa.CreatePDF(html, dest=pdf)
 
-  return response
+    response = make_response(pdf.getvalue())
+    response.headers['Content-Type'] = 'application/pdf'
+    response.headers['Content-Disposition'] = (
+        f'attachment; filename=Registro-{mes}-{user_id}.pdf'
+    )
+
+    return response
 # ══════════════════════════════════════════════════════
 #  SALIDA A COMER
 # ══════════════════════════════════════════════════════

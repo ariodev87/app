@@ -206,35 +206,40 @@ S.L.U' }}</td>
 
       {# ── VACACIONES POR DÍA ── #}
       {% set vd = {} %}
+      {% set target_ym = year * 12 + month %}
       {% for vin, vout in vacaciones_mes %}
         {% if vin and vout %}
+          {% set start_ym = vin.year * 12 + vin.month %}
+          {% set end_ym = vout.year * 12 + vout.month %}
+          {% if start_ym <= target_ym and end_ym >= target_ym %}
 
-          {# recorte al mes actual #}
-          {% set d_start = vin.day if vin.month == month and vin.year == year else 1 %}
-          {% set d_end = vout.day if vout.month == month and vout.year == year else ultimo_dia_num %}
+            {# recorte al mes actual #}
+            {% set d_start = vin.day if vin.month == month and vin.year == year else 1 %}
+            {% set d_end = vout.day if vout.month == month and vout.year == year else ultimo_dia_num %}
 
-          {# si es el mismo día y no cubre jornada completa -> vacaciones por horas #}
-          {% set mismo_dia = (vin.year == vout.year and vin.month == vout.month and vin.day == vout.day) %}
-          {% set segundos = (vout - vin).total_seconds() %}
-          {% set es_horas = mismo_dia and segundos < 28800 %}
+            {# si es el mismo día y no cubre jornada completa -> vacaciones por horas #}
+            {% set mismo_dia = (vin.year == vout.year and vin.month == vout.month and vin.day == vout.day) %}
+            {% set segundos = (vout - vin).total_seconds() %}
+            {% set es_horas = mismo_dia and segundos < 28800 %}
 
-          {% for dia in range(d_start | int, d_end | int + 1) %}
-            {% if es_horas %}
-              {% set _ = vd.update({
-                dia: {
-                  'tipo': 'horas',
-                  'desde': vin.strftime('%H:%M'),
-                  'hasta': vout.strftime('%H:%M')
-                }
-              }) %}
-            {% else %}
-              {% set _ = vd.update({
-                dia: {
-                  'tipo': 'completo'
-                }
-              }) %}
-            {% endif %}
-          {% endfor %}
+            {% for dia in range(d_start | int, d_end | int + 1) %}
+              {% if es_horas %}
+                {% set _ = vd.update({
+                  dia: {
+                    'tipo': 'horas',
+                    'desde': vin.strftime('%H:%M'),
+                    'hasta': vout.strftime('%H:%M')
+                  }
+                }) %}
+              {% else %}
+                {% set _ = vd.update({
+                  dia: {
+                    'tipo': 'completo'
+                  }
+                }) %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
         {% endif %}
       {% endfor %}
 
